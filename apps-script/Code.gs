@@ -396,9 +396,44 @@ function setConfig(sheet, key, value) {
   sheet.appendRow([key, value]);
 }
 
-// ─── Sheet / header utilities ────────────────────────────────
+// ─── Sheet resolution ────────────────────────────────────────
+// Resolve a sheet by NAME first; if not found, auto-detect by the
+// header signature of its first row, so it works regardless of the
+// actual tab name. Falls back to creating a tab with the canonical name.
 function getOrCreateSheet(ss, name) {
-  return ss.getSheetByName(name) || ss.insertSheet(name);
+  // direct name match
+  let sheet = ss.getSheetByName(name);
+  if (sheet) return sheet;
+
+  // signature-based detection
+  const SIGNATURES = {
+    'Units':    ['nama unit', 'status'],
+    'Biaya':    ['keterangan', 'nominal'],
+    'Partners': ['jumlah funding'],
+    'Config':   ['key', 'value']
+  };
+  const sig = SIGNATURES[name];
+  if (sig) {
+    const sheets = ss.getSheets();
+    for (let i = 0; i < sheets.length; i++) {
+      const sh = sheets[i];
+      if (sh.getLastColumn() === 0) continue;
+      const headers = sh.getRange(1, 1, 1, sh.getLastColumn())
+        .getValues()[0].map(h => String(h).toLowerCase().trim());
+      // Config special-case: exactly Key/Value 2-col table
+      if (name === 'Config') {
+        if (headers[0] === 'key' && headers[1] === 'value') return sh;
+        continue;
+      }
+      const matchAll = sig.every(s => headers.indexOf(s) >= 0);
+      // make sure we don't confuse Biaya vs Partners (both have Unit ID/Nama Unit)
+      if (name === 'Biaya'    && headers.indexOf('jumlah funding') >= 0) continue;
+      if (name === 'Partners' && headers.indexOf('nominal') >= 0 && headers.indexOf('jumlah funding') < 0) continue;
+      if (matchAll) return sh;
+    }
+  }
+  // not found anywhere → create canonical
+  return ss.insertSheet(name);
 }
 
 function ensureUnitHeaders(sheet) {
