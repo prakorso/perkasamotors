@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Perkasa Motors — Dashboard</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23C8420A'/%3E%3Ctext x='50' y='72' font-family='Georgia,serif' font-size='64' font-weight='bold' fill='white' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232563C9'/%3E%3Ctext x='50' y='72' font-family='Georgia,serif' font-size='64' font-weight='bold' fill='white' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
@@ -755,7 +755,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
           <div class="fg" style="margin-bottom:8px">
             <label>Warna Aksen (logo & tombol)</label>
-            <input type="color" id="setAccent" value="#C8420A" oninput="livePreview()" style="height:42px;padding:4px;cursor:pointer">
+            <input type="color" id="setAccent" value="#2563C9" oninput="livePreview()" style="height:42px;padding:4px;cursor:pointer">
           </div>
 
           <button class="btn-primary" onclick="saveSettings()">💾 Simpan Pengaturan</button>
@@ -1332,7 +1332,7 @@ function renderMOM(){
   if(cMOM)cMOM.destroy();
   cMOM=new Chart(document.getElementById('chartMOM').getContext('2d'),{
     type:'bar',
-    data:{labels:BULAN,datasets:[{label:'Profit Penjualan',data:monthly,backgroundColor:monthly.map(v=>v>=0?'#C8420A':'#A32D2D'),borderRadius:4}]},
+    data:{labels:BULAN,datasets:[{label:'Profit Penjualan',data:monthly,backgroundColor:monthly.map(v=>v>=0?'#2563C9':'#A32D2D'),borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{
         title:items=>BULAN_FULL[items[0].dataIndex],
@@ -1470,7 +1470,7 @@ function renderInsight(){
   if(cGrowthCum)cGrowthCum.destroy();
   cGrowthCum=new Chart(document.getElementById('chartGrowthCum').getContext('2d'),{
     data:{labels:mlabels.length?mlabels:['—'],datasets:[
-      {type:'bar',label:'Profit Bulanan',data:profitData,backgroundColor:'#C8420A',borderRadius:4,order:2},
+      {type:'bar',label:'Profit Bulanan',data:profitData,backgroundColor:'#2563C9',borderRadius:4,order:2},
       {type:'line',label:'Profit Kumulatif',data:cumData,borderColor:'#2D6A1F',backgroundColor:'rgba(45,106,31,0.08)',borderWidth:2.5,tension:0.3,pointRadius:4,pointBackgroundColor:'#2D6A1F',fill:true,order:1}
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
@@ -1622,7 +1622,7 @@ function renderYearly(){
   const years=Object.keys(byYear).sort();
   cYearly=new Chart(document.getElementById('chartYearly').getContext('2d'),{
     type:'bar',
-    data:{labels:years.length?years:['—'],datasets:[{label:'Profit Bersih',data:years.length?years.map(y=>byYear[y].profit):[0],backgroundColor:'#C8420A',borderRadius:4}]},
+    data:{labels:years.length?years:['—'],datasets:[{label:'Profit Bersih',data:years.length?years.map(y=>byYear[y].profit):[0],backgroundColor:'#2563C9',borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{
         label:i=>'Profit: '+fmtRp(i.parsed.y),
@@ -1820,7 +1820,7 @@ function renderProfitTrend(){
   if(cProfitTrend)cProfitTrend.destroy();
   cProfitTrend=new Chart(document.getElementById('chartProfitTrend').getContext('2d'),{
     data:{labels:keys.length?keys.map(fmtM):['—'],datasets:[
-      {type:'bar',label:'Profit Bulanan',data:keys.map(k=>byMonth[k]),backgroundColor:'#C8420A',borderRadius:4,order:2},
+      {type:'bar',label:'Profit Bulanan',data:keys.map(k=>byMonth[k]),backgroundColor:'#2563C9',borderRadius:4,order:2},
       {type:'line',label:'Kumulatif',data:cumData,borderColor:'#2D6A1F',borderWidth:2,tension:0.3,pointRadius:3,fill:false,order:1}
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
@@ -1998,7 +1998,7 @@ async function saveAdminConfig(){
 
 // ══════════ PENGATURAN TAMPILAN ══════════
 const SETTINGS_KEY='pm_settings';
-const DEFAULT_SETTINGS={logoType:'text',initial:'P',image:'',brand:'Perkasa Motors',tagline:'Dashboard Jual Beli Otomotif',taglineShort:'Jual Beli Otomotif',accent:'#C8420A'};
+const DEFAULT_SETTINGS={logoType:'text',initial:'P',image:'',brand:'Perkasa Motors',tagline:'Dashboard Jual Beli Otomotif',taglineShort:'Jual Beli Otomotif',accent:'#2563C9'};
 
 function getSettings(){
   try{ return Object.assign({},DEFAULT_SETTINGS,JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}')); }
