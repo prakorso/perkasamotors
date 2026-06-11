@@ -373,6 +373,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   .home-hero{flex-direction:column;align-items:stretch;}
   .health-box{width:100%;}
 }
+
+/* ===== THEME OVERRIDE: Navy Executive ===== */
+
+:root{--bg:#F5F7FA;--surface:#FFFFFF;--surface2:#EBEFF5;--border:rgba(16,42,77,0.09);--border2:rgba(16,42,77,0.16);--text:#0E2747;--text2:#46586F;--text3:#8492A6;--accent:#1B4F8A;--accent-bg:#E9F1FA;--blue:#1B4F8A;--blue-bg:#E9F1FA;--amber:#B07A12;--amber-bg:#FBF3E2;--green:#1F7A4D;--green-bg:#E7F4EE;--red:#C0392B;--red-bg:#FBECEA;}
+.sidebar{background:#0E2747;}
+.home-hero{background:linear-gradient(135deg,#0E2747 0%,#1B4F8A 100%);}
+.insight-hero{background:linear-gradient(135deg,#0E2747 0%,#163B6B 100%);}
+.ih-card{background:#15315A;}
+.kpi-ic{display:none;}
+.kpi{background:#fff;border:1px solid var(--border);border-left:4px solid var(--accent);}
+.kpi.k-blue,.kpi.k-green,.kpi.k-amber,.kpi.k-teal,.kpi.k-purple,.kpi.k-orange{background:#fff;}
+.kpi.k-blue{border-left-color:var(--accent);}
+.kpi.k-teal{border-left-color:#2C7A8C;}
+.kpi.k-amber{border-left-color:var(--amber);}
+.kpi.k-green{border-left-color:var(--green);}
+.kpi.k-purple{border-left-color:#5B6B8F;}
+.kpi.k-orange{border-left-color:#2A6FB0;}
+.kpi.k-red{border-left-color:var(--red);}
+.kpi-value{color:var(--text);}
+.card,.kpi,.mc,.partner-card{box-shadow:none;}
+.mc::before{height:2px;}
+
 </style>
 </head>
 <body>
@@ -446,7 +468,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
     </div>
     <div style="background:#FFF0EB;border-bottom:1px solid rgba(200,66,10,0.18);color:var(--accent);font-size:12px;padding:8px 32px;text-align:center">
-      🎨 <b>MODE PREVIEW</b> — data di bawah adalah contoh (dummy). Gunakan dropdown kanan atas untuk melihat tampilan tiap role. Perubahan tidak tersimpan.
+      🎨 <b>VARIAN: Navy Executive</b> — data di bawah adalah contoh (dummy). Gunakan dropdown kanan atas untuk melihat tampilan tiap role. Perubahan tidak tersimpan.
     </div>
     <div class="content">
       <div class="metrics" id="globalMetrics">

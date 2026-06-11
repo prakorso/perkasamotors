@@ -373,6 +373,38 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   .home-hero{flex-direction:column;align-items:stretch;}
   .health-box{width:100%;}
 }
+
+/* ===== THEME OVERRIDE: Dark Premium ===== */
+
+:root{--bg:#0B1220;--surface:#141E33;--surface2:#1C2842;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);--text:#EAF0FA;--text2:#9FB0C9;--text3:#6B7C99;--accent:#3B82F6;--accent-bg:#16284A;--blue:#3B82F6;--blue-bg:#16284A;--amber:#E0A93B;--amber-bg:#2A2410;--green:#34D399;--green-bg:#0E2B22;--red:#F87171;--red-bg:#2C1719;}
+body{background:var(--bg);color:var(--text);}
+.topbar{background:var(--bg);border-bottom-color:var(--border);}
+.sidebar{background:#0A0F1C;border-right:1px solid var(--border);}
+.home-hero{background:linear-gradient(135deg,#15233B 0%,#1E3A6B 100%);border:1px solid var(--border);}
+.insight-hero{background:linear-gradient(135deg,#141E33 0%,#1B3157 100%);}
+.ih-card{background:#1A2742;}
+.card,.kpi,.mc,.partner-card,.unit-item,.eval-person,.seg-card{background:var(--surface);border:1px solid var(--border);box-shadow:none;}
+.kpi-ic{opacity:0.16;}
+.kpi{border-left:4px solid var(--accent);}
+.kpi.k-teal{border-left-color:#22D3EE;}
+.kpi.k-amber{border-left-color:var(--amber);}
+.kpi.k-green{border-left-color:var(--green);}
+.kpi.k-purple{border-left-color:#A78BFA;}
+.kpi.k-orange{border-left-color:#60A5FA;}
+.kpi.k-red{border-left-color:var(--red);}
+.kpi-value,.mc-value,.ihc-value,.mbox-value,.unit-name,.hh-greet{color:var(--text);}
+.login-wrap,.login-box{background:var(--surface);}
+.fg input,.fg select,.biaya-row input,.partner-fund-row input,.partner-fund-row select,.date-filter input,.modal input,.login-box input{background:var(--surface2);color:var(--text);border-color:var(--border2);}
+.chip{background:var(--surface2);color:var(--text2);border-color:var(--border2);}
+.chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.seg-card.motor{background:#241E0C;}.seg-card.mobil{background:#13243F;}
+.mbox.p1{background:#13243F;}.mbox.p2{background:#241E0C;}
+.aging-cell.a1{background:#0E2B22;}.aging-cell.a2{background:#2A2410;}.aging-cell.a3{background:#2E2113;}.aging-cell.a4{background:#2C1719;}
+.alert.red{background:#2C1719;}.alert.amber{background:#2A2410;}.alert.green{background:#0E2B22;}
+.btn-ghost,.btn-sm{background:var(--surface2);color:var(--text2);}
+.track-table tr:hover td{background:var(--surface2);}
+.home-filter{background:var(--surface);}
+
 </style>
 </head>
 <body>
@@ -446,7 +478,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
     </div>
     <div style="background:#FFF0EB;border-bottom:1px solid rgba(200,66,10,0.18);color:var(--accent);font-size:12px;padding:8px 32px;text-align:center">
-      🎨 <b>MODE PREVIEW</b> — data di bawah adalah contoh (dummy). Gunakan dropdown kanan atas untuk melihat tampilan tiap role. Perubahan tidak tersimpan.
+      🎨 <b>VARIAN: Dark Premium</b> — data di bawah adalah contoh (dummy). Gunakan dropdown kanan atas untuk melihat tampilan tiap role. Perubahan tidak tersimpan.
     </div>
     <div class="content">
       <div class="metrics" id="globalMetrics">
