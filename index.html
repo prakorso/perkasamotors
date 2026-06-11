@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-:root{--bg:#F5F2ED;--surface:#fff;--surface2:#EDEAE4;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);--text:#1A1714;--text2:#6B6560;--text3:#9E9891;--accent:#C8420A;--accent-bg:#FFF0EB;--blue:#185FA5;--blue-bg:#EAF2FB;--amber:#9A6300;--amber-bg:#FFF8E6;--green:#2D6A1F;--green-bg:#EDF7EB;--red:#A32D2D;--red-bg:#FBEDED;--r:10px;--rl:16px;}
+:root{--bg:#F1F4F9;--surface:#FFFFFF;--surface2:#E9EEF6;--border:rgba(30,58,95,0.07);--border2:rgba(30,58,95,0.13);--text:#15233B;--text2:#52617A;--text3:#94A1B3;--accent:#2563C9;--accent-bg:#E8F0FC;--blue:#2563C9;--blue-bg:#E8F0FC;--amber:#C07A0E;--amber-bg:#FCF3E0;--green:#178A5A;--green-bg:#E3F5EC;--red:#D33A2C;--red-bg:#FCEBE9;--r:12px;--rl:18px;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);}
@@ -359,6 +359,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   .home-hero{flex-direction:column;align-items:stretch;}
   .health-box{width:100%;}
 }
+.sidebar{background:linear-gradient(180deg,#15233B 0%,#1B2E4D 100%);}
+.home-hero{background:linear-gradient(135deg,#1B3A6B 0%,#2563C9 100%);}
+.insight-hero{background:linear-gradient(135deg,#15233B 0%,#1B3A6B 100%);}
+.ih-card{background:#1C3157;}
+.kpi-value,.mc-value,.ihc-value,.aging-cell .ac-num,.seg-roi,.mbox-value,.unit-name,.hh-greet,.ih-head,.health-ring .hr-num,.login-box h1,.modal h2{font-family:'DM Sans',sans-serif !important;font-weight:600 !important;letter-spacing:-0.015em;}
+.kpi-ic{display:none;}
+.kpi{background:#fff;border:1px solid var(--border);border-left:none;border-radius:var(--rl);box-shadow:0 1px 3px rgba(21,35,59,0.06),0 1px 2px rgba(21,35,59,0.04);padding-top:22px;}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--accent);}
+.kpi.k-blue::after{background:var(--accent);}
+.kpi.k-teal::after{background:#1E9AA8;}
+.kpi.k-amber::after{background:var(--amber);}
+.kpi.k-green::after{background:var(--green);}
+.kpi.k-purple::after{background:#6C5CE0;}
+.kpi.k-orange::after{background:#2F7CE0;}
+.kpi.k-red::after{background:var(--red);}
+.card{box-shadow:0 1px 3px rgba(21,35,59,0.06),0 1px 2px rgba(21,35,59,0.04);border:1px solid var(--border);}
+.mc{box-shadow:0 1px 3px rgba(21,35,59,0.06);border-radius:var(--rl);}
+.chip.active{background:var(--accent);border-color:var(--accent);}
 </style>
 </head>
 <body>
@@ -1728,7 +1746,7 @@ function renderHome(){
   // Greeting
   const hr=new Date().getHours();
   const greet=hr<11?'Selamat pagi':hr<15?'Selamat siang':hr<19?'Selamat sore':'Selamat malam';
-  document.getElementById('hhGreet').textContent=`${greet}, ${(currentUser||'').charAt(0).toUpperCase()+(currentUser||'').slice(1)}`;
+  document.getElementById('hhGreet').textContent=greet;
   document.getElementById('hhDate').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
   if(!ig){ renderInvestorHome(); return; }
