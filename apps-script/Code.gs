@@ -27,14 +27,13 @@ const COL = {
 };
 const TOTAL_COLS = 28;
 
-// ─── CORS helper ────────────────────────────────────────────
-function cors(output) {
-  return output
-    .setMimeType(ContentService.MimeType.JSON)
-    .addHeader('Access-Control-Allow-Origin', '*');
-}
+// ─── JSON response ──────────────────────────────────────────
+// Apps Script web apps deployed with access "Anyone" are reachable
+// cross-origin from the browser without manual CORS headers.
 function json(data) {
-  return cors(ContentService.createTextOutput(JSON.stringify(data)));
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 // ─── GET: return all units ───────────────────────────────────
