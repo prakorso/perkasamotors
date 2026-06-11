@@ -1,11 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <rect width="100" height="100" rx="18" fill="#CC0000"/>
-  <polygon points="22,49 27,37 66,34 71,41 28,44" fill="white"/>
-  <polygon points="22,48 29,46 31,72 24,72" fill="white"/>
-  <polygon points="29,44 54,41 57,46 57,61 52,65 29,64" fill="white"/>
-  <polygon points="33,48 52,45 54,49 54,58 50,61 33,60" fill="#CC0000"/>
-  <polygon points="55,41 62,40 66,72 59,72" fill="white"/>
-  <polygon points="62,40 69,42 64,61 57,63" fill="white"/>
-  <polygon points="69,42 75,40 72,61 64,61" fill="white"/>
-  <polygon points="75,40 82,43 78,72 71,72" fill="white"/>
+  <g fill="white">
+    <!-- P: diagonal top wing (arrow pointing right) -->
+    <polygon points="20,50 26,36 62,32 67,39 24,44"/>
+    <!-- P: left stem -->
+    <polygon points="20,49 27,45 29,72 22,72"/>
+    <!-- P: bowl outer -->
+    <polygon points="27,44 51,40 54,44 54,59 49,63 27,62"/>
+    <!-- P: bowl counter (hole) -->
+    <polygon points="31,48 50,44 52,48 52,57 48,60 31,59" fill="#CC0000"/>
+    <!-- M: left outer leg -->
+    <polygon points="53,40 61,39 64,72 57,72"/>
+    <!-- M: left inner diagonal to V-notch -->
+    <polygon points="61,39 68,41 63,60 56,62"/>
+    <!-- M: right inner diagonal from V-notch -->
+    <polygon points="68,41 74,39 71,60 63,60"/>
+    <!-- M: right outer leg -->
+    <polygon points="74,39 81,41 77,72 70,72"/>
+  </g>
 </svg>
