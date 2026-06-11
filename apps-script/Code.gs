@@ -5,9 +5,12 @@
 //    Kondisi, Lokasi, Harga Beli, Target Jual, Target Profit
 // ============================================================
 
+// Tab names — match the actual Perkasa Motors sheet.
+// Line-item costs live in "Detail Biaya"; partner funding in
+// "Support Funding". (The "Biaya"/"Partners" tabs are legacy.)
 const SHEET_UNITS    = 'Units';
-const SHEET_BIAYA    = 'Biaya';
-const SHEET_PARTNERS = 'Partners';
+const SHEET_BIAYA    = 'Detail Biaya';
+const SHEET_PARTNERS = 'Support Funding';
 const SHEET_CONFIG   = 'Config';
 
 // Column indices in "Units" sheet (0-based)
@@ -407,10 +410,10 @@ function getOrCreateSheet(ss, name) {
 
   // signature-based detection
   const SIGNATURES = {
-    'Units':    ['nama unit', 'status'],
-    'Biaya':    ['keterangan', 'nominal'],
-    'Partners': ['jumlah funding'],
-    'Config':   ['key', 'value']
+    'Units':          ['nama unit', 'status'],
+    'Detail Biaya':   ['keterangan', 'nominal'],
+    'Support Funding':['jumlah funding'],
+    'Config':         ['key', 'value']
   };
   const sig = SIGNATURES[name];
   if (sig) {
@@ -426,9 +429,9 @@ function getOrCreateSheet(ss, name) {
         continue;
       }
       const matchAll = sig.every(s => headers.indexOf(s) >= 0);
-      // make sure we don't confuse Biaya vs Partners (both have Unit ID/Nama Unit)
-      if (name === 'Biaya'    && headers.indexOf('jumlah funding') >= 0) continue;
-      if (name === 'Partners' && headers.indexOf('nominal') >= 0 && headers.indexOf('jumlah funding') < 0) continue;
+      // avoid confusing the cost tab vs the funding tab
+      if (name === 'Detail Biaya'    && headers.indexOf('jumlah funding') >= 0) continue;
+      if (name === 'Support Funding' && headers.indexOf('jumlah funding') < 0) continue;
       if (matchAll) return sh;
     }
   }
