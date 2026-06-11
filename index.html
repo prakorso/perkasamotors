@@ -2,9 +2,16 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Perkasa Motors — Dashboard</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232563C9'/%3E%3Ctext x='50' y='72' font-family='Georgia,serif' font-size='64' font-weight='bold' fill='white' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#CC0000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Perkasa Motors">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/logo.svg">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
@@ -13,7 +20,7 @@
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);}
 .login-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:40px 36px;width:360px;text-align:center;}
-.login-logo{width:52px;height:52px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:24px;color:#fff;margin:0 auto 16px;}
+.login-logo{width:72px;height:72px;border-radius:16px;overflow:hidden;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;}
 .login-box h1{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:4px;}
 .login-box p{font-size:13px;color:var(--text3);margin-bottom:28px;}
 .login-box input{width:100%;padding:11px 14px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface);margin-bottom:10px;}
@@ -27,7 +34,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .hamburger{display:none;background:none;border:none;font-size:22px;color:var(--text);cursor:pointer;padding:2px 6px;line-height:1;border-radius:8px;}
 .hamburger:hover{background:var(--surface2);}
 .sb-brand{padding:28px 24px 20px;border-bottom:1px solid rgba(255,255,255,0.08);}
-.sb-logo{width:36px;height:36px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:18px;color:#fff;margin-bottom:12px;}
+.sb-logo{width:40px;height:40px;border-radius:8px;overflow:hidden;margin-bottom:12px;display:flex;align-items:center;justify-content:center;}
 .sb-brand h1{font-family:'DM Serif Display',serif;font-size:17px;color:#fff;}
 .sb-brand p{font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;}
 .sb-nav{flex:1;padding:16px 12px;display:flex;flex-direction:column;gap:2px;}
@@ -383,7 +390,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <div class="login-wrap" id="loginWrap">
   <div class="login-box">
-    <div class="login-logo" id="loginLogo">P</div>
+    <div class="login-logo" id="loginLogo"><img src="/logo.svg" alt="Perkasa Motors" style="width:100%;height:100%;object-fit:cover;border-radius:16px"></div>
     <h1 id="loginBrand">Perkasa Motors</h1>
     <p id="loginTagline">Dashboard Jual Beli Otomotif</p>
     <input type="text" id="loginUser" placeholder="Username" autocomplete="username">
@@ -413,7 +420,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div id="dashWrap" style="display:none">
   <div class="sidebar" id="sidebar">
     <div class="sb-brand">
-      <div class="sb-logo" id="sbLogo">P</div>
+      <div class="sb-logo" id="sbLogo"><img src="/logo.svg" alt="PM" style="width:100%;height:100%;object-fit:cover;border-radius:8px"></div>
       <h1 id="sbBrand">Perkasa Motors</h1>
       <p id="sbTagline">Jual Beli Otomotif</p>
     </div>
@@ -2058,9 +2065,10 @@ function applySettings(s){
   const ll=document.getElementById('loginLogo');
   const sl=document.getElementById('sbLogo');
   if(s.logoType==='image'&&s.image){
-    [ll,sl].forEach(el=>{el.textContent='';el.style.backgroundImage=`url(${s.image})`;el.style.backgroundSize='cover';el.style.backgroundPosition='center';});
+    [ll,sl].forEach(el=>{el.innerHTML=`<img src="${s.image}" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;});
   }else{
-    [ll,sl].forEach(el=>{el.style.backgroundImage='';el.textContent=s.initial||'P';});
+    // default: use logo.svg file
+    [ll,sl].forEach(el=>{el.innerHTML=`<img src="/logo.svg" alt="PM" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;});
   }
   document.getElementById('loginBrand').textContent=s.brand;
   document.getElementById('loginTagline').textContent=s.tagline;
@@ -2169,6 +2177,13 @@ function resetSettings(){
 
 // Terapkan settings saat halaman dibuka
 applySettings(getSettings());
+
+// Register service worker (PWA)
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
