@@ -1828,7 +1828,7 @@ function renderHome(){
   // Greeting
   const hr=new Date().getHours();
   const greet=hr<11?'Selamat pagi':hr<15?'Selamat siang':hr<19?'Selamat sore':'Selamat malam';
-  document.getElementById('hhGreet').textContent=`${greet}, ${(currentUser||'').charAt(0).toUpperCase()+(currentUser||'').slice(1)}`;
+  document.getElementById('hhGreet').textContent=greet;
   document.getElementById('hhDate').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
   if(!ig){ renderInvestorHome(); return; }
