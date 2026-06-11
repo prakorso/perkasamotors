@@ -280,6 +280,85 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   .print-header .ph-meta{font-size:11px;color:var(--text3);margin-top:6px;}
   .card{box-shadow:none !important;border:1px solid #ddd !important;}
 }
+
+/* ═══════════ V3 ADDITIONS ═══════════ */
+/* HOME / EXECUTIVE SUMMARY */
+.home-hero{background:linear-gradient(135deg,var(--text) 0%,#2A2420 100%);border-radius:var(--rl);padding:24px;margin-bottom:20px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;}
+.hh-left{flex:1;min-width:200px;}
+.hh-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.5);margin-bottom:6px;}
+.hh-greet{font-family:'DM Serif Display',serif;font-size:24px;color:#fff;letter-spacing:-0.01em;}
+.hh-date{font-size:12px;color:rgba(255,255,255,0.55);margin-top:4px;}
+.health-box{display:flex;align-items:center;gap:18px;background:rgba(255,255,255,0.06);border-radius:var(--r);padding:16px 20px;}
+.health-ring{position:relative;width:84px;height:84px;flex-shrink:0;}
+.health-ring svg{transform:rotate(-90deg);}
+.health-ring .hr-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:24px;color:#fff;line-height:1;}
+.health-ring .hr-num small{font-size:9px;font-family:'DM Sans',sans-serif;color:rgba(255,255,255,0.5);letter-spacing:0.05em;margin-top:2px;}
+.health-label{font-size:14px;font-weight:600;color:#fff;}
+.health-sub{font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px;max-width:180px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;width:3px;bottom:0;background:var(--accent);}
+.kpi.k-blue::before{background:var(--blue);}.kpi.k-green::before{background:var(--green);}.kpi.k-amber::before{background:var(--amber);}.kpi.k-teal::before{background:#4A7C7C;}.kpi.k-purple::before{background:#7A5C9E;}.kpi.k-red::before{background:var(--red);}
+.kpi-label{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.kpi-value{font-family:'DM Serif Display',serif;font-size:22px;letter-spacing:-0.02em;line-height:1.1;}
+.kpi-sub{font-size:10.5px;color:var(--text3);margin-top:4px;}
+.kpi-sub.up{color:var(--green);}.kpi-sub.down{color:var(--red);}
+.alert-stack{display:flex;flex-direction:column;gap:8px;}
+.alert{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:var(--r);font-size:13px;border:1px solid transparent;}
+.alert .a-ic{font-size:15px;line-height:1.2;flex-shrink:0;}
+.alert.red{background:var(--red-bg);color:var(--red);border-color:rgba(163,45,45,0.18);}
+.alert.amber{background:var(--amber-bg);color:var(--amber);border-color:rgba(154,99,0,0.18);}
+.alert.green{background:var(--green-bg);color:var(--green);border-color:rgba(45,106,31,0.18);}
+.alert b{font-weight:600;}
+.qa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;}
+.qa-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:18px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--text);transition:all 0.12s;text-align:center;}
+.qa-btn:hover{background:var(--surface2);border-color:var(--accent);}
+.qa-btn .qa-ic{font-size:22px;}
+.top-list{display:flex;flex-direction:column;gap:2px;}
+.top-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.top-row:last-child{border-bottom:none;}
+.top-rank{width:24px;height:24px;border-radius:50%;background:var(--surface2);color:var(--text2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;}
+.top-row:first-child .top-rank{background:var(--accent);color:#fff;}
+.top-name{flex:1;font-size:13px;font-weight:500;}
+.top-meta{font-size:11px;color:var(--text3);}
+.top-val{font-size:13px;font-weight:600;color:var(--green);text-align:right;}
+.aging-badge{font-size:10.5px;padding:3px 9px;border-radius:20px;font-weight:600;display:inline-flex;align-items:center;gap:4px;}
+.aging-badge.a1{background:var(--green-bg);color:var(--green);}
+.aging-badge.a2{background:var(--amber-bg);color:var(--amber);}
+.aging-badge.a3{background:#FFF1E6;color:#B5560F;}
+.aging-badge.a4{background:var(--red-bg);color:var(--red);}
+.aging-dist{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.aging-cell{border-radius:var(--r);padding:14px;text-align:center;}
+.aging-cell.a1{background:var(--green-bg);}.aging-cell.a2{background:var(--amber-bg);}.aging-cell.a3{background:#FFF1E6;}.aging-cell.a4{background:var(--red-bg);}
+.aging-cell .ac-num{font-family:'DM Serif Display',serif;font-size:24px;line-height:1;}
+.aging-cell.a1 .ac-num{color:var(--green);}.aging-cell.a2 .ac-num{color:var(--amber);}.aging-cell.a3 .ac-num{color:#B5560F;}.aging-cell.a4 .ac-num{color:var(--red);}
+.aging-cell .ac-lbl{font-size:10.5px;color:var(--text2);margin-top:5px;text-transform:uppercase;letter-spacing:0.04em;}
+.fund-status{font-size:10.5px;padding:3px 9px;border-radius:20px;font-weight:600;}
+.fund-status.active{background:var(--blue-bg);color:var(--blue);}
+.fund-status.pending_payment{background:var(--amber-bg);color:var(--amber);}
+.fund-status.paid{background:var(--green-bg);color:var(--green);}
+.fund-status.cancelled{background:var(--surface2);color:var(--text3);}
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:62px;background:var(--surface);border-top:1px solid var(--border2);z-index:90;justify-content:space-around;align-items:stretch;padding-bottom:env(safe-area-inset-bottom);}
+.bn-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;cursor:pointer;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;padding:8px 0;}
+.bn-btn .bn-ic{font-size:18px;line-height:1;}
+.bn-btn.active{color:var(--accent);}
+.fab{display:none;position:fixed;right:18px;bottom:78px;width:54px;height:54px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 16px rgba(200,66,10,0.4);z-index:91;align-items:center;justify-content:center;line-height:1;transition:transform 0.2s;}
+.fab.open{transform:rotate(45deg);}
+.fab-menu{display:none;position:fixed;right:18px;bottom:142px;flex-direction:column;gap:10px;z-index:91;align-items:flex-end;}
+.fab-menu.show{display:flex;}
+.fab-item{display:flex;align-items:center;gap:10px;background:var(--text);color:#fff;border:none;border-radius:24px;padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,0.25);white-space:nowrap;}
+.section-hint{font-size:12px;color:var(--text2);background:var(--surface2);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;line-height:1.5;}
+.role-badge{font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.05em;margin-top:6px;display:inline-block;}
+.hide-role{display:none !important;}
+@media(max-width:768px){
+  .bottom-nav{display:flex;}
+  .fab{display:flex;}
+  .main{padding-bottom:70px;}
+  .content{padding-bottom:90px;}
+  .aging-dist{grid-template-columns:1fr 1fr;}
+  .home-hero{flex-direction:column;align-items:stretch;}
+  .health-box{width:100%;}
+}
 </style>
 </head>
 <body>
@@ -321,14 +400,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <p id="sbTagline">Jual Beli Otomotif</p>
     </div>
     <nav class="sb-nav">
-      <button class="nav-btn active" onclick="showSection('input')"><span class="ni">＋</span><span>Input Unit</span></button>
-      <button class="nav-btn" onclick="showSection('unit')"><span class="ni">≡</span><span>Daftar Unit</span></button>
-      <button class="nav-btn" onclick="showSection('insight')"><span class="ni">★</span><span>Insight &amp; Growth</span></button>
-      <button class="nav-btn" onclick="showSection('evaluasi')"><span class="ni">◑</span><span>Evaluasi</span></button>
-      <button class="nav-btn" onclick="showSection('pengaturan')"><span class="ni">⚙</span><span>Pengaturan</span></button>
+      <button class="nav-btn active" data-nav="home" onclick="showSection('home')"><span class="ni">⌂</span><span>Home Dashboard</span></button>
+      <button class="nav-btn" data-nav="input" onclick="showSection('input')"><span class="ni">＋</span><span>Input Unit</span></button>
+      <button class="nav-btn" data-nav="unit" onclick="showSection('unit')"><span class="ni">≡</span><span>Daftar Unit</span></button>
+      <button class="nav-btn" data-nav="funding" onclick="showSection('funding')"><span class="ni">◆</span><span>Funding Ledger</span></button>
+      <button class="nav-btn" data-nav="insight" onclick="showSection('insight')"><span class="ni">★</span><span>Insight &amp; Growth</span></button>
+      <button class="nav-btn" data-nav="evaluasi" onclick="showSection('evaluasi')"><span class="ni">◑</span><span>Evaluasi</span></button>
+      <button class="nav-btn" data-nav="pengaturan" onclick="showSection('pengaturan')"><span class="ni">⚙</span><span>Pengaturan</span></button>
     </nav>
     <div class="sb-foot">
       <div class="sb-user">Login sebagai <span id="sbUser">—</span></div>
+      <div class="role-badge" id="sbRole">—</div>
       <button class="logout-btn" onclick="doLogout()">Keluar →</button>
     </div>
   </div>
@@ -343,16 +425,104 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="sync-indicator"><div class="sync-dot" id="syncDot"></div><span id="syncText">Terhubung</span></div>
     </div>
     <div class="content">
-      <div class="metrics">
+      <div class="metrics" id="globalMetrics">
         <div class="mc c1"><div class="mc-label">Total Unit</div><div class="mc-value" id="mTotal">—</div><div class="mc-sub">unit tercatat</div></div>
         <div class="mc c4b"><div class="mc-label">Unit Ready</div><div class="mc-value" id="mReady">—</div><div class="mc-sub">belum terjual</div></div>
         <div class="mc c4"><div class="mc-label">Unit Terjual</div><div class="mc-value" id="mTerjual">—</div><div class="mc-sub">sudah selesai</div></div>
         <div class="mc c5"><div class="mc-label">Modal Berjalan</div><div class="mc-value" id="mBerjalan">—</div><div class="mc-sub">di unit ready</div></div>
         <div class="mc c2"><div class="mc-label">Total Modal</div><div class="mc-value" id="mModal">—</div><div class="mc-sub">semua unit</div></div>
-        <div class="mc c3"><div class="mc-label">Total Profit Bersih</div><div class="mc-value" id="mUntung">—</div><div class="mc-sub">dari unit terjual</div></div>
+        <div class="mc c3 role-internal"><div class="mc-label">Total Profit Bersih</div><div class="mc-value" id="mUntung">—</div><div class="mc-sub">dari unit terjual</div></div>
       </div>
 
-      <div id="sec-input" class="section active">
+      <!-- ═══════════ HOME / EXECUTIVE SUMMARY ═══════════ -->
+      <div id="sec-home" class="section active">
+        <div class="home-hero">
+          <div class="hh-left">
+            <div class="hh-eyebrow">Business Operating System</div>
+            <div class="hh-greet" id="hhGreet">Selamat datang</div>
+            <div class="hh-date" id="hhDate">—</div>
+          </div>
+          <div class="health-box role-internal">
+            <div class="health-ring">
+              <svg width="84" height="84" viewBox="0 0 84 84">
+                <circle cx="42" cy="42" r="36" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="8"/>
+                <circle id="healthArc" cx="42" cy="42" r="36" fill="none" stroke="#2D6A1F" stroke-width="8" stroke-linecap="round" stroke-dasharray="226" stroke-dashoffset="226"/>
+              </svg>
+              <div class="hr-num"><span id="healthNum">—</span><small>SKOR</small></div>
+            </div>
+            <div>
+              <div class="health-label" id="healthLabel">Menghitung…</div>
+              <div class="health-sub" id="healthSub">Business Health Score</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="alertCard">
+          <div class="card-hdr"><div class="card-title">⚠ Alert Center</div></div>
+          <div class="alert-stack" id="alertStack"></div>
+        </div>
+
+        <div class="card-hdr" style="margin:4px 0 12px"><div class="card-title">CEO KPI Overview</div></div>
+        <div class="kpi-grid" id="kpiGrid"></div>
+
+        <div class="two-col">
+          <div class="card role-internal">
+            <div class="card-hdr"><div class="card-title">Cash Position</div></div>
+            <div class="chart-wrap" style="height:240px"><canvas id="chartCash"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-hdr">
+              <div class="card-title">Profit Trend</div>
+              <div style="display:flex;gap:5px">
+                <button class="chip active" data-pt="3" onclick="setProfitRange('3')">3B</button>
+                <button class="chip" data-pt="6" onclick="setProfitRange('6')">6B</button>
+                <button class="chip" data-pt="12" onclick="setProfitRange('12')">12B</button>
+                <button class="chip" data-pt="all" onclick="setProfitRange('all')">All</button>
+              </div>
+            </div>
+            <div class="chart-wrap" style="height:240px"><canvas id="chartProfitTrend"></canvas></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Inventory Overview & Aging</div></div>
+          <div class="aging-dist" id="agingDist"></div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:13px">
+            <div><span style="color:var(--text3)">Ready Stock: </span><b id="ovReady">—</b></div>
+            <div><span style="color:var(--text3)">Avg Holding: </span><b id="ovHold">—</b></div>
+            <div class="role-internal"><span style="color:var(--text3)">Fast Mover: </span><b id="ovFast">—</b></div>
+            <div class="role-internal"><span style="color:var(--text3)">Slow Mover: </span><b id="ovSlow">—</b></div>
+          </div>
+        </div>
+
+        <div class="two-col role-internal">
+          <div class="card">
+            <div class="card-hdr"><div class="card-title">Top Performance — Profit</div></div>
+            <div class="top-list" id="topProfit"></div>
+          </div>
+          <div class="card">
+            <div class="card-hdr"><div class="card-title">Top Performance — ROI</div></div>
+            <div class="top-list" id="topRoi"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Investor Summary</div></div>
+          <div class="kpi-grid" id="investorSummary" style="margin-bottom:0"></div>
+        </div>
+
+        <div class="card no-print">
+          <div class="card-hdr"><div class="card-title">Quick Action</div></div>
+          <div class="qa-grid">
+            <button class="qa-btn role-internal" onclick="showSection('input')"><span class="qa-ic">＋</span>Tambah Unit</button>
+            <button class="qa-btn role-internal" onclick="showSection('funding')"><span class="qa-ic">◆</span>Tambah Funding</button>
+            <button class="qa-btn role-internal" onclick="showSection('funding')"><span class="qa-ic">💸</span>Catat Pembayaran</button>
+            <button class="qa-btn" onclick="showSection('insight');setTimeout(exportInsightPDF,300)"><span class="qa-ic">⬇</span>Export Report</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="sec-input" class="section role-internal">
         <div class="edit-banner" id="editBanner">
           <span>✏️ Sedang mengedit unit: <strong id="editUnitName"></strong></span>
           <button onclick="cancelEdit()">Batal edit</button>
@@ -416,10 +586,36 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <button class="chip" data-uf="Motor" onclick="setUnitFilter('Motor')">Motor</button>
           <button class="chip" style="margin-left:auto" onclick="loadUnits()">↻ Refresh</button>
         </div>
+        <div class="filter-bar">
+          <span class="filter-label">Aging:</span>
+          <button class="chip active" data-ag="all" onclick="setAgingFilter('all')">Semua</button>
+          <button class="chip" data-ag="1" onclick="setAgingFilter('1')">0–30 Hari</button>
+          <button class="chip" data-ag="2" onclick="setAgingFilter('2')">31–60 Hari</button>
+          <button class="chip" data-ag="3" onclick="setAgingFilter('3')">61–90 Hari</button>
+          <button class="chip" data-ag="4" onclick="setAgingFilter('4')">90+ Hari</button>
+        </div>
         <div id="unitList"></div>
       </div>
 
-      <div id="sec-insight" class="section">
+      <!-- ═══════════ FUNDING LEDGER ═══════════ -->
+      <div id="sec-funding" class="section">
+        <div class="section-hint">Funding Ledger menampilkan seluruh pendanaan partner/investor per unit, lengkap dengan status pembayaran dan estimasi return. Data ditarik dari Support Funding Partner pada tiap unit.</div>
+        <div class="kpi-grid" id="fundingKpi"></div>
+        <div class="filter-bar">
+          <span class="filter-label">Status:</span>
+          <button class="chip active" data-fs="all" onclick="setFundingFilter('all')">Semua</button>
+          <button class="chip" data-fs="active" onclick="setFundingFilter('active')">Aktif</button>
+          <button class="chip" data-fs="pending_payment" onclick="setFundingFilter('pending_payment')">Belum Dibayar</button>
+          <button class="chip" data-fs="paid" onclick="setFundingFilter('paid')">Lunas</button>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Funding Ledger</div></div>
+          <div class="table-scroll"><table class="track-table" id="fundingTable"></table></div>
+          <p style="font-size:11px;color:var(--text3);margin-top:10px">Status <b>Aktif</b> = unit masih dijual; <b>Belum Dibayar</b> = unit terjual namun fee partner belum dicairkan; <b>Lunas</b> = sudah dibayar. Estimasi return dihitung dari skema fee partner.</p>
+        </div>
+      </div>
+
+      <div id="sec-insight" class="section role-internal">
         <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
           <div class="date-filter" style="margin-bottom:0">
             <span class="filter-label">Periode:</span>
@@ -473,7 +669,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
       </div>
 
-      <div id="sec-evaluasi" class="section">
+      <div id="sec-evaluasi" class="section role-internal">
         <div class="filter-bar">
           <span class="filter-label">Jenis:</span>
           <button class="chip active" data-es="all" onclick="setEvalSegment('all')">Semua</button>
@@ -591,6 +787,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
     </div>
   </div>
+
+  <!-- ═══════════ MOBILE BOTTOM NAV + FAB ═══════════ -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="bn-btn active" data-bn="home" onclick="showSection('home')"><span class="bn-ic">⌂</span>Dashboard</button>
+    <button class="bn-btn" data-bn="unit" onclick="showSection('unit')"><span class="bn-ic">≡</span>Unit</button>
+    <button class="bn-btn role-internal" data-bn="funding" onclick="showSection('funding')"><span class="bn-ic">◆</span>Funding</button>
+    <button class="bn-btn role-internal" data-bn="insight" onclick="showSection('insight')"><span class="bn-ic">★</span>Insight</button>
+    <button class="bn-btn" data-bn="pengaturan" onclick="showSection('pengaturan')"><span class="bn-ic">⚙</span>More</button>
+  </nav>
+  <div class="fab-menu" id="fabMenu">
+    <button class="fab-item" onclick="toggleFab();showSection('input')">＋ Tambah Unit</button>
+    <button class="fab-item" onclick="toggleFab();showSection('funding')">◆ Tambah Funding</button>
+    <button class="fab-item" onclick="toggleFab();showSection('input')">💸 Tambah Cashflow</button>
+  </div>
+  <button class="fab role-internal" id="fab" onclick="toggleFab()">＋</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -611,6 +822,29 @@ let evalSegment = 'all';
 let insightFrom = '', insightTo = '';
 let adminUnlocked = false;
 let cMOM=null, cYearly=null, cProduct=null, cGrowthCum=null, cVolume=null, cSegment=null, cOmzet=null;
+let cCash=null, cProfitTrend=null;
+let agingFilter='all', fundingFilter='all', profitRange='3';
+
+// ═══════════ RBAC (PHASE 1 & 8) ═══════════
+// Peran ditentukan dari username login. partner = Panji/Pandu (akses penuh internal).
+// investor = hanya lihat data sendiri. Profit bisnis disembunyikan untuk investor/viewer.
+const ROLE_INTERNAL = ['super_admin','admin','partner','panji','pandu'];
+function roleOf(user){
+  const u=(user||'').toLowerCase();
+  if(u==='panji'||u==='pandu'||u==='partner')return 'partner';
+  if(u==='admin')return 'admin';
+  if(u==='super_admin'||u==='superadmin')return 'super_admin';
+  if(u==='viewer')return 'viewer';
+  if(u.startsWith('investor')||u.startsWith('inv_'))return 'investor';
+  return 'partner'; // default kompatibilitas: login lama Panji/Pandu
+}
+function isInternal(){ return ROLE_INTERNAL.includes(roleOf(currentUser)); }
+function applyRBAC(){
+  const internal=isInternal();
+  document.querySelectorAll('.role-internal').forEach(el=>el.classList.toggle('hide-role',!internal));
+  const rb=document.getElementById('sbRole');
+  if(rb)rb.textContent=roleOf(currentUser).replace('_',' ');
+}
 
 const fmtRp = n => 'Rp'+Math.round(n).toLocaleString('id-ID');
 const fmtRpShort = n => {
@@ -637,8 +871,9 @@ async function doLogin(){
       document.getElementById('loginWrap').style.display='none';
       document.getElementById('dashWrap').style.display='block';
       document.getElementById('sbUser').textContent=res.role.charAt(0).toUpperCase()+res.role.slice(1);
-      try{ history.replaceState({sec:'input'},''); }catch(e){}
-      loadUnits();
+      applyRBAC(); startIdleTimer();
+      try{ history.replaceState({sec:'home'},''); }catch(e){}
+      showSection('home'); loadUnits();
     }else{
       err.textContent=res.error||'Username atau password salah.';
       err.style.display='block';
@@ -662,8 +897,9 @@ window.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('loginWrap').style.display='none';
     document.getElementById('dashWrap').style.display='block';
     document.getElementById('sbUser').textContent=s.charAt(0).toUpperCase()+s.slice(1);
-    try{ history.replaceState({sec:'input'},''); }catch(e){}
-    loadUnits();
+    applyRBAC(); startIdleTimer();
+    try{ history.replaceState({sec:'home'},''); }catch(e){}
+    showSection('home'); loadUnits();
   }
   document.getElementById('tglMasuk').value=new Date().toISOString().slice(0,10);
 });
@@ -694,7 +930,9 @@ async function loadUnits(){
   catch(e){ setSyncStatus('error'); showToast('❌ Gagal memuat data. Cek koneksi.'); }
   setLoading(false);
   const sec=document.querySelector('.section.active');
+  if(sec&&sec.id==='sec-home')renderHome();
   if(sec&&sec.id==='sec-unit')renderUnits();
+  if(sec&&sec.id==='sec-funding')renderFunding();
   if(sec&&sec.id==='sec-evaluasi')renderEvaluasi();
 }
 
@@ -708,26 +946,49 @@ function closeSidebar(){
   document.getElementById('sbBackdrop').classList.remove('show');
 }
 function showSection(s,fromPop){
-  const titles={input: editingId?'Edit Unit':'Input Unit Baru',unit:'Daftar Unit',insight:'Insight & Growth',evaluasi:'Evaluasi & Rekap',pengaturan:'Pengaturan'};
-  const order=['input','unit','insight','evaluasi','pengaturan'];
-  document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',order[i]===s));
+  // Cegah investor/viewer membuka halaman internal (PHASE 8)
+  const internalOnly=['input','funding','insight','evaluasi'];
+  if(!isInternal() && internalOnly.includes(s)) s='home';
+  const titles={home:'Home Dashboard',input: editingId?'Edit Unit':'Input Unit Baru',unit:'Daftar Unit',funding:'Funding Ledger',insight:'Insight & Growth',evaluasi:'Evaluasi & Rekap',pengaturan:'Pengaturan'};
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav===s));
+  document.querySelectorAll('.bn-btn').forEach(b=>b.classList.toggle('active',b.dataset.bn===s));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
   document.getElementById('sec-'+s).classList.add('active');
-  document.getElementById('topbarTitle').textContent=titles[s];
+  document.getElementById('topbarTitle').textContent=titles[s]||'Dashboard';
+  // Metrics global hanya untuk halaman operasional, bukan home (home punya KPI sendiri)
+  document.getElementById('globalMetrics').style.display=(s==='home')?'none':'grid';
   closeSidebar();
   window.scrollTo(0,0);
-  // Riwayat: supaya tombol back/swipe pindah antar tab, bukan keluar app
   if(!fromPop){ try{ history.pushState({sec:s},''); }catch(e){} }
+  if(s==='home')renderHome();
   if(s==='unit')renderUnits();
+  if(s==='funding')renderFunding();
   if(s==='insight')renderInsight();
   if(s==='evaluasi')renderEvaluasi();
   if(s==='pengaturan')loadSettingsForm();
 }
 window.addEventListener('popstate',e=>{
   if(document.getElementById('dashWrap').style.display==='none')return;
-  const sec=(e.state&&e.state.sec)||'input';
+  const sec=(e.state&&e.state.sec)||'home';
   showSection(sec,true);
 });
+
+// ═══════════ FAB + IDLE AUTO-LOGOUT (PHASE 1 & 10) ═══════════
+function toggleFab(){
+  const f=document.getElementById('fab'),m=document.getElementById('fabMenu');
+  const open=f.classList.toggle('open'); m.classList.toggle('show',open);
+}
+let idleTimer=null;
+function startIdleTimer(){
+  ['click','keydown','mousemove','touchstart','scroll'].forEach(ev=>
+    document.addEventListener(ev,resetIdle,{passive:true}));
+  resetIdle();
+}
+function resetIdle(){
+  if(!currentUser)return;
+  clearTimeout(idleTimer);
+  idleTimer=setTimeout(()=>{ showToast('🔒 Sesi berakhir karena idle 30 menit'); doLogout(); }, 30*60*1000);
+}
 
 function addBiaya(who,ket='',nom=''){
   const c=document.getElementById('biayas-'+who);
@@ -904,6 +1165,27 @@ function setUnitFilter(f){
   document.querySelectorAll('#sec-unit .chip[data-uf]').forEach(b=>b.classList.toggle('active',b.dataset.uf===f));
   renderUnits();
 }
+function setAgingFilter(f){
+  agingFilter=f;
+  document.querySelectorAll('#sec-unit .chip[data-ag]').forEach(b=>b.classList.toggle('active',b.dataset.ag===f));
+  renderUnits();
+}
+// ═══════════ INVENTORY AGING (PHASE 5) ═══════════
+function holdingDays(u){
+  // Untuk unit aktif: hari ini - tanggal masuk; untuk terjual: tgl jual - masuk
+  const end = u.status==='terjual' ? (u.tglJual||u.tgl) : new Date().toISOString().slice(0,10);
+  return daysBetween(u.tgl,end);
+}
+function agingTier(days){
+  if(days===null)return 0;
+  if(days<=30)return 1; if(days<=60)return 2; if(days<=90)return 3; return 4;
+}
+function agingBadge(u){
+  if(u.status==='terjual')return '';
+  const d=holdingDays(u), t=agingTier(d);
+  const lbl={1:'Sehat',2:'Perhatikan',3:'Mendesak',4:'Kritis'}[t]||'';
+  return `<span class="aging-badge a${t}">⏱ ${d} hari · ${lbl}</span>`;
+}
 function renderUnits(){
   const el=document.getElementById('unitList');
   if(!units.length){el.innerHTML=`<div class="empty-state">🚗<br><br>Belum ada unit. Tambahkan unit di menu Input Unit.</div>`;return;}
@@ -912,11 +1194,13 @@ function renderUnits(){
   if(unitFilter==='ready') pool=pool.filter(u=>u.status!=='terjual');
   else if(unitFilter==='Mobil') pool=pool.filter(u=>u.jenis==='Mobil');
   else if(unitFilter==='Motor') pool=pool.filter(u=>u.jenis==='Motor');
+  if(agingFilter!=='all') pool=pool.filter(u=>u.status!=='terjual' && agingTier(holdingDays(u))===+agingFilter);
   // Aktif di atas (terbaru dulu), terjual di bawah (terbaru dulu)
   const aktif=pool.filter(u=>u.status!=='terjual').slice().reverse();
   const terjual=pool.filter(u=>u.status==='terjual').slice().reverse();
   const ordered=[...aktif,...terjual];
   if(!ordered.length){el.innerHTML=`<div class="empty-state">Tidak ada unit untuk filter ini.</div>`;return;}
+  const ig=isInternal();
   el.innerHTML=ordered.map(u=>{
     const sold=u.status==='terjual';
     const kotor=sold?(+u.hargaJual-+u.totalModal):null;
@@ -936,27 +1220,29 @@ function renderUnits(){
       <div class="unit-top">
         <div><div class="unit-name">${u.nama}</div><div class="unit-meta">${metaParts.join(' · ')}</div></div>
         <div class="unit-actions">
+          ${agingBadge(u)}
           <span class="badge ${u.status}">${sold?'Terjual':'Aktif'}</span>
-          ${!sold?`<button class="btn-sm success" onclick="openTerjualModal(${u.id})">Tandai Terjual</button>`:''}
-          <button class="btn-sm edit" onclick="startEdit(${u.id})">Edit</button>
-          <button class="btn-sm danger" onclick="hapusUnit(${u.id})">Hapus</button>
+          ${ig&&!sold?`<button class="btn-sm success" onclick="openTerjualModal(${u.id})">Tandai Terjual</button>`:''}
+          ${ig?`<button class="btn-sm edit" onclick="startEdit(${u.id})">Edit</button>`:''}
+          ${ig?`<button class="btn-sm danger" onclick="hapusUnit(${u.id})">Hapus</button>`:''}
         </div>
       </div>
-      <div class="unit-modals">
+      ${ig?`<div class="unit-modals">
         <div class="mbox p1"><div class="mbox-label">Modal Panji</div><div class="mbox-value">${fmtRp(u.panji.total)}</div><div class="mbox-pct">${(+u.pctPanji).toFixed(2)}% porsi bagi hasil</div></div>
         <div class="mbox p2"><div class="mbox-label">Modal Pandu</div><div class="mbox-value">${fmtRp(u.pandu.total)}</div><div class="mbox-pct">${(+u.pctPandu).toFixed(2)}% porsi bagi hasil</div></div>
-      </div>
-      ${hasPartner?`<div style="margin-bottom:12px">${partnerChips}</div>`:''}
+      </div>`:''}
+      ${ig&&hasPartner?`<div style="margin-bottom:12px">${partnerChips}</div>`:''}
       <div class="unit-stats">
-        <div><span class="sl">Total Modal: </span><span class="sv">${fmtRp(u.totalModal)}</span></div>
-        ${sold?`
+        ${ig?`<div><span class="sl">Total Modal: </span><span class="sv">${fmtRp(u.totalModal)}</span></div>`:''}
+        ${ig&&sold?`
           <div><span class="sl">Harga Jual: </span><span class="sv">${fmtRp(u.hargaJual)}</span></div>
           <div><span class="sl">Profit Kotor: </span><span class="sv ${kotor>=0?'untung':'rugi'}">${fmtRp(kotor)}</span></div>
           ${(+u.totalFee>0)?`<div><span class="sl">Fee Partner: </span><span class="sv">${fmtRp(u.totalFee)}</span></div>`:''}
           <div><span class="sl">Profit Bersih: </span><span class="sv ${bersih>=0?'untung':'rugi'}">${fmtRp(bersih)}</span></div>
           <div><span class="sl">Bagi Panji: </span><span class="sv untung">${fmtRp(bP)}</span></div>
           <div><span class="sl">Bagi Pandu: </span><span class="sv untung">${fmtRp(bD)}</span></div>
-        `:`<div><span class="sl">Status: </span><span class="sv pending">Belum terjual</span></div>`}
+        `:`<div><span class="sl">Status: </span><span class="sv ${sold?'untung':'pending'}">${sold?'Terjual':'Belum terjual'}</span></div>
+           <div><span class="sl">Holding: </span><span class="sv">${holdingDays(u)} hari</span></div>`}
       </div>
     </div>`;
   }).join('');
@@ -1346,6 +1632,282 @@ function renderProduct(){
       }}},
       scales:{x:{ticks:{font:{size:12}}},y:{ticks:{callback:v=>'Rp'+(v/1e6).toFixed(0)+'jt'}}}}
   });
+}
+
+// ═══════════════════════════════════════════════════════════
+// HOME / EXECUTIVE SUMMARY (PHASE 0) + FUNDING LEDGER (PHASE 3)
+// ═══════════════════════════════════════════════════════════
+function allFundings(){
+  // Flatten partner funding tiap unit menjadi baris ledger
+  const rows=[];
+  units.forEach(u=>{
+    (u.partners||[]).forEach(p=>{
+      const fee = p.feeAmount!==undefined ? +p.feeAmount : feeOf(p);
+      const sold = u.status==='terjual';
+      // Status: aktif (unit masih dijual) / belum dibayar (terjual, fee outstanding)
+      const status = sold ? 'pending_payment' : 'active';
+      rows.push({
+        unit:u, namaUnit:u.nama, investor:p.nama||'Partner',
+        funding:+p.funding||0, feeType:p.feeType, feeValue:p.feeValue,
+        estReturn:(+p.funding||0)+fee, fee, status,
+        fundingDate:u.tgl, payDate:sold?(u.tglJual||''):''
+      });
+    });
+  });
+  return rows;
+}
+function thisMonthKey(){ return new Date().toISOString().slice(0,7); }
+function thisYear(){ return new Date().getFullYear().toString(); }
+
+function computeHome(){
+  const sold=units.filter(u=>u.status==='terjual');
+  const active=units.filter(u=>u.status!=='terjual');
+  const modalIntiOf=u=>(+u.totalModal)-(+u.modalPartner||0);
+  const modalBerjalan=active.reduce((a,u)=>a+(+u.totalModal),0);
+  let realized=0, profitMonth=0, profitYear=0, modalYear=0;
+  sold.forEach(u=>{
+    const np=netProfitOf(u); realized+=np;
+    const dt=saleDateOf(u);
+    if(dt&&dt.slice(0,7)===thisMonthKey())profitMonth+=np;
+    if(dt&&dt.slice(0,4)===thisYear()){profitYear+=np; modalYear+=modalIntiOf(u);}
+  });
+  const fundings=allFundings();
+  const investorActive=fundings.filter(f=>f.status==='active').reduce((a,f)=>a+f.funding,0);
+  const outstanding=fundings.filter(f=>f.status==='pending_payment').reduce((a,f)=>a+f.fee,0);
+  const inventoryVal=modalBerjalan;
+  const cashProxy=realized; // proxy kas: akumulasi profit terealisasi (sebelum modul Cashflow)
+  const totalAsset=cashProxy+inventoryVal;
+  // holding
+  const holds=sold.map(u=>daysBetween(u.tgl,saleDateOf(u))).filter(d=>d!==null);
+  const avgHold=holds.length?holds.reduce((a,b)=>a+b,0)/holds.length:0;
+  const roiYear=modalYear>0?profitYear/modalYear*100:0;
+  // aging distribution (unit aktif)
+  const dist=[0,0,0,0];
+  active.forEach(u=>{const t=agingTier(holdingDays(u)); if(t)dist[t-1]++;});
+  return {sold,active,modalBerjalan,realized,profitMonth,profitYear,roiYear,
+    investorActive,outstanding,inventoryVal,cashProxy,totalAsset,avgHold,dist,fundings};
+}
+
+function computeHealth(h){
+  // Skor komposit 0-100 dari 6 faktor (PHASE 2)
+  const sellThrough = units.length? h.sold.length/units.length : 0;
+  const roiNorm = Math.max(0,Math.min(1, h.roiYear/30)); // 30% ROI = penuh
+  const cashRatio = h.modalBerjalan>0? Math.min(1, h.cashProxy/h.modalBerjalan) : 1;
+  const agingPenalty = h.active.length? h.dist[3]/h.active.length : 0; // proporsi unit 90+
+  const outstandingPenalty = h.totalAsset>0? Math.min(1, h.outstanding/h.totalAsset) : 0;
+  const profitTrend = h.profitMonth>0?1:(h.realized>0?0.6:0.3);
+  let score = 100*(
+    0.20*cashRatio + 0.20*roiNorm + 0.20*sellThrough +
+    0.15*(1-outstandingPenalty) + 0.15*(1-agingPenalty) + 0.10*profitTrend
+  );
+  score=Math.round(Math.max(0,Math.min(100,score)));
+  let label,color,sub;
+  if(score>=85){label='Sangat Sehat';color='#2D6A1F';sub='Bisnis dalam kondisi prima.';}
+  else if(score>=70){label='Sehat';color='#2D6A1F';sub='Kondisi baik, pertahankan momentum.';}
+  else if(score>=55){label='Waspada';color='#9A6300';sub='Ada beberapa hal yang perlu diperhatikan.';}
+  else{label='Risiko Tinggi';color='#A32D2D';sub='Perlu tindakan segera.';}
+  return {score,label,color,sub};
+}
+
+function buildAlerts(h){
+  const alerts=[];
+  const over90=h.active.filter(u=>holdingDays(u)>90).length;
+  const over60=h.active.filter(u=>{const d=holdingDays(u);return d>60&&d<=90;}).length;
+  if(over90>=3)alerts.push(['red',`<b>${over90} unit</b> sudah lebih dari 90 hari belum terjual — segera evaluasi harga/promosi.`]);
+  else if(over90>0)alerts.push(['amber',`<b>${over90} unit</b> melewati 90 hari. Pertimbangkan penyesuaian harga.`]);
+  if(h.outstanding>0)alerts.push(['red',`Ada kewajiban ke partner/investor <b>${fmtRp(h.outstanding)}</b> yang belum dibayar.`]);
+  if(over60>0)alerts.push(['amber',`<b>${over60} unit</b> berada di rentang 61–90 hari — pantau pergerakannya.`]);
+  if(h.cashProxy>0 && h.modalBerjalan>0 && h.cashProxy < 0.2*h.modalBerjalan)
+    alerts.push(['amber',`Kas estimasi tersisa di bawah 20% dari modal berjalan.`]);
+  if(!alerts.length)alerts.push(['green','Tidak ada masalah terdeteksi. Semua indikator dalam batas aman. ✓']);
+  return alerts;
+}
+
+function renderHome(){
+  const ig=isInternal();
+  // Greeting
+  const hr=new Date().getHours();
+  const greet=hr<11?'Selamat pagi':hr<15?'Selamat siang':hr<19?'Selamat sore':'Selamat malam';
+  document.getElementById('hhGreet').textContent=`${greet}, ${(currentUser||'').charAt(0).toUpperCase()+(currentUser||'').slice(1)}`;
+  document.getElementById('hhDate').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  if(!ig){ renderInvestorHome(); return; }
+
+  const h=computeHome();
+  // Health score
+  const hs=computeHealth(h);
+  const circ=2*Math.PI*36;
+  const arc=document.getElementById('healthArc');
+  arc.style.strokeDasharray=circ; arc.style.strokeDashoffset=circ*(1-hs.score/100); arc.style.stroke=hs.color;
+  document.getElementById('healthNum').textContent=hs.score;
+  document.getElementById('healthLabel').textContent=hs.label;
+  document.getElementById('healthSub').textContent=hs.sub;
+
+  // Alerts
+  document.getElementById('alertStack').innerHTML=buildAlerts(h).map(([lvl,msg])=>{
+    const ic={red:'🔴',amber:'🟡',green:'🟢'}[lvl];
+    return `<div class="alert ${lvl}"><span class="a-ic">${ic}</span><div>${msg}</div></div>`;
+  }).join('');
+
+  // KPI cards
+  const kpis=[
+    ['Cash Available (est.)',fmtRpShort(h.cashProxy),'profit terealisasi','k-green'],
+    ['Modal Berjalan',fmtRpShort(h.modalBerjalan),h.active.length+' unit aktif','k-teal'],
+    ['Profit Bulan Ini',fmtRpShort(h.profitMonth),'bulan berjalan','k-amber'],
+    ['Profit Tahun Ini',fmtRpShort(h.profitYear),thisYear(),''],
+    ['ROI Tahun Berjalan',h.roiYear.toFixed(1)+'%','atas modal inti','k-blue'],
+    ['Inventory Ready',h.active.length,'unit belum terjual','k-purple'],
+    ['Total Asset',fmtRpShort(h.totalAsset),'kas + inventory','k-green'],
+    ['Investor Fund Active',fmtRpShort(h.investorActive),'dana partner aktif','k-blue'],
+    ['Outstanding Payment',fmtRpShort(h.outstanding),'kewajiban belum dibayar','k-red'],
+    ['Average Holding',h.avgHold.toFixed(0)+' hari','masuk → terjual','k-teal'],
+  ];
+  document.getElementById('kpiGrid').innerHTML=kpis.map(([l,v,s,c])=>
+    `<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
+
+  renderCashChart(h);
+  renderProfitTrend();
+  renderAgingDist(h);
+  renderTopPerformance(h);
+  renderInvestorSummary(h);
+}
+
+function renderCashChart(h){
+  if(cCash)cCash.destroy();
+  cCash=new Chart(document.getElementById('chartCash').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:['Cash (est.)','Inventory','Piutang','Hutang Investor'],
+      datasets:[{data:[h.cashProxy,h.inventoryVal,0,h.outstanding],
+        backgroundColor:['#2D6A1F','#4A7C7C','#185FA5','#A32D2D'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>c.label+': '+fmtRp(c.parsed)}}}}
+  });
+}
+function setProfitRange(r){
+  profitRange=r;
+  document.querySelectorAll('[data-pt]').forEach(b=>b.classList.toggle('active',b.dataset.pt===r));
+  renderProfitTrend();
+}
+function renderProfitTrend(){
+  const byMonth={};
+  units.filter(u=>u.status==='terjual').forEach(u=>{
+    const mk=monthKey(saleDateOf(u)); if(!mk)return;
+    byMonth[mk]=(byMonth[mk]||0)+netProfitOf(u);
+  });
+  let keys=Object.keys(byMonth).sort();
+  if(profitRange!=='all'){ keys=keys.slice(-parseInt(profitRange)); }
+  const fmtM=mk=>{const[y,m]=mk.split('-');return BULAN[parseInt(m)-1]+" '"+y.slice(2);};
+  let cum=0; const cumData=keys.map(k=>cum+=byMonth[k]);
+  if(cProfitTrend)cProfitTrend.destroy();
+  cProfitTrend=new Chart(document.getElementById('chartProfitTrend').getContext('2d'),{
+    data:{labels:keys.length?keys.map(fmtM):['—'],datasets:[
+      {type:'bar',label:'Profit Bulanan',data:keys.map(k=>byMonth[k]),backgroundColor:'#C8420A',borderRadius:4,order:2},
+      {type:'line',label:'Kumulatif',data:cumData,borderColor:'#2D6A1F',borderWidth:2,tension:0.3,pointRadius:3,fill:false,order:1}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtRp(c.parsed.y)}}},
+      scales:{x:{ticks:{font:{size:10}}},y:{ticks:{callback:v=>'Rp'+(v/1e6).toFixed(0)+'jt'}}}}
+  });
+}
+function renderAgingDist(h){
+  const labels=['0–30 Hari','31–60 Hari','61–90 Hari','90+ Hari'];
+  document.getElementById('agingDist').innerHTML=h.dist.map((n,i)=>
+    `<div class="aging-cell a${i+1}"><div class="ac-num">${n}</div><div class="ac-lbl">${labels[i]}</div></div>`).join('');
+  // overview metrics
+  const fast=h.sold.filter(u=>{const d=daysBetween(u.tgl,saleDateOf(u));return d!==null&&d<=30;}).length;
+  const slow=h.sold.filter(u=>{const d=daysBetween(u.tgl,saleDateOf(u));return d!==null&&d>60;}).length;
+  document.getElementById('ovReady').textContent=h.active.length+' unit';
+  document.getElementById('ovHold').textContent=h.avgHold.toFixed(0)+' hari';
+  document.getElementById('ovFast').textContent=fast+' unit';
+  document.getElementById('ovSlow').textContent=slow+' unit';
+}
+function renderTopPerformance(h){
+  const modalIntiOf=u=>(+u.totalModal)-(+u.modalPartner||0);
+  const perUnit=h.sold.map(u=>{const np=netProfitOf(u);const mi=modalIntiOf(u);return {u,np,roi:mi>0?np/mi*100:0,hold:daysBetween(u.tgl,saleDateOf(u))};});
+  const byProfit=perUnit.slice().sort((a,b)=>b.np-a.np).slice(0,5);
+  const byRoi=perUnit.slice().sort((a,b)=>b.roi-a.roi).slice(0,5);
+  const fill=(el,arr,valFn,metaFn)=>{
+    const html=arr.map((x,i)=>`<div class="top-row"><div class="top-rank">${i+1}</div><div class="top-name">${x.u.nama}<div class="top-meta">${metaFn(x)}</div></div><div class="top-val">${valFn(x)}</div></div>`).join('');
+    document.getElementById(el).innerHTML=html||`<div class="empty-state" style="padding:20px">Belum ada unit terjual.</div>`;
+  };
+  fill('topProfit',byProfit,x=>fmtRpShort(x.np),x=>x.u.jenis+' · ROI '+x.roi.toFixed(0)+'%');
+  fill('topRoi',byRoi,x=>x.roi.toFixed(1)+'%',x=>x.u.jenis+' · '+fmtRpShort(x.np));
+}
+function renderInvestorSummary(h){
+  const names=new Set(); let active=0,done=0;
+  h.fundings.forEach(f=>{names.add(f.investor); if(f.status==='active')active+=f.funding; else done+=f.funding;});
+  // top investor by total funding
+  const byInv={};
+  h.fundings.forEach(f=>{byInv[f.investor]=(byInv[f.investor]||0)+f.funding;});
+  const top=Object.entries(byInv).sort((a,b)=>b[1]-a[1])[0];
+  const cards=[
+    ['Total Investor',names.size,'partner aktif','k-blue'],
+    ['Funding Aktif',fmtRpShort(active),'di unit berjalan','k-teal'],
+    ['Funding Selesai',fmtRpShort(done),'unit terjual','k-green'],
+    ['Outstanding',fmtRpShort(h.outstanding),'belum dibayar','k-red'],
+    ['Top Investor',top?top[0]:'—',top?fmtRpShort(top[1]):'','k-amber'],
+  ];
+  document.getElementById('investorSummary').innerHTML=cards.map(([l,v,s,c])=>
+    `<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value" style="font-size:18px">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
+}
+
+// ── Tampilan HOME khusus INVESTOR (PHASE 2 & 8) ──
+function renderInvestorHome(){
+  const me=(currentUser||'').toLowerCase();
+  const mine=allFundings().filter(f=>(f.investor||'').toLowerCase().includes(me)||me.includes((f.investor||'').toLowerCase()));
+  const totalActive=mine.filter(f=>f.status==='active').reduce((a,f)=>a+f.funding,0);
+  const totalReturn=mine.reduce((a,f)=>a+f.fee,0);
+  const roi=mine.reduce((a,f)=>a+f.funding,0)>0?totalReturn/mine.reduce((a,f)=>a+f.funding,0)*100:0;
+  const unitAktif=new Set(mine.filter(f=>f.status==='active').map(f=>f.namaUnit)).size;
+  const unitSelesai=new Set(mine.filter(f=>f.status!=='active').map(f=>f.namaUnit)).size;
+  const kpis=[
+    ['Total Modal Aktif',fmtRpShort(totalActive),'sedang berjalan','k-teal'],
+    ['Total Return',fmtRpShort(totalReturn),'estimasi','k-green'],
+    ['ROI Investasi',roi.toFixed(1)+'%','pribadi','k-blue'],
+    ['Unit Aktif',unitAktif,'didanai','k-purple'],
+    ['Unit Selesai',unitSelesai,'sudah terjual','k-amber'],
+    ['Total Funding',fmtRpShort(mine.reduce((a,f)=>a+f.funding,0)),mine.length+' entri','k-blue'],
+  ];
+  document.getElementById('kpiGrid').innerHTML=kpis.map(([l,v,s,c])=>
+    `<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
+  document.getElementById('alertStack').innerHTML=`<div class="alert green"><span class="a-ic">🟢</span><div>Anda login sebagai <b>Investor</b>. Hanya data investasi pribadi Anda yang ditampilkan.</div></div>`;
+  // Portfolio cards in profit trend slot? render as table inside investorSummary
+  document.getElementById('investorSummary').innerHTML=mine.map(f=>
+    `<div class="kpi k-blue"><div class="kpi-label">${f.namaUnit}</div><div class="kpi-value" style="font-size:16px">${fmtRpShort(f.funding)}</div><div class="kpi-sub">Funding ${f.fundingDate} · <span class="fund-status ${f.status}">${f.status==='active'?'Aktif':'Belum dibayar'}</span></div><div class="kpi-sub">Est. return ${fmtRpShort(f.estReturn)}</div></div>`
+  ).join('')||`<div class="empty-state" style="padding:20px">Belum ada funding atas nama Anda.</div>`;
+}
+
+// ═══════════ FUNDING LEDGER RENDER (PHASE 3) ═══════════
+function setFundingFilter(f){
+  fundingFilter=f;
+  document.querySelectorAll('#sec-funding .chip[data-fs]').forEach(b=>b.classList.toggle('active',b.dataset.fs===f));
+  renderFunding();
+}
+function renderFunding(){
+  let rows=allFundings();
+  if(!isInternal()){ const me=(currentUser||'').toLowerCase(); rows=rows.filter(f=>(f.investor||'').toLowerCase().includes(me)); }
+  const totalFund=rows.reduce((a,f)=>a+f.funding,0);
+  const totalReturn=rows.reduce((a,f)=>a+f.fee,0);
+  const outstanding=rows.filter(f=>f.status==='pending_payment').reduce((a,f)=>a+f.fee,0);
+  const investors=new Set(rows.map(f=>f.investor)).size;
+  document.getElementById('fundingKpi').innerHTML=[
+    ['Total Funding',fmtRpShort(totalFund),rows.length+' entri','k-blue'],
+    ['Total Investor',investors,'partner','k-teal'],
+    ['Est. Return',fmtRpShort(totalReturn),'fee partner','k-green'],
+    ['Outstanding',fmtRpShort(outstanding),'belum dibayar','k-red'],
+  ].map(([l,v,s,c])=>`<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value" style="font-size:18px">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
+
+  if(fundingFilter!=='all')rows=rows.filter(f=>f.status===fundingFilter);
+  rows.sort((a,b)=>(b.fundingDate||'').localeCompare(a.fundingDate||''));
+  const statusLbl={active:'Aktif',pending_payment:'Belum Dibayar',paid:'Lunas',cancelled:'Batal'};
+  const head=`<thead><tr><th>Investor</th><th>Unit</th><th class="num">Funding</th><th>Skema</th><th class="num">Est. Return</th><th>Tgl Funding</th><th>Status</th></tr></thead>`;
+  const body=rows.map(f=>{
+    const skema=f.feeType==='fixed'?'Fixed '+fmtRpShort(f.feeValue):f.feeType==='percent'?'Bagi '+f.feeValue+'%':'Tanpa fee';
+    return `<tr><td>${f.investor}</td><td>${f.namaUnit}</td><td class="num">${fmtRp(f.funding)}</td><td>${skema}</td><td class="num">${fmtRp(f.estReturn)}</td><td>${f.fundingDate||'—'}</td><td><span class="fund-status ${f.status}">${statusLbl[f.status]}</span></td></tr>`;
+  }).join('');
+  document.getElementById('fundingTable').innerHTML=head+'<tbody>'+(body||`<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Belum ada data funding. Tambahkan partner saat input unit.</td></tr>`)+'</tbody>';
 }
 
 function updateMetrics(){
