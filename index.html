@@ -762,8 +762,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           </div>
 
           <div class="fg" id="setImageWrap" style="margin-bottom:18px;display:none">
-            <label>Upload Gambar Logo (PNG/JPG, akan diperkecil otomatis)</label>
-            <input type="file" id="setImage" accept="image/png,image/jpeg" onchange="onImageUpload(event)">
+            <label>Upload Gambar Logo (PNG/JPG/SVG/WebP, akan diperkecil otomatis)</label>
+            <input type="file" id="setImage" accept="image/png,image/jpeg,image/svg+xml,image/webp" onchange="onImageUpload(event)">
             <div id="imagePreviewWrap" style="margin-top:10px;display:none">
               <img id="imagePreview" style="width:60px;height:60px;border-radius:12px;object-fit:cover;border:1px solid var(--border)">
               <button class="btn-sm danger" style="margin-left:10px;vertical-align:top" onclick="removeLogoImage()">Hapus gambar</button>
