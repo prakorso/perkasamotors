@@ -295,14 +295,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .health-ring .hr-num small{font-size:9px;font-family:'DM Sans',sans-serif;color:rgba(255,255,255,0.5);letter-spacing:0.05em;margin-top:2px;}
 .health-label{font-size:14px;font-weight:600;color:#fff;}
 .health-sub{font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px;max-width:180px;}
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
-.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;position:relative;overflow:hidden;}
-.kpi::before{content:'';position:absolute;top:0;left:0;width:3px;bottom:0;background:var(--accent);}
-.kpi.k-blue::before{background:var(--blue);}.kpi.k-green::before{background:var(--green);}.kpi.k-amber::before{background:var(--amber);}.kpi.k-teal::before{background:#4A7C7C;}.kpi.k-purple::before{background:#7A5C9E;}.kpi.k-red::before{background:var(--red);}
-.kpi-label{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;display:flex;align-items:center;gap:5px;}
-.kpi-value{font-family:'DM Serif Display',serif;font-size:22px;letter-spacing:-0.02em;line-height:1.1;}
-.kpi-sub{font-size:10.5px;color:var(--text3);margin-top:4px;}
-.kpi-sub.up{color:var(--green);}.kpi-sub.down{color:var(--red);}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+/* KPI card — colored icon badge top-right, colored left border, tinted bg */
+.kpi{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:var(--rl);padding:18px 16px 14px;position:relative;overflow:hidden;transition:box-shadow 0.15s;}
+.kpi:hover{box-shadow:0 2px 12px rgba(0,0,0,0.07);}
+.kpi-ic{position:absolute;top:14px;right:14px;font-size:20px;opacity:0.22;}
+.kpi.k-blue{border-left-color:var(--blue);background:linear-gradient(135deg,var(--blue-bg) 0%,var(--surface) 60%);}
+.kpi.k-green{border-left-color:var(--green);background:linear-gradient(135deg,var(--green-bg) 0%,var(--surface) 60%);}
+.kpi.k-amber{border-left-color:var(--amber);background:linear-gradient(135deg,var(--amber-bg) 0%,var(--surface) 60%);}
+.kpi.k-teal{border-left-color:#4A7C7C;background:linear-gradient(135deg,rgba(74,124,124,0.08) 0%,var(--surface) 60%);}
+.kpi.k-purple{border-left-color:#7A5C9E;background:linear-gradient(135deg,rgba(122,92,158,0.08) 0%,var(--surface) 60%);}
+.kpi.k-red{border-left-color:var(--red);background:linear-gradient(135deg,var(--red-bg) 0%,var(--surface) 60%);}
+.kpi.k-orange{border-left-color:var(--accent);background:linear-gradient(135deg,var(--accent-bg) 0%,var(--surface) 60%);}
+.kpi-label{font-size:10.5px;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;font-weight:600;}
+.kpi-value{font-family:'DM Serif Display',serif;font-size:24px;letter-spacing:-0.02em;line-height:1.1;}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:5px;}
+.kpi-sub.up{color:var(--green);font-weight:500;}.kpi-sub.down{color:var(--red);font-weight:500;}
+/* date filter bar on home */
+.home-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);}
+.home-filter .filter-label{font-size:12px;color:var(--text2);font-weight:600;margin-right:4px;}
+@media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:600px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
 .alert-stack{display:flex;flex-direction:column;gap:8px;}
 .alert{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:var(--r);font-size:13px;border:1px solid transparent;}
 .alert .a-ic{font-size:15px;line-height:1.2;flex-shrink:0;}
@@ -472,7 +486,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="alert-stack" id="alertStack"></div>
         </div>
 
-        <div class="card-hdr" style="margin:4px 0 12px"><div class="card-title">CEO KPI Overview</div></div>
+        <div class="home-filter no-print">
+          <span class="filter-label">📅 Periode:</span>
+          <button class="chip active" data-hf="month" onclick="setHomeFilter('month')">Bulan Ini</button>
+          <button class="chip" data-hf="3m" onclick="setHomeFilter('3m')">3 Bulan</button>
+          <button class="chip" data-hf="6m" onclick="setHomeFilter('6m')">6 Bulan</button>
+          <button class="chip" data-hf="year" onclick="setHomeFilter('year')">Tahun Ini</button>
+          <button class="chip" data-hf="all" onclick="setHomeFilter('all')">All Time</button>
+          <span id="homeFilterLabel" style="margin-left:auto;font-size:11px;color:var(--text3)"></span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="card-title">CEO KPI Overview</div>
+          <span style="font-size:11px;color:var(--text3)" id="kpiSubtitle"></span>
+        </div>
         <div class="kpi-grid" id="kpiGrid"></div>
 
         <div class="two-col">
@@ -833,7 +859,7 @@ let insightFrom = '', insightTo = '';
 let adminUnlocked = false;
 let cMOM=null, cYearly=null, cProduct=null, cGrowthCum=null, cVolume=null, cSegment=null, cOmzet=null;
 let cCash=null, cProfitTrend=null;
-let agingFilter='all', fundingFilter='all', profitRange='3';
+let agingFilter='all', fundingFilter='all', profitRange='3', homeFilter='month';
 
 // ═══════════ RBAC (PHASE 1 & 8) ═══════════
 // Peran ditentukan dari username login. partner = Panji/Pandu (akses penuh internal).
@@ -1712,33 +1738,54 @@ function allFundings(){
 function thisMonthKey(){ return new Date().toISOString().slice(0,7); }
 function thisYear(){ return new Date().getFullYear().toString(); }
 
+// ─── date range helpers ───────────────────────────────────
+function homeFilterRange(){
+  const now=new Date(), y=now.getFullYear(), m=now.getMonth();
+  if(homeFilter==='month') return {from:new Date(y,m,1).toISOString().slice(0,10), label:'Bulan '+now.toLocaleDateString('id-ID',{month:'long',year:'numeric'})};
+  if(homeFilter==='3m')    return {from:new Date(y,m-3,1).toISOString().slice(0,10), label:'3 Bulan Terakhir'};
+  if(homeFilter==='6m')    return {from:new Date(y,m-6,1).toISOString().slice(0,10), label:'6 Bulan Terakhir'};
+  if(homeFilter==='year')  return {from:new Date(y,0,1).toISOString().slice(0,10), label:'Tahun '+y};
+  return {from:null, label:'Semua Waktu'};
+}
+function setHomeFilter(f){
+  homeFilter=f;
+  document.querySelectorAll('[data-hf]').forEach(b=>b.classList.toggle('active',b.dataset.hf===f));
+  renderHome();
+}
 function computeHome(){
-  const sold=units.filter(u=>u.status==='terjual');
+  const {from, label} = homeFilterRange();
+  const allSold=units.filter(u=>u.status==='terjual');
   const active=units.filter(u=>u.status!=='terjual');
+  // sold dalam range terpilih
+  const sold = from ? allSold.filter(u=>(saleDateOf(u)||'')>=from) : allSold;
   const modalIntiOf=u=>(+u.totalModal)-(+u.modalPartner||0);
   const modalBerjalan=active.reduce((a,u)=>a+(+u.totalModal),0);
-  let realized=0, profitMonth=0, profitYear=0, modalYear=0;
-  sold.forEach(u=>{
+  // profit bulan ini & tahun ini (selalu absolut, bukan kena filter range)
+  let profitMonth=0, profitYear=0, modalYear=0, realized=0;
+  allSold.forEach(u=>{
     const np=netProfitOf(u); realized+=np;
     const dt=saleDateOf(u);
-    if(dt&&dt.slice(0,7)===thisMonthKey())profitMonth+=np;
+    if(dt&&dt.slice(0,7)===thisMonthKey()) profitMonth+=np;
     if(dt&&dt.slice(0,4)===thisYear()){profitYear+=np; modalYear+=modalIntiOf(u);}
   });
+  // profit dalam range terpilih
+  const profitInRange=sold.reduce((a,u)=>a+netProfitOf(u),0);
+  const modalInRange=sold.reduce((a,u)=>a+modalIntiOf(u),0);
+  const roiInRange=modalInRange>0?profitInRange/modalInRange*100:0;
+  // selalu pakai full-history ROI for health score
+  const roiYear=modalYear>0?profitYear/modalYear*100:0;
   const fundings=allFundings();
   const investorActive=fundings.filter(f=>f.status==='active').reduce((a,f)=>a+f.funding,0);
   const outstanding=fundings.filter(f=>f.status==='pending_payment').reduce((a,f)=>a+f.fee,0);
-  const inventoryVal=modalBerjalan;
-  const cashProxy=realized; // proxy kas: akumulasi profit terealisasi (sebelum modul Cashflow)
-  const totalAsset=cashProxy+inventoryVal;
-  // holding
-  const holds=sold.map(u=>daysBetween(u.tgl,saleDateOf(u))).filter(d=>d!==null);
+  const cashProxy=realized;
+  const totalAsset=cashProxy+modalBerjalan;
+  const holds=allSold.map(u=>daysBetween(u.tgl,saleDateOf(u))).filter(d=>d!==null);
   const avgHold=holds.length?holds.reduce((a,b)=>a+b,0)/holds.length:0;
-  const roiYear=modalYear>0?profitYear/modalYear*100:0;
-  // aging distribution (unit aktif)
   const dist=[0,0,0,0];
   active.forEach(u=>{const t=agingTier(holdingDays(u)); if(t)dist[t-1]++;});
-  return {sold,active,modalBerjalan,realized,profitMonth,profitYear,roiYear,
-    investorActive,outstanding,inventoryVal,cashProxy,totalAsset,avgHold,dist,fundings};
+  return {sold,allSold,active,modalBerjalan,realized,profitMonth,profitYear,
+    profitInRange,roiInRange,roiYear,investorActive,outstanding,
+    cashProxy,totalAsset,avgHold,dist,fundings,filterLabel:label};
 }
 
 function computeHealth(h){
@@ -1802,21 +1849,33 @@ function renderHome(){
     return `<div class="alert ${lvl}"><span class="a-ic">${ic}</span><div>${msg}</div></div>`;
   }).join('');
 
-  // KPI cards
+  // Update filter label
+  const fl=document.getElementById('homeFilterLabel');
+  if(fl) fl.textContent='Menampilkan: '+h.filterLabel;
+  const ks=document.getElementById('kpiSubtitle');
+  if(ks) ks.textContent='Data periode: '+h.filterLabel;
+
+  // KPI cards — tiap card punya warna unik + ikon + trend sub
+  // Row 1: Money — 3 profit KPIs + ROI + Cash
+  // Row 2: Ops — Inventory + Asset + Investor + Outstanding + Holding
+  const soldCount=h.sold.length;
+  // tanda vs bulan sebelumnya: tidak ada data historis, tampilkan count saja
   const kpis=[
-    ['Cash Available (est.)',fmtRpShort(h.cashProxy),'profit terealisasi','k-green'],
-    ['Modal Berjalan',fmtRpShort(h.modalBerjalan),h.active.length+' unit aktif','k-teal'],
-    ['Profit Bulan Ini',fmtRpShort(h.profitMonth),'bulan berjalan','k-amber'],
-    ['Profit Tahun Ini',fmtRpShort(h.profitYear),thisYear(),''],
-    ['ROI Tahun Berjalan',h.roiYear.toFixed(1)+'%','atas modal inti','k-blue'],
-    ['Inventory Ready',h.active.length,'unit belum terjual','k-purple'],
-    ['Total Asset',fmtRpShort(h.totalAsset),'kas + inventory','k-green'],
-    ['Investor Fund Active',fmtRpShort(h.investorActive),'dana partner aktif','k-blue'],
-    ['Outstanding Payment',fmtRpShort(h.outstanding),'kewajiban belum dibayar','k-red'],
-    ['Average Holding',h.avgHold.toFixed(0)+' hari','masuk → terjual','k-teal'],
+    // ── Uang / Profit ──────────────────────────────────────────
+    {l:'Profit '+h.filterLabel, v:fmtRpShort(h.profitInRange), s:soldCount+' unit terjual', c:'k-green',  ic:'💰'},
+    {l:'Profit Bulan Ini',      v:fmtRpShort(h.profitMonth),   s:new Date().toLocaleDateString('id-ID',{month:'long'}), c:'k-amber',  ic:'📅'},
+    {l:'Profit Tahun Ini',      v:fmtRpShort(h.profitYear),    s:'akumulasi '+thisYear(), c:'k-orange', ic:'📈'},
+    {l:'ROI Periode Ini',       v:h.roiInRange.toFixed(1)+'%', s:'atas modal inti', c:'k-blue',   ic:'🎯'},
+    {l:'Cash Available',        v:fmtRpShort(h.cashProxy),     s:'estimasi profit terealisasi', c:'k-teal',   ic:'🏦'},
+    // ── Operasional ────────────────────────────────────────────
+    {l:'Modal Berjalan',        v:fmtRpShort(h.modalBerjalan), s:h.active.length+' unit aktif', c:'k-teal',   ic:'🚗'},
+    {l:'Total Asset',           v:fmtRpShort(h.totalAsset),    s:'kas + inventory', c:'k-green',  ic:'🏢'},
+    {l:'Investor Fund Active',  v:fmtRpShort(h.investorActive),s:'dana partner aktif', c:'k-purple', ic:'🤝'},
+    {l:'Outstanding Payment',   v:fmtRpShort(h.outstanding),   s:h.outstanding>0?'⚠ segera bayar':'✓ tidak ada', c:h.outstanding>0?'k-red':'k-green', ic:'💸'},
+    {l:'Avg Holding Time',      v:h.avgHold.toFixed(0)+' hari',s:'masuk → terjual', c:'k-blue',   ic:'⏱'},
   ];
-  document.getElementById('kpiGrid').innerHTML=kpis.map(([l,v,s,c])=>
-    `<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
+  document.getElementById('kpiGrid').innerHTML=kpis.map(({l,v,s,c,ic})=>
+    `<div class="kpi ${c}"><span class="kpi-ic">${ic}</span><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
 
   renderCashChart(h);
   renderProfitTrend();
@@ -1830,7 +1889,7 @@ function renderCashChart(h){
   cCash=new Chart(document.getElementById('chartCash').getContext('2d'),{
     type:'doughnut',
     data:{labels:['Cash (est.)','Inventory','Piutang','Hutang Investor'],
-      datasets:[{data:[h.cashProxy,h.inventoryVal,0,h.outstanding],
+      datasets:[{data:[h.cashProxy,h.modalBerjalan,0,h.outstanding],
         backgroundColor:['#2D6A1F','#4A7C7C','#185FA5','#A32D2D'],borderWidth:0}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
       plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12,font:{size:11}}},
