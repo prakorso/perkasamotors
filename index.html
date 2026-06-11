@@ -558,6 +558,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <div class="fg" id="tglJualWrap" style="display:none"><label>Tanggal Jual</label><input type="date" id="tglJual"></div>
           </div>
         </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Detail Akuisisi &amp; Target</div></div>
+          <div class="form-grid">
+            <div class="fg"><label>Sumber Pembelian</label><input type="text" id="sumberBeli" placeholder="contoh: Lelang / Showroom / Perorangan"></div>
+            <div class="fg"><label>PIC</label><input type="text" id="picUnit" placeholder="contoh: Panji"></div>
+            <div class="fg"><label>Kategori Kendaraan</label><select id="kategoriUnit">
+              <option value="">— Pilih —</option>
+              <option>City Car</option><option>Hatchback</option><option>Sedan</option><option>SUV</option><option>MPV</option><option>Pick Up</option><option>Truck</option>
+              <option>Motor Bebek</option><option>Motor Matic</option><option>Motor Sport</option><option>Lainnya</option>
+            </select></div>
+            <div class="fg"><label>Kondisi Kendaraan</label><select id="kondisiUnit">
+              <option value="">— Pilih —</option>
+              <option>Sangat Baik</option><option>Baik</option><option>Cukup</option><option>Perlu Perbaikan</option>
+            </select></div>
+            <div class="fg full"><label>Lokasi Unit</label><input type="text" id="lokasiUnit" placeholder="contoh: Garasi Pusat / Showroom A"></div>
+            <div class="fg"><label>Harga Beli (Rp)</label><input type="number" id="hargaBeli" placeholder="0" oninput="updateTargetProfit()"></div>
+            <div class="fg"><label>Target Harga Jual (Rp)</label><input type="number" id="targetJual" placeholder="0" oninput="updateTargetProfit()"></div>
+            <div class="fg"><label>Target Profit (Rp)</label><input type="text" id="targetProfit" readonly placeholder="otomatis" style="background:var(--surface2);color:var(--green);font-weight:600"></div>
+          </div>
+        </div>
         <div class="two-col">
           <div class="partner-card">
             <div class="pc-title"><span class="dot blue"></span>Modal Panji</div>
@@ -1025,6 +1045,14 @@ function toggleHJ(){
   if(isSold&&!document.getElementById('tglJual').value)document.getElementById('tglJual').value=new Date().toISOString().slice(0,10);
   updatePreview();
 }
+function updateTargetProfit(){
+  const beli=parseFloat(document.getElementById('hargaBeli').value)||0;
+  const jual=parseFloat(document.getElementById('targetJual').value)||0;
+  const tp=document.getElementById('targetProfit');
+  const margin=jual-beli;
+  tp.value=(jual||beli)?fmtRp(margin):'';
+  tp.style.color=margin>=0?'var(--green)':'var(--red)';
+}
 function getBiayas(who){
   const items=[];
   document.querySelectorAll(`#biayas-${who} .biaya-row`).forEach(row=>{
@@ -1110,6 +1138,14 @@ function startEdit(id){
   document.getElementById('tahunUnit').value=u.tahun||'';
   document.getElementById('jenisUnit').value=u.jenis;
   document.getElementById('tglMasuk').value=u.tgl;
+  document.getElementById('sumberBeli').value=u.sumberBeli||'';
+  document.getElementById('picUnit').value=u.pic||'';
+  document.getElementById('kategoriUnit').value=u.kategori||'';
+  document.getElementById('kondisiUnit').value=u.kondisi||'';
+  document.getElementById('lokasiUnit').value=u.lokasi||'';
+  document.getElementById('hargaBeli').value=u.hargaBeli||'';
+  document.getElementById('targetJual').value=u.targetJual||'';
+  updateTargetProfit();
   document.getElementById('statusUnit').value=u.status;
   toggleHJ();
   if(u.status==='terjual'){document.getElementById('hargaJual').value=u.hargaJual;document.getElementById('tglJual').value=u.tglJual||u.tgl||'';}
@@ -1142,7 +1178,10 @@ async function simpanUnit(){
   const status=document.getElementById('statusUnit').value;
   const harga=status==='terjual'?(parseFloat(document.getElementById('hargaJual').value)||0):0;
   const tglJual=status==='terjual'?(document.getElementById('tglJual').value||new Date().toISOString().slice(0,10)):'';
-  const payload={nama,plat:document.getElementById('platUnit').value.trim(),tahun:document.getElementById('tahunUnit').value.trim(),jenis:document.getElementById('jenisUnit').value,tgl:document.getElementById('tglMasuk').value||new Date().toISOString().slice(0,10),status,hargaJual:harga,tglJual,panji:p,pandu:d,partners:getPartners()};
+  const hargaBeli=parseFloat(document.getElementById('hargaBeli').value)||0;
+  const targetJual=parseFloat(document.getElementById('targetJual').value)||0;
+  const payload={nama,plat:document.getElementById('platUnit').value.trim(),tahun:document.getElementById('tahunUnit').value.trim(),jenis:document.getElementById('jenisUnit').value,tgl:document.getElementById('tglMasuk').value||new Date().toISOString().slice(0,10),status,hargaJual:harga,tglJual,panji:p,pandu:d,partners:getPartners(),
+    sumberBeli:document.getElementById('sumberBeli').value.trim(),pic:document.getElementById('picUnit').value.trim(),kategori:document.getElementById('kategoriUnit').value,kondisi:document.getElementById('kondisiUnit').value,lokasi:document.getElementById('lokasiUnit').value.trim(),hargaBeli,targetJual,targetProfit:targetJual-hargaBeli};
 
   const btn=document.getElementById('saveBtn');
   btn.disabled=true; btn.textContent='⏳ Menyimpan...'; setSyncStatus('syncing');
@@ -1166,8 +1205,10 @@ async function simpanUnit(){
 }
 
 function resetForm(){
-  ['namaUnit','hargaJual','tglJual','platUnit','tahunUnit'].forEach(id=>document.getElementById(id).value='');
+  ['namaUnit','hargaJual','tglJual','platUnit','tahunUnit','sumberBeli','picUnit','lokasiUnit','hargaBeli','targetJual','targetProfit'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('jenisUnit').value='Mobil';
+  document.getElementById('kategoriUnit').value='';
+  document.getElementById('kondisiUnit').value='';
   document.getElementById('statusUnit').value='aktif';
   document.getElementById('tglMasuk').value=new Date().toISOString().slice(0,10);
   document.getElementById('hjWrap').style.display='none';
@@ -1230,8 +1271,12 @@ function renderUnits(){
       return `<span class="partner-chip">🤝 ${p.nama||'Partner'}: ${fmtRp(p.funding)}${fee}</span>`;
     }).join('');
     const metaParts=[u.jenis];
+    if(u.kategori)metaParts.push(u.kategori);
     if(u.tahun)metaParts.push('Th '+u.tahun);
     if(u.plat)metaParts.push(u.plat);
+    if(u.kondisi)metaParts.push(u.kondisi);
+    if(u.lokasi)metaParts.push('📍 '+u.lokasi);
+    if(u.pic)metaParts.push('PIC '+u.pic);
     metaParts.push('Masuk '+u.tgl);
     if(sold&&u.tglJual)metaParts.push('Jual '+u.tglJual);
     return `<div class="unit-item">
@@ -1260,7 +1305,10 @@ function renderUnits(){
           <div><span class="sl">Bagi Panji: </span><span class="sv untung">${fmtRp(bP)}</span></div>
           <div><span class="sl">Bagi Pandu: </span><span class="sv untung">${fmtRp(bD)}</span></div>
         `:`<div><span class="sl">Status: </span><span class="sv ${sold?'untung':'pending'}">${sold?'Terjual':'Belum terjual'}</span></div>
-           <div><span class="sl">Holding: </span><span class="sv">${holdingDays(u)} hari</span></div>`}
+           <div><span class="sl">Holding: </span><span class="sv">${holdingDays(u)} hari</span></div>
+           ${ig&&+u.hargaBeli>0?`<div><span class="sl">Harga Beli: </span><span class="sv">${fmtRp(u.hargaBeli)}</span></div>`:''}
+           ${ig&&+u.targetJual>0?`<div><span class="sl">Target Jual: </span><span class="sv">${fmtRp(u.targetJual)}</span></div>`:''}
+           ${ig&&+u.targetProfit>0?`<div><span class="sl">Target Profit: </span><span class="sv untung">${fmtRp(u.targetProfit)}</span></div>`:''}`}
       </div>
     </div>`;
   }).join('');
