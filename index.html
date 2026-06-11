@@ -2,9 +2,16 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Perkasa Motors — Dashboard</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23C8420A'/%3E%3Ctext x='50' y='72' font-family='Georgia,serif' font-size='64' font-weight='bold' fill='white' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#CC0000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Perkasa Motors">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/logo.svg">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
@@ -13,7 +20,7 @@
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);}
 .login-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:40px 36px;width:360px;text-align:center;}
-.login-logo{width:52px;height:52px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:24px;color:#fff;margin:0 auto 16px;}
+.login-logo{width:72px;height:72px;border-radius:16px;overflow:hidden;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;}
 .login-box h1{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:4px;}
 .login-box p{font-size:13px;color:var(--text3);margin-bottom:28px;}
 .login-box input{width:100%;padding:11px 14px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface);margin-bottom:10px;}
@@ -27,7 +34,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .hamburger{display:none;background:none;border:none;font-size:22px;color:var(--text);cursor:pointer;padding:2px 6px;line-height:1;border-radius:8px;}
 .hamburger:hover{background:var(--surface2);}
 .sb-brand{padding:28px 24px 20px;border-bottom:1px solid rgba(255,255,255,0.08);}
-.sb-logo{width:36px;height:36px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:18px;color:#fff;margin-bottom:12px;}
+.sb-logo{width:40px;height:40px;border-radius:8px;overflow:hidden;margin-bottom:12px;display:flex;align-items:center;justify-content:center;}
 .sb-brand h1{font-family:'DM Serif Display',serif;font-size:17px;color:#fff;}
 .sb-brand p{font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;}
 .sb-nav{flex:1;padding:16px 12px;display:flex;flex-direction:column;gap:2px;}
@@ -383,7 +390,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <div class="login-wrap" id="loginWrap">
   <div class="login-box">
-    <div class="login-logo" id="loginLogo">P</div>
+    <div class="login-logo" id="loginLogo"><img src="/logo.svg" alt="Perkasa Motors" style="width:100%;height:100%;object-fit:cover;border-radius:16px"></div>
     <h1 id="loginBrand">Perkasa Motors</h1>
     <p id="loginTagline">Dashboard Jual Beli Otomotif</p>
     <input type="text" id="loginUser" placeholder="Username" autocomplete="username">
@@ -413,7 +420,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div id="dashWrap" style="display:none">
   <div class="sidebar" id="sidebar">
     <div class="sb-brand">
-      <div class="sb-logo" id="sbLogo">P</div>
+      <div class="sb-logo" id="sbLogo"><img src="/logo.svg" alt="PM" style="width:100%;height:100%;object-fit:cover;border-radius:8px"></div>
       <h1 id="sbBrand">Perkasa Motors</h1>
       <p id="sbTagline">Jual Beli Otomotif</p>
     </div>
@@ -556,6 +563,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <div class="fg"><label>Status</label><select id="statusUnit" onchange="toggleHJ()"><option value="aktif">Aktif (belum terjual)</option><option value="terjual">Terjual</option></select></div>
             <div class="fg" id="hjWrap" style="display:none"><label>Harga Jual (Rp)</label><input type="number" id="hargaJual" placeholder="0" oninput="updatePreview()"></div>
             <div class="fg" id="tglJualWrap" style="display:none"><label>Tanggal Jual</label><input type="date" id="tglJual"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Detail Akuisisi &amp; Target</div></div>
+          <div class="form-grid">
+            <div class="fg"><label>Sumber Pembelian</label><input type="text" id="sumberBeli" placeholder="contoh: Lelang / Showroom / Perorangan"></div>
+            <div class="fg"><label>PIC</label><input type="text" id="picUnit" placeholder="contoh: Panji"></div>
+            <div class="fg"><label>Kategori Kendaraan</label><select id="kategoriUnit">
+              <option value="">— Pilih —</option>
+              <option>City Car</option><option>Hatchback</option><option>Sedan</option><option>SUV</option><option>MPV</option><option>Pick Up</option><option>Truck</option>
+              <option>Motor Bebek</option><option>Motor Matic</option><option>Motor Sport</option><option>Lainnya</option>
+            </select></div>
+            <div class="fg"><label>Kondisi Kendaraan</label><select id="kondisiUnit">
+              <option value="">— Pilih —</option>
+              <option>Sangat Baik</option><option>Baik</option><option>Cukup</option><option>Perlu Perbaikan</option>
+            </select></div>
+            <div class="fg full"><label>Lokasi Unit</label><input type="text" id="lokasiUnit" placeholder="contoh: Garasi Pusat / Showroom A"></div>
+            <div class="fg"><label>Harga Beli (Rp)</label><input type="number" id="hargaBeli" placeholder="0" oninput="updateTargetProfit()"></div>
+            <div class="fg"><label>Target Harga Jual (Rp)</label><input type="number" id="targetJual" placeholder="0" oninput="updateTargetProfit()"></div>
+            <div class="fg"><label>Target Profit (Rp)</label><input type="text" id="targetProfit" readonly placeholder="otomatis" style="background:var(--surface2);color:var(--green);font-weight:600"></div>
           </div>
         </div>
         <div class="two-col">
@@ -755,7 +782,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
           <div class="fg" style="margin-bottom:8px">
             <label>Warna Aksen (logo & tombol)</label>
-            <input type="color" id="setAccent" value="#C8420A" oninput="livePreview()" style="height:42px;padding:4px;cursor:pointer">
+            <input type="color" id="setAccent" value="#2563C9" oninput="livePreview()" style="height:42px;padding:4px;cursor:pointer">
           </div>
 
           <button class="btn-primary" onclick="saveSettings()">💾 Simpan Pengaturan</button>
@@ -826,7 +853,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <script>
 // ⚙️ URL Apps Script — SUDAH TERPASANG
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwY-188f1lAHKuTTNrzzyESmq0S2wzrf_jIs-1K6xbaI-U-1GUo3Dh7Ic68MDFyULhJDg/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzD3IYh58mQb1JO4Zjg11v52fChB7BrzQwqnwftcU5uqgAgor7gs0tVC2ah3Td5djVleg/exec';
 
 // Login divalidasi di server (Google Sheets). Password diatur via panel Admin.
 
@@ -1025,6 +1052,14 @@ function toggleHJ(){
   if(isSold&&!document.getElementById('tglJual').value)document.getElementById('tglJual').value=new Date().toISOString().slice(0,10);
   updatePreview();
 }
+function updateTargetProfit(){
+  const beli=parseFloat(document.getElementById('hargaBeli').value)||0;
+  const jual=parseFloat(document.getElementById('targetJual').value)||0;
+  const tp=document.getElementById('targetProfit');
+  const margin=jual-beli;
+  tp.value=(jual||beli)?fmtRp(margin):'';
+  tp.style.color=margin>=0?'var(--green)':'var(--red)';
+}
 function getBiayas(who){
   const items=[];
   document.querySelectorAll(`#biayas-${who} .biaya-row`).forEach(row=>{
@@ -1110,6 +1145,14 @@ function startEdit(id){
   document.getElementById('tahunUnit').value=u.tahun||'';
   document.getElementById('jenisUnit').value=u.jenis;
   document.getElementById('tglMasuk').value=u.tgl;
+  document.getElementById('sumberBeli').value=u.sumberBeli||'';
+  document.getElementById('picUnit').value=u.pic||'';
+  document.getElementById('kategoriUnit').value=u.kategori||'';
+  document.getElementById('kondisiUnit').value=u.kondisi||'';
+  document.getElementById('lokasiUnit').value=u.lokasi||'';
+  document.getElementById('hargaBeli').value=u.hargaBeli||'';
+  document.getElementById('targetJual').value=u.targetJual||'';
+  updateTargetProfit();
   document.getElementById('statusUnit').value=u.status;
   toggleHJ();
   if(u.status==='terjual'){document.getElementById('hargaJual').value=u.hargaJual;document.getElementById('tglJual').value=u.tglJual||u.tgl||'';}
@@ -1142,7 +1185,10 @@ async function simpanUnit(){
   const status=document.getElementById('statusUnit').value;
   const harga=status==='terjual'?(parseFloat(document.getElementById('hargaJual').value)||0):0;
   const tglJual=status==='terjual'?(document.getElementById('tglJual').value||new Date().toISOString().slice(0,10)):'';
-  const payload={nama,plat:document.getElementById('platUnit').value.trim(),tahun:document.getElementById('tahunUnit').value.trim(),jenis:document.getElementById('jenisUnit').value,tgl:document.getElementById('tglMasuk').value||new Date().toISOString().slice(0,10),status,hargaJual:harga,tglJual,panji:p,pandu:d,partners:getPartners()};
+  const hargaBeli=parseFloat(document.getElementById('hargaBeli').value)||0;
+  const targetJual=parseFloat(document.getElementById('targetJual').value)||0;
+  const payload={nama,plat:document.getElementById('platUnit').value.trim(),tahun:document.getElementById('tahunUnit').value.trim(),jenis:document.getElementById('jenisUnit').value,tgl:document.getElementById('tglMasuk').value||new Date().toISOString().slice(0,10),status,hargaJual:harga,tglJual,panji:p,pandu:d,partners:getPartners(),
+    sumberBeli:document.getElementById('sumberBeli').value.trim(),pic:document.getElementById('picUnit').value.trim(),kategori:document.getElementById('kategoriUnit').value,kondisi:document.getElementById('kondisiUnit').value,lokasi:document.getElementById('lokasiUnit').value.trim(),hargaBeli,targetJual,targetProfit:targetJual-hargaBeli};
 
   const btn=document.getElementById('saveBtn');
   btn.disabled=true; btn.textContent='⏳ Menyimpan...'; setSyncStatus('syncing');
@@ -1166,8 +1212,10 @@ async function simpanUnit(){
 }
 
 function resetForm(){
-  ['namaUnit','hargaJual','tglJual','platUnit','tahunUnit'].forEach(id=>document.getElementById(id).value='');
+  ['namaUnit','hargaJual','tglJual','platUnit','tahunUnit','sumberBeli','picUnit','lokasiUnit','hargaBeli','targetJual','targetProfit'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('jenisUnit').value='Mobil';
+  document.getElementById('kategoriUnit').value='';
+  document.getElementById('kondisiUnit').value='';
   document.getElementById('statusUnit').value='aktif';
   document.getElementById('tglMasuk').value=new Date().toISOString().slice(0,10);
   document.getElementById('hjWrap').style.display='none';
@@ -1230,8 +1278,12 @@ function renderUnits(){
       return `<span class="partner-chip">🤝 ${p.nama||'Partner'}: ${fmtRp(p.funding)}${fee}</span>`;
     }).join('');
     const metaParts=[u.jenis];
+    if(u.kategori)metaParts.push(u.kategori);
     if(u.tahun)metaParts.push('Th '+u.tahun);
     if(u.plat)metaParts.push(u.plat);
+    if(u.kondisi)metaParts.push(u.kondisi);
+    if(u.lokasi)metaParts.push('📍 '+u.lokasi);
+    if(u.pic)metaParts.push('PIC '+u.pic);
     metaParts.push('Masuk '+u.tgl);
     if(sold&&u.tglJual)metaParts.push('Jual '+u.tglJual);
     return `<div class="unit-item">
@@ -1260,7 +1312,10 @@ function renderUnits(){
           <div><span class="sl">Bagi Panji: </span><span class="sv untung">${fmtRp(bP)}</span></div>
           <div><span class="sl">Bagi Pandu: </span><span class="sv untung">${fmtRp(bD)}</span></div>
         `:`<div><span class="sl">Status: </span><span class="sv ${sold?'untung':'pending'}">${sold?'Terjual':'Belum terjual'}</span></div>
-           <div><span class="sl">Holding: </span><span class="sv">${holdingDays(u)} hari</span></div>`}
+           <div><span class="sl">Holding: </span><span class="sv">${holdingDays(u)} hari</span></div>
+           ${ig&&+u.hargaBeli>0?`<div><span class="sl">Harga Beli: </span><span class="sv">${fmtRp(u.hargaBeli)}</span></div>`:''}
+           ${ig&&+u.targetJual>0?`<div><span class="sl">Target Jual: </span><span class="sv">${fmtRp(u.targetJual)}</span></div>`:''}
+           ${ig&&+u.targetProfit>0?`<div><span class="sl">Target Profit: </span><span class="sv untung">${fmtRp(u.targetProfit)}</span></div>`:''}`}
       </div>
     </div>`;
   }).join('');
@@ -1332,7 +1387,7 @@ function renderMOM(){
   if(cMOM)cMOM.destroy();
   cMOM=new Chart(document.getElementById('chartMOM').getContext('2d'),{
     type:'bar',
-    data:{labels:BULAN,datasets:[{label:'Profit Penjualan',data:monthly,backgroundColor:monthly.map(v=>v>=0?'#C8420A':'#A32D2D'),borderRadius:4}]},
+    data:{labels:BULAN,datasets:[{label:'Profit Penjualan',data:monthly,backgroundColor:monthly.map(v=>v>=0?'#2563C9':'#A32D2D'),borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{
         title:items=>BULAN_FULL[items[0].dataIndex],
@@ -1470,7 +1525,7 @@ function renderInsight(){
   if(cGrowthCum)cGrowthCum.destroy();
   cGrowthCum=new Chart(document.getElementById('chartGrowthCum').getContext('2d'),{
     data:{labels:mlabels.length?mlabels:['—'],datasets:[
-      {type:'bar',label:'Profit Bulanan',data:profitData,backgroundColor:'#C8420A',borderRadius:4,order:2},
+      {type:'bar',label:'Profit Bulanan',data:profitData,backgroundColor:'#2563C9',borderRadius:4,order:2},
       {type:'line',label:'Profit Kumulatif',data:cumData,borderColor:'#2D6A1F',backgroundColor:'rgba(45,106,31,0.08)',borderWidth:2.5,tension:0.3,pointRadius:4,pointBackgroundColor:'#2D6A1F',fill:true,order:1}
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
@@ -1622,7 +1677,7 @@ function renderYearly(){
   const years=Object.keys(byYear).sort();
   cYearly=new Chart(document.getElementById('chartYearly').getContext('2d'),{
     type:'bar',
-    data:{labels:years.length?years:['—'],datasets:[{label:'Profit Bersih',data:years.length?years.map(y=>byYear[y].profit):[0],backgroundColor:'#C8420A',borderRadius:4}]},
+    data:{labels:years.length?years:['—'],datasets:[{label:'Profit Bersih',data:years.length?years.map(y=>byYear[y].profit):[0],backgroundColor:'#2563C9',borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{
         label:i=>'Profit: '+fmtRp(i.parsed.y),
@@ -1820,7 +1875,7 @@ function renderProfitTrend(){
   if(cProfitTrend)cProfitTrend.destroy();
   cProfitTrend=new Chart(document.getElementById('chartProfitTrend').getContext('2d'),{
     data:{labels:keys.length?keys.map(fmtM):['—'],datasets:[
-      {type:'bar',label:'Profit Bulanan',data:keys.map(k=>byMonth[k]),backgroundColor:'#C8420A',borderRadius:4,order:2},
+      {type:'bar',label:'Profit Bulanan',data:keys.map(k=>byMonth[k]),backgroundColor:'#2563C9',borderRadius:4,order:2},
       {type:'line',label:'Kumulatif',data:cumData,borderColor:'#2D6A1F',borderWidth:2,tension:0.3,pointRadius:3,fill:false,order:1}
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
@@ -1998,7 +2053,7 @@ async function saveAdminConfig(){
 
 // ══════════ PENGATURAN TAMPILAN ══════════
 const SETTINGS_KEY='pm_settings';
-const DEFAULT_SETTINGS={logoType:'text',initial:'P',image:'',brand:'Perkasa Motors',tagline:'Dashboard Jual Beli Otomotif',taglineShort:'Jual Beli Otomotif',accent:'#C8420A'};
+const DEFAULT_SETTINGS={logoType:'text',initial:'P',image:'',brand:'Perkasa Motors',tagline:'Dashboard Jual Beli Otomotif',taglineShort:'Jual Beli Otomotif',accent:'#2563C9'};
 
 function getSettings(){
   try{ return Object.assign({},DEFAULT_SETTINGS,JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}')); }
@@ -2010,9 +2065,10 @@ function applySettings(s){
   const ll=document.getElementById('loginLogo');
   const sl=document.getElementById('sbLogo');
   if(s.logoType==='image'&&s.image){
-    [ll,sl].forEach(el=>{el.textContent='';el.style.backgroundImage=`url(${s.image})`;el.style.backgroundSize='cover';el.style.backgroundPosition='center';});
+    [ll,sl].forEach(el=>{el.innerHTML=`<img src="${s.image}" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;});
   }else{
-    [ll,sl].forEach(el=>{el.style.backgroundImage='';el.textContent=s.initial||'P';});
+    // default: use logo.svg file
+    [ll,sl].forEach(el=>{el.innerHTML=`<img src="/logo.svg" alt="PM" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;});
   }
   document.getElementById('loginBrand').textContent=s.brand;
   document.getElementById('loginTagline').textContent=s.tagline;
@@ -2121,6 +2177,13 @@ function resetSettings(){
 
 // Terapkan settings saat halaman dibuka
 applySettings(getSettings());
+
+// Register service worker (PWA)
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>

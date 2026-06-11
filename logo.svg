@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="36" fill="#CC0000"/>
+  <!-- P shape -->
+  <polygon points="52,48 52,152 72,152 72,116 104,116 118,102 118,62 104,48" fill="white"/>
+  <polygon points="72,64 72,100 104,100 108,96 108,68 104,64" fill="#CC0000"/>
+  <!-- M shape -->
+  <polygon points="122,48 122,152 142,152 142,90 158,120 162,120 178,90 178,152 198,152 198,48 178,48 160,82 142,48" fill="white"/>
+</svg>
