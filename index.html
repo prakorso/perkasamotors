@@ -10,8 +10,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Perkasa Motors">
 <link rel="manifest" href="/manifest.json">
-<link rel="icon" href="/logo.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/logo.svg">
+<link rel="icon" id="favicon" href="/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" id="appleIcon" href="/logo.svg">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
@@ -2075,6 +2075,11 @@ function applySettings(s){
   document.getElementById('sbBrand').textContent=s.brand;
   document.getElementById('sbTagline').textContent=s.taglineShort||s.tagline;
   document.title=s.brand+' — Dashboard';
+  // Sync favicon with the chosen logo
+  const iconHref=(s.logoType==='image'&&s.image)?s.image:'/logo.svg';
+  const fav=document.getElementById('favicon'),appleI=document.getElementById('appleIcon');
+  if(fav)fav.setAttribute('href',iconHref);
+  if(appleI)appleI.setAttribute('href',iconHref);
   // Accent color
   document.documentElement.style.setProperty('--accent',s.accent);
 }
