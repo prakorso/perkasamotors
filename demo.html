@@ -422,7 +422,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">☰</button>
         <div class="topbar-title" id="topbarTitle">Input Unit Baru</div>
       </div>
-      <div class="sync-indicator"><div class="sync-dot" id="syncDot"></div><span id="syncText">Terhubung</span></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <select onchange="demoSetRole(this.value)" title="Preview sebagai role" style="border:1px solid var(--border2);border-radius:var(--r);padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);cursor:pointer">
+          <option value="panji">👤 Owner / Partner (Panji)</option>
+          <option value="investor">💼 Investor (Budi)</option>
+          <option value="viewer">👁 Viewer</option>
+        </select>
+        <div class="sync-indicator"><div class="sync-dot" id="syncDot"></div><span id="syncText">Mode Demo</span></div>
+      </div>
+    </div>
+    <div style="background:#FFF0EB;border-bottom:1px solid rgba(200,66,10,0.18);color:var(--accent);font-size:12px;padding:8px 32px;text-align:center">
+      🎨 <b>MODE PREVIEW</b> — data di bawah adalah contoh (dummy). Gunakan dropdown kanan atas untuk melihat tampilan tiap role. Perubahan tidak tersimpan.
     </div>
     <div class="content">
       <div class="metrics" id="globalMetrics">
@@ -890,17 +900,21 @@ function doLogout(){
   document.getElementById('loginWrap').style.display='flex';
   document.getElementById('loginPass').value='';
 }
+// DEMO: langsung masuk dashboard tanpa login
+function demoSetRole(r){
+  currentUser = r==='investor' ? 'investor_budi' : r==='viewer' ? 'viewer' : 'panji';
+  document.getElementById('sbUser').textContent = r==='investor'?'Investor Budi':r==='viewer'?'Viewer':'Panji';
+  applyRBAC();
+  showSection('home');
+}
 window.addEventListener('DOMContentLoaded',()=>{
-  const s=sessionStorage.getItem('pm_session');
-  if(s){
-    currentUser=s;
-    document.getElementById('loginWrap').style.display='none';
-    document.getElementById('dashWrap').style.display='block';
-    document.getElementById('sbUser').textContent=s.charAt(0).toUpperCase()+s.slice(1);
-    applyRBAC(); startIdleTimer();
-    try{ history.replaceState({sec:'home'},''); }catch(e){}
-    showSection('home'); loadUnits();
-  }
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('dashWrap').style.display='block';
+  currentUser='panji';
+  document.getElementById('sbUser').textContent='Panji';
+  applyRBAC();
+  try{ history.replaceState({sec:'home'},''); }catch(e){}
+  showSection('home'); loadUnits();
   document.getElementById('tglMasuk').value=new Date().toISOString().slice(0,10);
 });
 
@@ -914,14 +928,53 @@ function setLoading(show,text='Memuat data...'){
   document.getElementById('loadingText').textContent=text;
 }
 
-async function apiGet(){
-  const res=await fetch(APPS_SCRIPT_URL);
-  const data=await res.json();
-  return data.ok?data.units:[];
+// ═══════════ DEMO MODE — DATA CONTOH (tidak terhubung ke server) ═══════════
+function _buildUnit(o){
+  const panjiT=(o.panji||[]).reduce((a,b)=>a+b.nominal,0);
+  const panduT=(o.pandu||[]).reduce((a,b)=>a+b.nominal,0);
+  const modalUtama=panjiT+panduT;
+  const partners=(o.partners||[]).map(p=>{
+    const fee=p.feeType==='fixed'?p.feeValue:p.feeType==='percent'?p.funding*p.feeValue/100:0;
+    return Object.assign({},p,{feeAmount:fee});
+  });
+  const modalPartner=partners.reduce((a,p)=>a+p.funding,0);
+  const totalFee=partners.reduce((a,p)=>a+p.feeAmount,0);
+  const totalModal=modalUtama+modalPartner;
+  const pctPanji=modalUtama?+(panjiT/modalUtama*100).toFixed(2):0;
+  const pctPandu=modalUtama?+(panduT/modalUtama*100).toFixed(2):0;
+  let keuntunganBersih='';
+  if(o.status==='terjual')keuntunganBersih=o.hargaJual-totalModal-totalFee;
+  return {id:o.id,nama:o.nama,plat:o.plat||'',tahun:o.tahun||'',jenis:o.jenis,tgl:o.tgl,
+    status:o.status,hargaJual:o.hargaJual||0,tglJual:o.tglJual||'',
+    panji:{total:panjiT,biaya:o.panji||[]},pandu:{total:panduT,biaya:o.pandu||[]},
+    pctPanji,pctPandu,partners,totalModal,modalPartner,totalFee,keuntunganBersih};
 }
+const jt=1e6;
+function mockUnits(){return [
+  // — UNIT TERJUAL (untuk profit trend, top performance, evaluasi) —
+  _buildUnit({id:1,nama:'Toyota Avanza G',plat:'B 1234 AVZ',tahun:'2019',jenis:'Mobil',tgl:'2025-08-01',status:'terjual',tglJual:'2025-09-15',hargaJual:135*jt,panji:[{ket:'Beli',nominal:55*jt},{ket:'Servis',nominal:5*jt}],pandu:[{ket:'Beli',nominal:60*jt}]}),
+  _buildUnit({id:2,nama:'Honda Vario 150',plat:'B 5678 VAR',tahun:'2021',jenis:'Motor',tgl:'2025-10-25',status:'terjual',tglJual:'2025-11-20',hargaJual:19*jt,panji:[{ket:'Beli',nominal:8*jt}],pandu:[{ket:'Beli',nominal:8*jt}]}),
+  _buildUnit({id:3,nama:'Honda Brio Satya',plat:'B 9012 BRO',tahun:'2020',jenis:'Mobil',tgl:'2025-10-15',status:'terjual',tglJual:'2025-12-10',hargaJual:165*jt,panji:[{ket:'Beli',nominal:70*jt}],pandu:[{ket:'Beli',nominal:50*jt}],partners:[{nama:'Budi',funding:30*jt,feeType:'percent',feeValue:10}]}),
+  _buildUnit({id:4,nama:'Honda Beat Street',plat:'B 3456 BEA',tahun:'2022',jenis:'Motor',tgl:'2025-12-20',status:'terjual',tglJual:'2026-01-15',hargaJual:15*jt,panji:[{ket:'Beli',nominal:6*jt}],pandu:[{ket:'Beli',nominal:6*jt}]}),
+  _buildUnit({id:5,nama:'Toyota Innova Reborn',plat:'B 7788 INV',tahun:'2018',jenis:'Mobil',tgl:'2026-01-20',status:'terjual',tglJual:'2026-03-20',hargaJual:235*jt,panji:[{ket:'Beli',nominal:100*jt}],pandu:[{ket:'Beli',nominal:100*jt}]}),
+  _buildUnit({id:6,nama:'Honda Jazz RS',plat:'B 2233 JAZ',tahun:'2019',jenis:'Mobil',tgl:'2026-02-25',status:'terjual',tglJual:'2026-04-10',hargaJual:140*jt,panji:[{ket:'Beli',nominal:55*jt}],pandu:[{ket:'Beli',nominal:45*jt}],partners:[{nama:'Andi',funding:20*jt,feeType:'fixed',feeValue:2*jt}]}),
+  _buildUnit({id:7,nama:'Honda PCX 160',plat:'B 4455 PCX',tahun:'2023',jenis:'Motor',tgl:'2026-04-10',status:'terjual',tglJual:'2026-05-05',hargaJual:38*jt,panji:[{ket:'Beli',nominal:15*jt}],pandu:[{ket:'Beli',nominal:15*jt}]}),
+  // — UNIT AKTIF (untuk inventory aging) —
+  _buildUnit({id:8,nama:'Mitsubishi Xpander Ultimate',plat:'B 8899 XPD',tahun:'2021',jenis:'Mobil',tgl:'2026-05-20',status:'aktif',panji:[{ket:'Beli',nominal:90*jt}],pandu:[{ket:'Beli',nominal:90*jt}]}),
+  _buildUnit({id:9,nama:'Yamaha NMAX Connected',plat:'B 1010 NMX',tahun:'2022',jenis:'Motor',tgl:'2026-04-15',status:'aktif',panji:[{ket:'Beli',nominal:12*jt}],pandu:[{ket:'Beli',nominal:12*jt}]}),
+  _buildUnit({id:10,nama:'Honda HR-V SE',plat:'B 2020 HRV',tahun:'2022',jenis:'Mobil',tgl:'2026-03-25',status:'aktif',panji:[{ket:'Beli',nominal:110*jt}],pandu:[{ket:'Beli',nominal:100*jt}],partners:[{nama:'Citra',funding:40*jt,feeType:'percent',feeValue:8}]}),
+  _buildUnit({id:11,nama:'Toyota Rush TRD',plat:'B 3030 RSH',tahun:'2019',jenis:'Mobil',tgl:'2026-01-10',status:'aktif',panji:[{ket:'Beli',nominal:95*jt}],pandu:[{ket:'Beli',nominal:95*jt}],partners:[{nama:'Dewi',funding:50*jt,feeType:'fixed',feeValue:5*jt}]}),
+  _buildUnit({id:12,nama:'Honda CBR 250RR',plat:'B 4040 CBR',tahun:'2021',jenis:'Motor',tgl:'2026-02-15',status:'aktif',panji:[{ket:'Beli',nominal:20*jt}],pandu:[{ket:'Beli',nominal:20*jt}]}),
+  _buildUnit({id:13,nama:'Suzuki Ertiga GX',plat:'B 5050 ERT',tahun:'2020',jenis:'Mobil',tgl:'2025-12-20',status:'aktif',panji:[{ket:'Beli',nominal:85*jt}],pandu:[{ket:'Beli',nominal:85*jt}]}),
+];}
+
+async function apiGet(){ await new Promise(r=>setTimeout(r,300)); return mockUnits(); }
 async function apiPost(body){
-  const res=await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify(body)});
-  return res.json();
+  await new Promise(r=>setTimeout(r,200));
+  if(body.action==='login')return {ok:true,role:body.user||'panji'};
+  if(body.action==='get_admin_config')return {ok:true,emails:'demo@perkasa.com',emailEnabled:false};
+  showToast('ℹ️ Mode Demo: perubahan tidak disimpan (tanpa koneksi server).');
+  return {ok:true,id:Date.now()};
 }
 
 async function loadUnits(){
