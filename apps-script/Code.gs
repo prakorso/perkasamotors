@@ -273,10 +273,12 @@ function getBiayaMap(ss) {
 }
 
 function saveBiaya(ss, unitId, unitNama, biayaObj, who) {
-  if (!biayaObj || !biayaObj.biaya) return;
+  // Accept {biaya:[...]} or array directly
+  const items = Array.isArray(biayaObj) ? biayaObj : ((biayaObj && biayaObj.biaya) || []);
+  if (!items.length) return;
   const sheet = getOrCreateSheet(ss, SHEET_BIAYA);
   ensureBiayaHeaders(sheet);
-  biayaObj.biaya.forEach(b => {
+  items.forEach(b => {
     if (!b.keterangan && !b.nominal) return;
     sheet.appendRow([unitId, unitNama, who, b.keterangan || '', parseNum(b.nominal)]);
   });
@@ -323,8 +325,10 @@ function deletePartnersByUnitId(ss, unitId) {
 
 // ─── BUILD UNIT ROW ──────────────────────────────────────────
 function buildUnitRow(id, d) {
-  const panji  = d.panji  || { biaya: [] };
-  const pandu  = d.pandu  || { biaya: [] };
+  // panji/pandu can arrive as {biaya:[...]} or as an array directly — normalise both
+  const normBiaya = x => Array.isArray(x) ? x : ((x && x.biaya) || []);
+  const panji  = { biaya: normBiaya(d.panji)  };
+  const pandu  = { biaya: normBiaya(d.pandu)  };
   const partners = d.partners || [];
 
   const modalPanji  = (panji.biaya  || []).reduce((s,b) => s + parseNum(b.nominal), 0);

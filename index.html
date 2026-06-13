@@ -1147,8 +1147,10 @@ function startEdit(id){
   if(u.status==='terjual'){document.getElementById('hargaJual').value=u.hargaJual;document.getElementById('tglJual').value=u.tglJual||u.tgl||'';}
   document.getElementById('biayas-panji').innerHTML='';
   document.getElementById('biayas-pandu').innerHTML='';
-  (u.panji.biaya.length?u.panji.biaya:[{keterangan:'',nominal:''}]).forEach(b=>addBiaya('panji',b.keterangan,b.nominal));
-  (u.pandu.biaya.length?u.pandu.biaya:[{keterangan:'',nominal:''}]).forEach(b=>addBiaya('pandu',b.keterangan,b.nominal));
+  const pBiaya=((u.panji&&u.panji.biaya)||[]);
+  const dBiaya=((u.pandu&&u.pandu.biaya)||[]);
+  (pBiaya.length?pBiaya:[{keterangan:'',nominal:''}]).forEach(b=>addBiaya('panji',b.keterangan,b.nominal));
+  (dBiaya.length?dBiaya:[{keterangan:'',nominal:''}]).forEach(b=>addBiaya('pandu',b.keterangan,b.nominal));
   document.getElementById('partners-list').innerHTML='';
   (u.partners||[]).forEach(p=>addPartner(p.nama,p.funding,p.feeType,p.feeValue));
   document.getElementById('editBanner').classList.add('show');
@@ -1176,7 +1178,7 @@ async function simpanUnit(){
   const tglJual=status==='terjual'?(document.getElementById('tglJual').value||new Date().toISOString().slice(0,10)):'';
   const hargaBeli=parseFloat(document.getElementById('hargaBeli').value)||0;
   const targetJual=parseFloat(document.getElementById('targetJual').value)||0;
-  const payload={nama,plat:document.getElementById('platUnit').value.trim(),tahun:document.getElementById('tahunUnit').value.trim(),jenis:document.getElementById('jenisUnit').value,tgl:document.getElementById('tglMasuk').value||new Date().toISOString().slice(0,10),status,hargaJual:harga,tglJual,panji:p,pandu:d,partners:getPartners(),
+  const payload={nama,plat:document.getElementById('platUnit').value.trim(),tahun:document.getElementById('tahunUnit').value.trim(),jenis:document.getElementById('jenisUnit').value,tgl:document.getElementById('tglMasuk').value||new Date().toISOString().slice(0,10),status,hargaJual:harga,tglJual,panji:{biaya:p},pandu:{biaya:d},partners:getPartners(),
     sumberBeli:document.getElementById('sumberBeli').value.trim(),pic:document.getElementById('picUnit').value.trim(),kategori:document.getElementById('kategoriUnit').value,kondisi:document.getElementById('kondisiUnit').value,lokasi:document.getElementById('lokasiUnit').value.trim(),hargaBeli,targetJual,targetProfit:targetJual-hargaBeli};
 
   const btn=document.getElementById('saveBtn');
