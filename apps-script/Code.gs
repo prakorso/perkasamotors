@@ -63,6 +63,7 @@ function doPost(e) {
       case 'save_admin_config':  return handleSaveConfig(ss, body);
       case 'save_investor':      return handleSaveInvestor(ss, body);
       case 'delete_investor':    return handleDeleteInvestor(ss, body);
+      case 'fix_kas_bisnis':     return handleFixKasBisnis(ss, body);
       default: return json({ ok: false, error: 'Unknown action: ' + body.action });
     }
   } catch(err) {
@@ -262,6 +263,34 @@ function handleDeleteInvestor(ss, body) {
     }
   }
   return json({ ok: false, error: 'Investor tidak ditemukan.' });
+}
+
+// ─── BACKFILL Kas Bisnis untuk unit yang sudah ada ───────────
+function handleFixKasBisnis(ss, body) {
+  const cfg = getConfig(ss);
+  const isInternalToken = body.adminPass === '__internal__';
+  if (!isInternalToken && (body.adminPass || '') !== (cfg['admin_pass'] || 'admin123'))
+    return json({ ok: false, error: 'Password admin salah.' });
+
+  const sheetU = getOrCreateSheet(ss, SHEET_UNITS);
+  ensureUnitHeaders(sheetU); // pastikan kolom header ada
+  const data = sheetU.getDataRange().getValues();
+  let updated = 0;
+  for (let i = 1; i < data.length; i++) {
+    const r = data[i];
+    const status = String(r[COL.STATUS] || '');
+    if (status !== 'terjual') continue;
+    const bersih = parseNum(r[COL.KEUNTUNGAN_BERSIH]);
+    if (!bersih) continue;
+    const kasBisnis = bersih * 0.10;
+    const bagiBersih = bersih * 0.90;
+    // Update Kas Bisnis, Bagi Panji, Bagi Pandu pakai skema baru
+    sheetU.getRange(i + 1, COL.BAGI_PANJI + 1).setValue(bagiBersih * 0.5);
+    sheetU.getRange(i + 1, COL.BAGI_PANDU + 1).setValue(bagiBersih * 0.5);
+    sheetU.getRange(i + 1, COL.KAS_BISNIS + 1).setValue(kasBisnis);
+    updated++;
+  }
+  return json({ ok: true, updated });
 }
 
 // ─── FETCH ALL UNITS ─────────────────────────────────────────
@@ -518,15 +547,33 @@ function getOrCreateSheet(ss, name) {
 }
 
 function ensureUnitHeaders(sheet) {
-  if (sheet.getLastRow() > 0) return;
-  sheet.appendRow([
+  const ALL_HEADERS = [
     'ID','Nama Unit','Jenis','Tanggal Masuk','Status','Harga Jual',
     'Modal Panji','% Panji','Modal Pandu','% Pandu','Modal Partner',
     'Total Modal','Total Fee Partner','Keuntungan Kotor','Keuntungan Bersih',
     'Bagi Panji','Bagi Pandu','Tanggal Jual','Plat Nomor','Tahun Unit',
     'Sumber Beli','PIC','Kategori','Kondisi','Lokasi',
     'Harga Beli','Target Jual','Target Profit','Kas Bisnis (10%)'
-  ]);
+  ];
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(ALL_HEADERS);
+    return;
+  }
+  // Sheet sudah ada — cek dan tambah kolom yang belum ada
+  const existing = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+    .map(h => String(h).trim());
+  ALL_HEADERS.forEach((h, i) => {
+    if (!existing.includes(h)) {
+      // Kolom belum ada — tambah di posisi i+1 (1-based)
+      const col = i + 1;
+      if (col > sheet.getLastColumn()) {
+        sheet.getRange(1, col).setValue(h);
+      } else {
+        sheet.insertColumnBefore(col);
+        sheet.getRange(1, col).setValue(h);
+      }
+    }
+  });
 }
 
 function ensureBiayaHeaders(sheet) {
