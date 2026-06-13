@@ -60,6 +60,8 @@ function doPost(e) {
       case 'update_status':  return handleUpdateStatus(ss, body);
       case 'get_admin_config':   return handleGetConfig(ss, body);
       case 'save_admin_config':  return handleSaveConfig(ss, body);
+      case 'save_investor':      return handleSaveInvestor(ss, body);
+      case 'delete_investor':    return handleDeleteInvestor(ss, body);
       default: return json({ ok: false, error: 'Unknown action: ' + body.action });
     }
   } catch(err) {
@@ -181,7 +183,17 @@ function handleGetConfig(ss, body) {
   const cfg = getConfig(ss);
   if ((body.adminPass || '') !== (cfg['admin_pass'] || 'admin123'))
     return json({ ok: false, error: 'Password admin salah.' });
-  return json({ ok: true, config: cfg });
+  // Build investor list (username + password) so admin can manage them.
+  const investors = Object.keys(cfg)
+    .filter(k => k.startsWith('inv_') || k.startsWith('investor_'))
+    .map(k => ({ username: k, password: cfg[k] }));
+  return json({
+    ok: true,
+    config: cfg,
+    emails: cfg['emails'] || '',
+    emailEnabled: String(cfg['email_enabled']) === 'true',
+    investors: investors
+  });
 }
 
 function handleSaveConfig(ss, body) {
@@ -190,12 +202,56 @@ function handleSaveConfig(ss, body) {
     return json({ ok: false, error: 'Password admin salah.' });
 
   const sheet = getOrCreateSheet(ss, SHEET_CONFIG);
+  // Accept the flat field names the dashboard actually sends.
+  if (body.panjiPass)    setConfig(sheet, 'panji_pass',  body.panjiPass);
+  if (body.panduPass)    setConfig(sheet, 'pandu_pass',  body.panduPass);
+  if (body.newAdminPass) setConfig(sheet, 'admin_pass',  body.newAdminPass);
+  if (body.emails !== undefined)       setConfig(sheet, 'emails', body.emails);
+  if (body.emailEnabled !== undefined) setConfig(sheet, 'email_enabled', String(!!body.emailEnabled));
+
+  // Also accept a generic settings object (forward-compatible).
   const s = body.settings || {};
   ['brand','tagline','taglineShort','accent','logoType','initial',
    'panji_pass','pandu_pass','admin_pass','emails','email_enabled'].forEach(k => {
     if (s[k] !== undefined) setConfig(sheet, k, s[k]);
   });
   return json({ ok: true });
+}
+
+// ─── INVESTOR ACCOUNTS ───────────────────────────────────────
+// Stored in Config as rows keyed "inv_<name>" = password.
+function handleSaveInvestor(ss, body) {
+  const cfg = getConfig(ss);
+  if ((body.adminPass || '') !== (cfg['admin_pass'] || 'admin123'))
+    return json({ ok: false, error: 'Password admin salah.' });
+
+  let username = (body.username || '').toLowerCase().trim().replace(/\s+/g, '_');
+  const password = (body.password || '').trim();
+  if (!username || !password)
+    return json({ ok: false, error: 'Username dan password wajib diisi.' });
+  if (!username.startsWith('inv_') && !username.startsWith('investor_'))
+    username = 'inv_' + username;
+
+  const sheet = getOrCreateSheet(ss, SHEET_CONFIG);
+  setConfig(sheet, username, password);
+  return json({ ok: true, username: username });
+}
+
+function handleDeleteInvestor(ss, body) {
+  const cfg = getConfig(ss);
+  if ((body.adminPass || '') !== (cfg['admin_pass'] || 'admin123'))
+    return json({ ok: false, error: 'Password admin salah.' });
+
+  const username = (body.username || '').toLowerCase().trim();
+  const sheet = getOrCreateSheet(ss, SHEET_CONFIG);
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).toLowerCase() === username) {
+      sheet.deleteRow(i + 1);
+      return json({ ok: true });
+    }
+  }
+  return json({ ok: false, error: 'Investor tidak ditemukan.' });
 }
 
 // ─── FETCH ALL UNITS ─────────────────────────────────────────
