@@ -23,9 +23,10 @@ const COL = {
   TGL_JUAL:17, PLAT:18, TAHUN:19,
   // Phase 4
   SUMBER_BELI:20, PIC:21, KATEGORI:22, KONDISI:23, LOKASI:24,
-  HARGA_BELI:25, TARGET_JUAL:26, TARGET_PROFIT:27
+  HARGA_BELI:25, TARGET_JUAL:26, TARGET_PROFIT:27,
+  KAS_BISNIS:28
 };
-const TOTAL_COLS = 28;
+const TOTAL_COLS = 29;
 
 // ─── JSON response ──────────────────────────────────────────
 // Apps Script web apps deployed with access "Anyone" are reachable
@@ -163,8 +164,10 @@ function handleUpdateStatus(ss, body) {
 
   const kotor  = harga - totalModal;
   const bersih = kotor - totalFee;
-  const bP     = bersih * pctPanji / 100;
-  const bD     = bersih * pctPandu / 100;
+  const kasBisnis = bersih * 0.10;
+  const bagiBersih = bersih * 0.90;
+  const bP     = bagiBersih * 0.5;
+  const bD     = bagiBersih * 0.5;
 
   r[COL.STATUS]            = 'terjual';
   r[COL.HARGA_JUAL]        = harga;
@@ -172,7 +175,8 @@ function handleUpdateStatus(ss, body) {
   r[COL.KEUNTUNGAN_BERSIH] = bersih;
   r[COL.BAGI_PANJI]        = bP;
   r[COL.BAGI_PANDU]        = bD;
-  r[COL.TGL_JUAL]          = new Date().toISOString().slice(0,10);
+  r[COL.KAS_BISNIS]        = kasBisnis;
+  r[COL.TGL_JUAL]          = body.tglJual || new Date().toISOString().slice(0,10);
 
   sheetU.getRange(rowIdx + 1, 1, 1, TOTAL_COLS).setValues([r]);
   return json({ ok: true });
@@ -181,7 +185,10 @@ function handleUpdateStatus(ss, body) {
 // ─── ADMIN CONFIG ────────────────────────────────────────────
 function handleGetConfig(ss, body) {
   const cfg = getConfig(ss);
-  if ((body.adminPass || '') !== (cfg['admin_pass'] || 'admin123'))
+  // '__internal__' token means the request came from a logged-in internal user (Panji/Pandu)
+  // They have full admin access without needing the admin password.
+  const isInternalToken = body.adminPass === '__internal__';
+  if (!isInternalToken && (body.adminPass || '') !== (cfg['admin_pass'] || 'admin123'))
     return json({ ok: false, error: 'Password admin salah.' });
   // Build investor list (username + password) so admin can manage them.
   const investors = Object.keys(cfg)
@@ -198,7 +205,8 @@ function handleGetConfig(ss, body) {
 
 function handleSaveConfig(ss, body) {
   const cfg = getConfig(ss);
-  if ((body.adminPass || '') !== (cfg['admin_pass'] || 'admin123'))
+  const isInternalToken = body.adminPass === '__internal__';
+  if (!isInternalToken && (body.adminPass || '') !== (cfg['admin_pass'] || 'admin123'))
     return json({ ok: false, error: 'Password admin salah.' });
 
   const sheet = getOrCreateSheet(ss, SHEET_CONFIG);
@@ -222,7 +230,8 @@ function handleSaveConfig(ss, body) {
 // Stored in Config as rows keyed "inv_<name>" = password.
 function handleSaveInvestor(ss, body) {
   const cfg = getConfig(ss);
-  if ((body.adminPass || '') !== (cfg['admin_pass'] || 'admin123'))
+  const isInternalToken = body.adminPass === '__internal__';
+  if (!isInternalToken && (body.adminPass || '') !== (cfg['admin_pass'] || 'admin123'))
     return json({ ok: false, error: 'Password admin salah.' });
 
   let username = (body.username || '').toLowerCase().trim().replace(/\s+/g, '_');
@@ -239,7 +248,8 @@ function handleSaveInvestor(ss, body) {
 
 function handleDeleteInvestor(ss, body) {
   const cfg = getConfig(ss);
-  if ((body.adminPass || '') !== (cfg['admin_pass'] || 'admin123'))
+  const isInternalToken = body.adminPass === '__internal__';
+  if (!isInternalToken && (body.adminPass || '') !== (cfg['admin_pass'] || 'admin123'))
     return json({ ok: false, error: 'Password admin salah.' });
 
   const username = (body.username || '').toLowerCase().trim();
@@ -307,7 +317,10 @@ function getUnits(ss) {
       totalFee,
       pctPanji:  +pctPanji.toFixed(2),
       pctPandu:  +pctPandu.toFixed(2),
-      keuntunganBersih: parseNum(r[COL.KEUNTUNGAN_BERSIH])
+      keuntunganBersih: parseNum(r[COL.KEUNTUNGAN_BERSIH]),
+      bagiPanji: parseNum(r[COL.BAGI_PANJI]),
+      bagiPandu: parseNum(r[COL.BAGI_PANDU]),
+      kasBisnis: parseNum(r[COL.KAS_BISNIS])
     };
   }).filter(Boolean);
 }
@@ -398,15 +411,20 @@ function buildUnitRow(id, d) {
     return s + feeAmount;
   }, 0);
   const base        = modalPanji + modalPandu;
-  const pctPanji    = base > 0 ? (modalPanji / base) * 100 : 0;
-  const pctPandu    = base > 0 ? (modalPandu / base) * 100 : 0;
+  // Skema: 10% kas bisnis, 90% dibagi 50/50 Panji & Pandu
+  const BISNIS_CUT  = 0.10;
+  const pctPanji    = 50; // selalu 50% dari porsi yg dibagi (setelah kas bisnis)
+  const pctPandu    = 50;
 
   const status   = d.status || 'aktif';
   const harga    = status === 'terjual' ? parseNum(d.hargaJual) : 0;
   const kotor    = status === 'terjual' ? harga - totalModal : '';
-  const bersih   = status === 'terjual' ? (kotor - totalFee)  : '';
-  const bP       = status === 'terjual' ? bersih * pctPanji / 100 : '';
-  const bD       = status === 'terjual' ? bersih * pctPandu / 100 : '';
+  const bersih   = status === 'terjual' ? (typeof kotor === 'number' ? kotor - totalFee : '') : '';
+  // Skema bagi: potong 10% dulu untuk kas bisnis, sisa 90% dibagi 50/50
+  const kasBisnis = status === 'terjual' && typeof bersih === 'number' ? bersih * BISNIS_CUT : '';
+  const bagiBersih = status === 'terjual' && typeof bersih === 'number' ? bersih * (1 - BISNIS_CUT) : '';
+  const bP       = status === 'terjual' && typeof bagiBersih === 'number' ? bagiBersih * 0.5 : '';
+  const bD       = status === 'terjual' && typeof bagiBersih === 'number' ? bagiBersih * 0.5 : '';
 
   const row = new Array(TOTAL_COLS).fill('');
   row[COL.ID]                = id;
@@ -426,6 +444,7 @@ function buildUnitRow(id, d) {
   row[COL.KEUNTUNGAN_BERSIH] = bersih;
   row[COL.BAGI_PANJI]        = bP;
   row[COL.BAGI_PANDU]        = bD;
+  row[COL.KAS_BISNIS]        = kasBisnis;
   row[COL.TGL_JUAL]          = status === 'terjual' ? (d.tglJual || new Date().toISOString().slice(0,10)) : '';
   row[COL.PLAT]              = d.plat   || '';
   row[COL.TAHUN]             = d.tahun  || '';
@@ -506,7 +525,7 @@ function ensureUnitHeaders(sheet) {
     'Total Modal','Total Fee Partner','Keuntungan Kotor','Keuntungan Bersih',
     'Bagi Panji','Bagi Pandu','Tanggal Jual','Plat Nomor','Tahun Unit',
     'Sumber Beli','PIC','Kategori','Kondisi','Lokasi',
-    'Harga Beli','Target Jual','Target Profit'
+    'Harga Beli','Target Jual','Target Profit','Kas Bisnis (10%)'
   ]);
 }
 

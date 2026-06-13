@@ -407,9 +407,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <div class="overlay" id="modalOverlay">
   <div class="modal">
-    <h2>Update Harga Jual</h2>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Masukkan harga jual unit ini:</p>
-    <input type="number" id="modalHarga" placeholder="Harga jual (Rp)">
+    <h2>Tandai Terjual</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Masukkan harga jual dan tanggal:</p>
+    <input type="number" id="modalHarga" placeholder="Harga jual (Rp)" style="margin-bottom:10px">
+    <input type="date" id="modalTglJual" style="margin-bottom:0">
     <div class="modal-btns">
       <button class="cancel" onclick="closeModal()">Batal</button>
       <button class="confirm" onclick="confirmTerjual()">Simpan</button>
@@ -702,6 +703,25 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           </div>
           <p style="font-size:11px;color:var(--text3);margin-top:10px">ROI dihitung atas modal inti (Panji+Pandu), profit setelah fee partner. Holding = lama hari dari masuk sampai terjual.</p>
         </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-hdr"><div class="card-title">Holding Distribution</div></div>
+            <div class="chart-wrap"><canvas id="chartHolding" role="img" aria-label="Distribusi holding period"></canvas></div>
+            <p style="font-size:11px;color:var(--text3);margin-top:8px">Distribusi lama hari modal berputar per unit terjual.</p>
+          </div>
+          <div class="card">
+            <div class="card-hdr"><div class="card-title">Win Rate Trend per Kuartal</div></div>
+            <div class="chart-wrap"><canvas id="chartWinRate" role="img" aria-label="Win rate per kuartal"></canvas></div>
+            <p style="font-size:11px;color:var(--text3);margin-top:8px">Persentase unit yang menghasilkan profit positif per kuartal.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">ROI per Unit (semua transaksi)</div></div>
+          <div class="chart-wrap" style="height:280px"><canvas id="chartRoiBar" role="img" aria-label="ROI bar chart per unit"></canvas></div>
+          <p style="font-size:11px;color:var(--text3);margin-top:8px">ROI atas modal inti per unit terjual, diurutkan dari tertinggi.</p>
+        </div>
       </div>
 
       <div id="sec-evaluasi" class="section role-internal">
@@ -760,6 +780,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="card">
           <div class="card-hdr"><div class="card-title">🧮 Simulasi Imbal Hasil</div></div>
           <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Estimasi berbasis ROI rata-rata historis per siklus jual. Bukan jaminan — hasil aktual bergantung performa unit.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
+            <div class="fg" style="flex:1;min-width:160px;margin-bottom:0">
+              <label>Fee Investor per Transaksi (%)</label>
+              <input type="number" id="simFee" placeholder="mis. 5" step="0.5" oninput="renderSimulator()">
+            </div>
+            <div class="fg" style="flex:1;min-width:160px;margin-bottom:0">
+              <label>Atau gunakan ROI historis otomatis</label>
+              <select id="simMode" onchange="renderSimulator()" style="padding:10px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;background:var(--surface);color:var(--text)">
+                <option value="custom">Pakai fee yang saya set</option>
+                <option value="roi">Pakai ROI historis rata-rata</option>
+              </select>
+            </div>
+          </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
             <div class="fg" style="flex:1;min-width:160px;margin-bottom:0">
               <label>Nominal Investasi (Rp)</label>
@@ -827,11 +860,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <p style="font-size:12px;color:var(--text3);margin-top:14px;text-align:center">Pengaturan tampilan disimpan di browser ini. Perubahan langsung terlihat.</p>
         </div>
 
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">🔐 Akses Admin</div></div>
+        <div class="card role-internal">
+          <div class="card-hdr"><div class="card-title">🔐 Manajemen Akses</div></div>
 
-          <div id="adminLocked">
-            <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Masukkan password admin untuk mengelola password login & notifikasi email.</p>
+          <div id="adminLocked" style="display:none">
+            <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Masukkan password admin untuk akses panel ini.</p>
             <div class="fg" style="margin-bottom:12px">
               <label>Password Admin</label>
               <input type="password" id="adminPassInput" placeholder="Password admin" onkeydown="if(event.key==='Enter')unlockAdmin()">
@@ -839,7 +872,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <button class="btn-primary" style="margin-top:0" onclick="unlockAdmin()">Buka Panel Admin</button>
           </div>
 
-          <div id="adminPanel" style="display:none">
+          <div id="adminPanel">
             <div class="fg" style="margin-bottom:16px">
               <label>Password Login Panji (kosongkan jika tidak diubah)</label>
               <input type="text" id="admPanjiPass" placeholder="Password baru Panji">
@@ -1014,7 +1047,7 @@ function setLoading(show,text='Memuat data...'){
 }
 
 async function apiGet(){
-  const res=await fetch(APPS_SCRIPT_URL);
+  const res=await fetch(APPS_SCRIPT_URL,{cache:'no-store'});
   const data=await res.json();
   return data.ok?data.units:[];
 }
@@ -1184,7 +1217,8 @@ function updatePreview(){
     document.getElementById('pvH').textContent=fmtRp(harga);
     document.getElementById('pvKK').textContent=fmtRp(kotor);
     document.getElementById('pvU').textContent=fmtRp(bersih);
-    document.getElementById('pvB').textContent=fmtRp(bersih*pctP/100)+' / '+fmtRp(bersih*pctD/100);
+    const kasBisnis=bersih*0.10, bagiBersih=bersih*0.90;
+    document.getElementById('pvB').textContent='Panji: '+fmtRp(bagiBersih*0.5)+' / Pandu: '+fmtRp(bagiBersih*0.5)+' (Kas Bisnis: '+fmtRp(kasBisnis)+')';
     ['pvHR','pvKKR','pvUR','pvBR'].forEach(id=>document.getElementById(id).style.display='flex');
     document.getElementById('pvUR').className='pv-row '+(bersih>=0?'profit':'loss');
   }else{['pvHR','pvKKR','pvUR','pvBR'].forEach(id=>document.getElementById(id).style.display='none');}
@@ -1328,7 +1362,10 @@ function renderUnits(){
     const sold=u.status==='terjual';
     const kotor=sold?(+u.hargaJual-+u.totalModal):null;
     const bersih=sold?(u.keuntunganBersih!==undefined&&u.keuntunganBersih!==''?+u.keuntunganBersih:kotor-(+u.totalFee||0)):null;
-    const bP=sold?bersih*u.pctPanji/100:null,bD=sold?bersih*u.pctPandu/100:null;
+    const kasBisnis=sold&&bersih!==null?bersih*0.10:null;
+    const bagiBersih=sold&&bersih!==null?bersih*0.90:null;
+    const bP=sold&&bagiBersih!==null?(+u.bagiPanji||bagiBersih*0.5):null;
+    const bD=sold&&bagiBersih!==null?(+u.bagiPandu||bagiBersih*0.5):null;
     const hasPartner=(u.partners&&u.partners.length>0)||(+u.modalPartner>0);
     const partnerChips=(u.partners||[]).map(p=>{
       const fee=p.feeAmount?` · fee ${fmtRp(p.feeAmount)}`:'';
@@ -1368,6 +1405,7 @@ function renderUnits(){
           <div><span class="sl">Profit Bersih: </span><span class="sv ${bersih>=0?'untung':'rugi'}">${fmtRp(bersih)}</span></div>
           <div><span class="sl">Bagi Panji: </span><span class="sv untung">${fmtRp(bP)}</span></div>
           <div><span class="sl">Bagi Pandu: </span><span class="sv untung">${fmtRp(bD)}</span></div>
+          <div><span class="sl">Kas Bisnis (10%): </span><span class="sv" style="color:var(--blue)">${fmtRp(kasBisnis)}</span></div>
         `:`<div><span class="sl">Status: </span><span class="sv ${sold?'untung':'pending'}">${sold?'Terjual':'Belum terjual'}</span></div>
            <div><span class="sl">Holding: </span><span class="sv">${holdingDays(u)} hari</span></div>
            ${ig&&+u.hargaBeli>0?`<div><span class="sl">Harga Beli: </span><span class="sv">${fmtRp(u.hargaBeli)}</span></div>`:''}
@@ -1381,6 +1419,7 @@ function renderUnits(){
 function openTerjualModal(id){
   pendingTerjualId=id;
   document.getElementById('modalHarga').value='';
+  document.getElementById('modalTglJual').value=new Date().toISOString().slice(0,10);
   document.getElementById('modalOverlay').classList.add('show');
   setTimeout(()=>document.getElementById('modalHarga').focus(),100);
 }
@@ -1388,8 +1427,9 @@ function closeModal(){document.getElementById('modalOverlay').classList.remove('
 async function confirmTerjual(){
   const h=parseFloat(document.getElementById('modalHarga').value)||0;
   if(!h){showToast('⚠️ Harga jual harus diisi!');return;}
+  const tgl=document.getElementById('modalTglJual').value||new Date().toISOString().slice(0,10);
   closeModal(); setSyncStatus('syncing'); setLoading(true,'Mengupdate status...');
-  const res=await apiPost({action:'update_status',id:pendingTerjualId,hargaJual:h});
+  const res=await apiPost({action:'update_status',id:pendingTerjualId,hargaJual:h,tglJual:tgl});
   setLoading(false);
   if(res.ok){setSyncStatus('ok');showToast('✅ Status berhasil diupdate!');await loadUnits();renderUnits();}
   else{setSyncStatus('error');showToast('❌ Gagal: '+(res.error||''));}
@@ -1635,6 +1675,50 @@ function renderInsight(){
     </tr>`;
   }).join('');
   document.getElementById('trackTable').innerHTML=head+'<tbody>'+(body||`<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Belum ada unit terjual.</td></tr>`)+'</tbody>';
+
+  renderHoldingChart(ins.perUnit);
+  renderWinRateChart(ins.perUnit);
+  renderRoiBarChart(ins.perUnit);
+}
+
+function renderHoldingChart(perUnit){
+  const el=document.getElementById('chartHolding');
+  if(!el)return;
+  const holds=perUnit.map(x=>x.hold||0).filter(h=>h>0);
+  const bins=[0,30,60,90,120,180];
+  const labels=['<30hr','30-60','60-90','90-120','120-180','>180hr'];
+  const counts=labels.map((_,i)=>holds.filter(h=>h>=bins[i]&&(i===bins.length-1||h<bins[i+1])).length);
+  if(window._chartHolding)window._chartHolding.destroy();
+  window._chartHolding=new Chart(el,{type:'bar',data:{labels,datasets:[{label:'Jumlah Unit',data:counts,backgroundColor:'rgba(37,99,201,0.7)',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:'rgba(0,0,0,0.06)'}}}}});
+}
+
+function renderWinRateChart(perUnit){
+  const el=document.getElementById('chartWinRate');
+  if(!el)return;
+  const byQ={};
+  perUnit.forEach(x=>{
+    const dt=saleDateOf(x.u);if(!dt)return;
+    const y=dt.slice(0,4),m=parseInt(dt.slice(5,7));
+    const q=y+'Q'+Math.ceil(m/3);
+    if(!byQ[q])byQ[q]={wins:0,total:0};
+    byQ[q].total++;
+    if(x.profit>0)byQ[q].wins++;
+  });
+  const labels=Object.keys(byQ).sort();
+  const data=labels.map(q=>byQ[q].total>0?+(byQ[q].wins/byQ[q].total*100).toFixed(1):0);
+  if(window._chartWinRate)window._chartWinRate.destroy();
+  window._chartWinRate=new Chart(el,{type:'line',data:{labels,datasets:[{label:'Win Rate (%)',data,borderColor:'#178A5A',backgroundColor:'rgba(23,138,90,0.12)',tension:0.3,fill:true,pointRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}}}});
+}
+
+function renderRoiBarChart(perUnit){
+  const el=document.getElementById('chartRoiBar');
+  if(!el)return;
+  const sorted=perUnit.slice().sort((a,b)=>b.roi-a.roi);
+  const labels=sorted.map(x=>x.u.nama);
+  const data=sorted.map(x=>+x.roi.toFixed(1));
+  const colors=data.map(r=>r>=0?'rgba(37,99,201,0.75)':'rgba(211,58,44,0.75)');
+  if(window._chartRoiBar)window._chartRoiBar.destroy();
+  window._chartRoiBar=new Chart(el,{type:'bar',data:{labels,datasets:[{label:'ROI (%)',data,backgroundColor:colors,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>i.parsed.x.toFixed(1)+'%'}}},scales:{x:{ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}},y:{ticks:{font:{size:11}}}}}});
 }
 
 function exportInsightPDF(){
@@ -2106,10 +2190,11 @@ function lockAdmin(){
   ['admPanjiPass','admPanduPass','admNewPass'].forEach(id=>document.getElementById(id).value='');
 }
 async function saveAdminConfig(){
+  const pass=adminPassCache||'__internal__';
   setLoading(true,'Menyimpan pengaturan admin...');
   const res=await apiPost({
     action:'save_admin_config',
-    adminPass:adminPassCache,
+    adminPass:pass,
     panjiPass:document.getElementById('admPanjiPass').value.trim(),
     panduPass:document.getElementById('admPanduPass').value.trim(),
     newAdminPass:document.getElementById('admNewPass').value.trim(),
@@ -2174,19 +2259,25 @@ function renderSimulator(){
   const st=dataRoomStats();
   const nominal=parseFloat(document.getElementById('simNominal').value)||0;
   const cyclesIn=parseFloat(document.getElementById('simCycles').value);
-  const cycles=(cyclesIn>0)?cyclesIn:st.cyclesPerYear;
-  const perCycle=nominal*st.roiCycle/100;
+  const cycles=(cyclesIn>0)?cyclesIn:Math.max(1,st.cyclesPerYear);
+  const modeEl=document.getElementById('simMode');
+  const feeEl=document.getElementById('simFee');
+  const mode=modeEl?modeEl.value:'roi';
+  const customFee=feeEl?parseFloat(feeEl.value)||0:0;
+  const roiPct=mode==='custom'&&customFee>0?customFee:st.roiCycle;
+  const perCycle=nominal*roiPct/100;
   const annual=perCycle*cycles;
   const total=nominal+annual;
+  const label=mode==='custom'&&customFee>0?customFee.toFixed(1)+'% fee/transaksi':st.roiCycle.toFixed(1)+'% ROI historis';
   const cards=[
-    ['Return / Siklus',fmtRpShort(perCycle),st.roiCycle.toFixed(1)+'% × modal'],
-    ['Perputaran / Tahun',(cycles||0).toFixed(1)+'×','dari holding '+st.avgHold.toFixed(0)+' hr'],
-    ['Estimasi Return Tahunan',fmtRpShort(annual),'~'+st.annualRoi.toFixed(0)+'% p.a.'],
-    ['Total Modal + Return',fmtRpShort(total),'akhir tahun'],
+    ['Return / Siklus',fmtRpShort(perCycle),''+roiPct.toFixed(1)+'% × modal · '+label],
+    ['Perputaran / Tahun',(cycles||0).toFixed(1)+'×','holding '+st.avgHold.toFixed(0)+' hari'],
+    ['Est. Return Tahunan',fmtRpShort(annual),'~'+(roiPct*cycles).toFixed(0)+'% p.a.'],
+    ['Total Modal + Return',fmtRpShort(total),'akhir '+cycles.toFixed(0)+' siklus'],
   ];
   document.getElementById('simResult').innerHTML=cards.map(([l,v,sub])=>
     `<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${sub}</div></div>`).join('');
-  document.getElementById('simNote').textContent='Estimasi kotor atas modal berbasis ROI historis '+st.roiCycle.toFixed(1)+'% per siklus. Imbal hasil aktual investor mengikuti skema bagi hasil/fee yang disepakati dan tidak dijamin.';
+  document.getElementById('simNote').textContent='Fee '+label+'. Angka di atas adalah estimasi, bukan jaminan.';
 }
 function exportDataRoomPDF(){
   const s=getSettings();
@@ -2279,6 +2370,23 @@ function loadSettingsForm(){
     document.getElementById('imagePreviewWrap').style.display='none';
   }
   onLogoTypeChange();
+  // Auto-unlock admin panel untuk Panji/Pandu/internal user
+  if(isInternal()&&!adminUnlocked){
+    autoUnlockAdmin();
+  }
+}
+
+async function autoUnlockAdmin(){
+  // Internal users (Panji/Pandu) tidak perlu password — gunakan token internal
+  const res=await apiPost({action:'get_admin_config',adminPass:adminPassCache||'__internal__'});
+  if(res.ok){
+    adminUnlocked=true;
+    document.getElementById('adminLocked').style.display='none';
+    document.getElementById('adminPanel').style.display='block';
+    if(res.emails!==undefined)document.getElementById('admEmails').value=res.emails||'';
+    if(res.emailEnabled!==undefined)document.getElementById('admEmailEnabled').checked=!!res.emailEnabled;
+    renderInvestorList(res.investors||[]);
+  }
 }
 
 function onLogoTypeChange(){
