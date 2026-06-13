@@ -276,7 +276,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   .main{margin-left:0 !important;}
   .content{padding:0 !important;}
   .section{display:none !important;}
-  #sec-insight{display:block !important;}
+  .section.active{display:block !important;}
   .card,.insight-hero,.seg-card,.ih-card{break-inside:avoid;page-break-inside:avoid;}
   .two-col{display:grid !important;grid-template-columns:1fr 1fr !important;}
   .chart-wrap{height:230px !important;}
@@ -431,6 +431,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <button class="nav-btn" data-nav="funding" onclick="showSection('funding')"><span class="ni">◆</span><span>Funding Ledger</span></button>
       <button class="nav-btn" data-nav="insight" onclick="showSection('insight')"><span class="ni">★</span><span>Insight &amp; Growth</span></button>
       <button class="nav-btn" data-nav="evaluasi" onclick="showSection('evaluasi')"><span class="ni">◑</span><span>Evaluasi</span></button>
+      <button class="nav-btn role-internal" data-nav="dataroom" onclick="showSection('dataroom')"><span class="ni">◇</span><span>Data Room</span></button>
       <button class="nav-btn" data-nav="pengaturan" onclick="showSection('pengaturan')"><span class="ni">⚙</span><span>Pengaturan</span></button>
     </nav>
     <div class="sb-foot">
@@ -733,6 +734,53 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
       </div>
 
+      <div id="sec-dataroom" class="section role-internal">
+        <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+          <p style="font-size:13px;color:var(--text2);margin:0;max-width:520px">Halaman ringkas untuk calon investor: rekam jejak, ROI historis, dan simulasi imbal hasil. Profit nominal bisnis tidak ditonjolkan — fokus pada metrik return yang relevan bagi pemodal.</p>
+          <button class="btn-sm no-print" onclick="exportDataRoomPDF()">⬇ Export / Cetak PDF</button>
+        </div>
+        <div class="print-header" id="drPrintHeader"></div>
+
+        <div class="insight-hero">
+          <div class="ih-title">
+            <div>
+              <div class="ih-eyebrow">Investment Memo</div>
+              <h2 class="ih-head" id="drBrand">Perkasa Motors</h2>
+            </div>
+            <div class="ih-period" id="drPeriod">—</div>
+          </div>
+          <div class="ih-grid" id="drScorecards"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Mengapa Berinvestasi</div></div>
+          <div id="drNarrative" style="font-size:14px;line-height:1.7;color:var(--text)"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">🧮 Simulasi Imbal Hasil</div></div>
+          <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Estimasi berbasis ROI rata-rata historis per siklus jual. Bukan jaminan — hasil aktual bergantung performa unit.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
+            <div class="fg" style="flex:1;min-width:160px;margin-bottom:0">
+              <label>Nominal Investasi (Rp)</label>
+              <input type="number" id="simNominal" placeholder="50000000" oninput="renderSimulator()">
+            </div>
+            <div class="fg" style="flex:1;min-width:120px;margin-bottom:0">
+              <label>Jumlah Siklus / Tahun</label>
+              <input type="number" id="simCycles" placeholder="otomatis" oninput="renderSimulator()">
+            </div>
+          </div>
+          <div class="ih-grid" id="simResult"></div>
+          <p style="font-size:11px;color:var(--text3);margin-top:10px" id="simNote"></p>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Rekam Jejak Transaksi (Unit Terjual)</div></div>
+          <div class="table-scroll"><table class="track-table" id="drTrackTable"></table></div>
+          <p style="font-size:11px;color:var(--text3);margin-top:10px">ROI atas modal inti, profit setelah fee. Holding = lama hari modal berputar per unit.</p>
+        </div>
+      </div>
+
       <div id="sec-pengaturan" class="section">
         <div class="card">
           <div class="card-hdr"><div class="card-title">Tampilan Logo & Nama</div></div>
@@ -815,7 +863,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             </label>
             <button class="btn-primary" style="margin-top:0" onclick="saveAdminConfig()">💾 Simpan Pengaturan Admin</button>
             <button class="btn-ghost" onclick="lockAdmin()">Tutup Panel</button>
-            <p style="font-size:12px;color:var(--text3);margin-top:12px">Catatan: ini gerbang akses sederhana, bukan keamanan tingkat tinggi. Password tersimpan di Google Sheets kamu (sheet "Config").</p>
+
+            <div style="border-top:1px solid var(--border);margin:20px 0 16px"></div>
+            <div class="card-title" style="margin-bottom:6px">👥 Akun Investor</div>
+            <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Buat login untuk investor. Mereka hanya melihat data investasi pribadinya — profit & margin bisnis disembunyikan. Tips: pakai nama yang sama dengan nama partner di funding (mis. partner "Budi" → username <b>inv_budi</b>).</p>
+            <div id="invList" style="margin-bottom:14px"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+              <div class="fg" style="flex:1;min-width:130px;margin-bottom:0">
+                <label>Username (otomatis diawali inv_)</label>
+                <input type="text" id="invUser" placeholder="budi">
+              </div>
+              <div class="fg" style="flex:1;min-width:130px;margin-bottom:0">
+                <label>Password</label>
+                <input type="text" id="invPass" placeholder="password investor">
+              </div>
+              <button class="btn-sm" style="height:40px" onclick="addInvestor()">+ Tambah</button>
+            </div>
+
+            <p style="font-size:12px;color:var(--text3);margin-top:16px">Catatan: ini gerbang akses sederhana, bukan keamanan tingkat tinggi. Password tersimpan di Google Sheets kamu (sheet "Config").</p>
           </div>
         </div>
       </div>
@@ -981,9 +1046,9 @@ function closeSidebar(){
 }
 function showSection(s,fromPop){
   // Cegah investor/viewer membuka halaman internal (PHASE 8)
-  const internalOnly=['input','funding','insight','evaluasi'];
+  const internalOnly=['input','funding','insight','evaluasi','dataroom'];
   if(!isInternal() && internalOnly.includes(s)) s='home';
-  const titles={home:'Home Dashboard',input: editingId?'Edit Unit':'Input Unit Baru',unit:'Daftar Unit',funding:'Funding Ledger',insight:'Insight & Growth',evaluasi:'Evaluasi & Rekap',pengaturan:'Pengaturan'};
+  const titles={home:'Home Dashboard',input: editingId?'Edit Unit':'Input Unit Baru',unit:'Daftar Unit',funding:'Funding Ledger',insight:'Insight & Growth',evaluasi:'Evaluasi & Rekap',dataroom:'Data Room — Investor',pengaturan:'Pengaturan'};
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav===s));
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.toggle('active',b.dataset.bn===s));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
@@ -999,6 +1064,7 @@ function showSection(s,fromPop){
   if(s==='funding')renderFunding();
   if(s==='insight')renderInsight();
   if(s==='evaluasi')renderEvaluasi();
+  if(s==='dataroom')renderDataRoom();
   if(s==='pengaturan')loadSettingsForm();
 }
 window.addEventListener('popstate',e=>{
@@ -2026,6 +2092,7 @@ async function unlockAdmin(){
     document.getElementById('adminPanel').style.display='block';
     document.getElementById('admEmails').value=res.emails||'';
     document.getElementById('admEmailEnabled').checked=!!res.emailEnabled;
+    renderInvestorList(res.investors||[]);
     showToast('✅ Panel admin terbuka');
   }else{
     showToast('❌ '+(res.error||'Password admin salah'));
@@ -2057,6 +2124,112 @@ async function saveAdminConfig(){
   }else{
     showToast('❌ '+(res.error||'Gagal menyimpan'));
   }
+}
+
+// ══════════ DATA ROOM / PITCH (PHASE 11) ══════════
+function dataRoomStats(){
+  const ins=computeInsights();
+  const rois=ins.perUnit.map(x=>x.roi).filter(r=>isFinite(r));
+  const roiCycle=rois.length?rois.reduce((a,b)=>a+b,0)/rois.length:0;
+  const avgHold=ins.avgHold||0;
+  const cyclesPerYear=avgHold>0?365/avgHold:0;
+  return {ins,roiCycle,avgHold,cyclesPerYear,
+    annualRoi:roiCycle*cyclesPerYear};
+}
+function renderDataRoom(){
+  const s=getSettings();
+  document.getElementById('drBrand').textContent=s.brand||'Perkasa Motors';
+  const st=dataRoomStats(), ins=st.ins;
+  const fmtMonth=mk=>{ if(!mk)return '—'; const[y,m]=mk.split('-'); return BULAN[parseInt(m)-1]+' '+y; };
+  document.getElementById('drPeriod').textContent=ins.sold.length?(fmtMonth(ins.firstMonth)+' – '+fmtMonth(ins.lastMonth)):'Belum ada penjualan';
+
+  const cards=[
+    ['ROI / Siklus',st.roiCycle.toFixed(1)+'%','rata-rata per unit terjual'],
+    ['Estimasi ROI Tahunan',st.annualRoi.toFixed(0)+'%','ROI siklus × perputaran'],
+    ['Win Rate',ins.winRate.toFixed(0)+'%','unit profit'],
+    ['Avg Holding',st.avgHold.toFixed(0)+' hari','modal → cair'],
+    ['Sell-Through',ins.sellThrough.toFixed(0)+'%','unit terjual / total'],
+    ['Unit Terjual',ins.sold.length,'rekam jejak'],
+  ];
+  document.getElementById('drScorecards').innerHTML=cards.map(([l,v,sub])=>
+    `<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${sub}</div></div>`).join('');
+
+  const cyc=st.cyclesPerYear>0?st.cyclesPerYear.toFixed(1):'—';
+  document.getElementById('drNarrative').innerHTML=
+    `<p style="margin:0 0 10px"><b>${s.brand||'Perkasa Motors'}</b> menjalankan model jual-beli kendaraan dengan perputaran modal cepat. Dari <b>${ins.sold.length} transaksi</b> yang sudah terealisasi, modal inti menghasilkan rata-rata <b>ROI ${st.roiCycle.toFixed(1)}% per siklus</b> dengan masa tahan rata-rata <b>${st.avgHold.toFixed(0)} hari</b>.</p>
+     <p style="margin:0 0 10px">Dengan holding sependek itu, modal dapat berputar sekitar <b>${cyc}× per tahun</b>, sehingga potensi ROI tahunan teranualisasi mencapai <b>~${st.annualRoi.toFixed(0)}%</b>. Tingkat keberhasilan (unit yang menghasilkan profit) berada di <b>${ins.winRate.toFixed(0)}%</b>.</p>
+     <p style="margin:0;color:var(--text2);font-size:13px">Imbal hasil investor diberikan dalam bentuk bagi hasil / fee tetap per unit yang disepakati di awal, dan modal dikembalikan setelah unit terjual. Transparansi penuh tersedia di laporan ini.</p>`;
+
+  if(!document.getElementById('simNominal').value)document.getElementById('simNominal').value=50000000;
+  renderSimulator();
+
+  // track table (reuse insight perUnit, sorted by sale date desc)
+  const rows=ins.perUnit.slice().sort((a,b)=>(saleDateOf(b.u)||'').localeCompare(saleDateOf(a.u)||''));
+  const head=`<thead><tr><th>Unit</th><th>Jenis</th><th class="num">Modal Inti</th><th class="num">Profit</th><th class="num">ROI</th><th class="num">Holding</th></tr></thead>`;
+  const body=rows.map(x=>`<tr><td>${x.u.nama}</td><td>${x.u.jenis||'—'}</td><td class="num">${fmtRpShort(x.mi)}</td><td class="num">${fmtRpShort(x.profit)}</td><td class="num"><span class="roi-badge">${x.roi.toFixed(1)}%</span></td><td class="num">${x.hold!==null?x.hold+' hr':'—'}</td></tr>`).join('')
+    ||`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">Belum ada unit terjual.</td></tr>`;
+  document.getElementById('drTrackTable').innerHTML=head+'<tbody>'+body+'</tbody>';
+}
+function renderSimulator(){
+  const st=dataRoomStats();
+  const nominal=parseFloat(document.getElementById('simNominal').value)||0;
+  const cyclesIn=parseFloat(document.getElementById('simCycles').value);
+  const cycles=(cyclesIn>0)?cyclesIn:st.cyclesPerYear;
+  const perCycle=nominal*st.roiCycle/100;
+  const annual=perCycle*cycles;
+  const total=nominal+annual;
+  const cards=[
+    ['Return / Siklus',fmtRpShort(perCycle),st.roiCycle.toFixed(1)+'% × modal'],
+    ['Perputaran / Tahun',(cycles||0).toFixed(1)+'×','dari holding '+st.avgHold.toFixed(0)+' hr'],
+    ['Estimasi Return Tahunan',fmtRpShort(annual),'~'+st.annualRoi.toFixed(0)+'% p.a.'],
+    ['Total Modal + Return',fmtRpShort(total),'akhir tahun'],
+  ];
+  document.getElementById('simResult').innerHTML=cards.map(([l,v,sub])=>
+    `<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${sub}</div></div>`).join('');
+  document.getElementById('simNote').textContent='Estimasi kotor atas modal berbasis ROI historis '+st.roiCycle.toFixed(1)+'% per siklus. Imbal hasil aktual investor mengikuti skema bagi hasil/fee yang disepakati dan tidak dijamin.';
+}
+function exportDataRoomPDF(){
+  const s=getSettings();
+  document.getElementById('drPrintHeader').innerHTML=`<h1 style="font-family:'DM Serif Display',serif">${s.brand||'Perkasa Motors'}</h1><p>Investment Memo · Dicetak ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</p>`;
+  document.body.classList.add('printing-dataroom');
+  window.print();
+  setTimeout(()=>document.body.classList.remove('printing-dataroom'),500);
+}
+
+// ══════════ AKUN INVESTOR (admin) ══════════
+function renderInvestorList(list){
+  const c=document.getElementById('invList');
+  if(!list.length){c.innerHTML=`<div style="font-size:13px;color:var(--text3);padding:10px 0">Belum ada akun investor.</div>`;return;}
+  c.innerHTML=list.map(inv=>
+    `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px">
+       <div><div style="font-weight:600;font-size:14px">${inv.username}</div><div style="font-size:12px;color:var(--text3)">password: ${inv.password}</div></div>
+       <button class="btn-sm danger" onclick="deleteInvestor('${inv.username}')">Hapus</button>
+     </div>`).join('');
+}
+async function addInvestor(){
+  const u=document.getElementById('invUser').value.trim();
+  const p=document.getElementById('invPass').value.trim();
+  if(!u||!p){showToast('⚠️ Username & password wajib diisi');return;}
+  setLoading(true,'Menambah akun investor...');
+  const res=await apiPost({action:'save_investor',adminPass:adminPassCache,username:u,password:p});
+  setLoading(false);
+  if(res.ok){
+    document.getElementById('invUser').value='';document.getElementById('invPass').value='';
+    showToast('✅ Investor '+res.username+' ditambahkan');
+    refreshInvestorList();
+  }else showToast('❌ '+(res.error||'Gagal menambah'));
+}
+async function deleteInvestor(username){
+  if(!confirm('Hapus akun investor '+username+'?'))return;
+  setLoading(true,'Menghapus akun...');
+  const res=await apiPost({action:'delete_investor',adminPass:adminPassCache,username:username});
+  setLoading(false);
+  if(res.ok){showToast('✅ Akun dihapus');refreshInvestorList();}
+  else showToast('❌ '+(res.error||'Gagal menghapus'));
+}
+async function refreshInvestorList(){
+  const res=await apiPost({action:'get_admin_config',adminPass:adminPassCache});
+  if(res.ok)renderInvestorList(res.investors||[]);
 }
 
 // ══════════ PENGATURAN TAMPILAN ══════════
