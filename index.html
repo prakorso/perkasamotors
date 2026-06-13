@@ -432,6 +432,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <button class="nav-btn" data-nav="funding" onclick="showSection('funding')"><span class="ni">◆</span><span>Funding Ledger</span></button>
       <button class="nav-btn" data-nav="insight" onclick="showSection('insight')"><span class="ni">★</span><span>Insight &amp; Growth</span></button>
       <button class="nav-btn" data-nav="evaluasi" onclick="showSection('evaluasi')"><span class="ni">◑</span><span>Evaluasi</span></button>
+      <button class="nav-btn role-internal" data-nav="kas" onclick="showSection('kas')"><span class="ni">💰</span><span>Kas Bisnis</span></button>
+      <button class="nav-btn role-internal" data-nav="inventori" onclick="showSection('inventori')"><span class="ni">📦</span><span>Inventori Aset</span></button>
       <button class="nav-btn role-internal" data-nav="dataroom" onclick="showSection('dataroom')"><span class="ni">◇</span><span>Data Room</span></button>
       <button class="nav-btn" data-nav="pengaturan" onclick="showSection('pengaturan')"><span class="ni">⚙</span><span>Pengaturan</span></button>
     </nav>
@@ -754,6 +756,93 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
       </div>
 
+      <!-- ═══════════ KAS BISNIS ═══════════ -->
+      <div id="sec-kas" class="section role-internal">
+        <div class="ih-grid" id="kasKPIGrid" style="margin-bottom:18px"></div>
+
+        <div class="card">
+          <div class="card-hdr">
+            <div class="card-title">Riwayat Kas Bisnis (dari unit terjual)</div>
+            <div style="font-size:12px;color:var(--text3)">10% dari profit bersih setiap unit dengan 2 stakeholder (Panji & Pandu)</div>
+          </div>
+          <div class="table-scroll">
+            <table class="track-table" id="kasTable"></table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Pengeluaran Kas Bisnis</div></div>
+          <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Catat penggunaan kas bisnis (beli aset, operasional, dll). Tersimpan lokal di browser ini.</p>
+          <div id="kasKeluarList" style="margin-bottom:14px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+            <div class="fg" style="flex:2;min-width:160px;margin-bottom:0">
+              <label>Keterangan</label>
+              <input type="text" id="kasKeluarKet" placeholder="mis. Beli kamera, operasional">
+            </div>
+            <div class="fg" style="flex:1;min-width:130px;margin-bottom:0">
+              <label>Nominal (Rp)</label>
+              <input type="number" id="kasKeluarNom" placeholder="0">
+            </div>
+            <div class="fg" style="flex:1;min-width:120px;margin-bottom:0">
+              <label>Tanggal</label>
+              <input type="date" id="kasKeluarTgl">
+            </div>
+            <button class="btn-sm" style="height:40px" onclick="tambahKasKeluar()">+ Catat</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ INVENTORI ASET ═══════════ -->
+      <div id="sec-inventori" class="section role-internal">
+        <div class="ih-grid" id="invKPIGrid" style="margin-bottom:18px"></div>
+
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Daftar Aset Non-Kendaraan</div></div>
+          <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Catat aset bisnis seperti kamera, peralatan, dll. Tersimpan lokal di browser ini.</p>
+          <div class="table-scroll">
+            <table class="track-table" id="asetTable"></table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">+ Tambah Aset</div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div class="fg" style="flex:2;min-width:160px;margin-bottom:10px">
+              <label>Nama Aset</label>
+              <input type="text" id="asetNama" placeholder="mis. Kamera Sony A7">
+            </div>
+            <div class="fg" style="flex:1;min-width:120px;margin-bottom:10px">
+              <label>Kategori</label>
+              <select id="asetKategori" style="padding:10px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;background:var(--surface);color:var(--text)">
+                <option>Kamera & Foto</option>
+                <option>Peralatan Bengkel</option>
+                <option>Elektronik</option>
+                <option>Furnitur & Kantor</option>
+                <option>Kendaraan Operasional</option>
+                <option>Lainnya</option>
+              </select>
+            </div>
+            <div class="fg" style="flex:1;min-width:130px;margin-bottom:10px">
+              <label>Nilai Beli (Rp)</label>
+              <input type="number" id="asetNilaiBeli" placeholder="0" oninput="document.getElementById('asetNilaiSkrg').value=this.value">
+            </div>
+            <div class="fg" style="flex:1;min-width:130px;margin-bottom:10px">
+              <label>Nilai Saat Ini (Rp)</label>
+              <input type="number" id="asetNilaiSkrg" placeholder="0">
+            </div>
+            <div class="fg" style="flex:1;min-width:120px;margin-bottom:10px">
+              <label>Tanggal Beli</label>
+              <input type="date" id="asetTgl">
+            </div>
+            <div class="fg" style="flex:2;min-width:160px;margin-bottom:10px">
+              <label>Catatan</label>
+              <input type="text" id="asetCatatan" placeholder="opsional">
+            </div>
+          </div>
+          <button class="btn-primary" style="margin-top:4px" onclick="tambahAset()">💾 Simpan Aset</button>
+        </div>
+      </div>
+
       <div id="sec-dataroom" class="section role-internal">
         <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
           <p style="font-size:13px;color:var(--text2);margin:0;max-width:520px">Halaman ringkas untuk calon investor: rekam jejak, ROI historis, dan simulasi imbal hasil. Profit nominal bisnis tidak ditonjolkan — fokus pada metrik return yang relevan bagi pemodal.</p>
@@ -926,7 +1015,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="bn-btn active" data-bn="home" onclick="showSection('home')"><span class="bn-ic">⌂</span>Dashboard</button>
     <button class="bn-btn" data-bn="unit" onclick="showSection('unit')"><span class="bn-ic">≡</span>Unit</button>
     <button class="bn-btn role-internal" data-bn="funding" onclick="showSection('funding')"><span class="bn-ic">◆</span>Funding</button>
-    <button class="bn-btn role-internal" data-bn="insight" onclick="showSection('insight')"><span class="bn-ic">★</span>Insight</button>
+    <button class="bn-btn role-internal" data-bn="kas" onclick="showSection('kas')"><span class="bn-ic">💰</span>Kas</button>
+    <button class="bn-btn role-internal" data-bn="inventori" onclick="showSection('inventori')"><span class="bn-ic">📦</span>Aset</button>
     <button class="bn-btn" data-bn="pengaturan" onclick="showSection('pengaturan')"><span class="bn-ic">⚙</span>More</button>
   </nav>
   <div class="fab-menu" id="fabMenu">
@@ -1080,9 +1170,9 @@ function closeSidebar(){
 }
 function showSection(s,fromPop){
   // Cegah investor/viewer membuka halaman internal (PHASE 8)
-  const internalOnly=['input','funding','insight','evaluasi','dataroom'];
+  const internalOnly=['input','funding','insight','evaluasi','kas','inventori','dataroom'];
   if(!isInternal() && internalOnly.includes(s)) s='home';
-  const titles={home:'Home Dashboard',input: editingId?'Edit Unit':'Input Unit Baru',unit:'Daftar Unit',funding:'Funding Ledger',insight:'Insight & Growth',evaluasi:'Evaluasi & Rekap',dataroom:'Data Room — Investor',pengaturan:'Pengaturan'};
+  const titles={home:'Home Dashboard',input: editingId?'Edit Unit':'Input Unit Baru',unit:'Daftar Unit',funding:'Funding Ledger',insight:'Insight & Growth',evaluasi:'Evaluasi & Rekap',kas:'Kas Bisnis',inventori:'Inventori Aset',dataroom:'Data Room — Investor',pengaturan:'Pengaturan'};
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav===s));
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.toggle('active',b.dataset.bn===s));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
@@ -1098,6 +1188,8 @@ function showSection(s,fromPop){
   if(s==='funding')renderFunding();
   if(s==='insight')renderInsight();
   if(s==='evaluasi')renderEvaluasi();
+  if(s==='kas')renderKas();
+  if(s==='inventori')renderInventori();
   if(s==='dataroom')renderDataRoom();
   if(s==='pengaturan')loadSettingsForm();
 }
@@ -2218,6 +2310,131 @@ async function saveAdminConfig(){
   }else{
     showToast('❌ '+(res.error||'Gagal menyimpan'));
   }
+}
+
+// ══════════ KAS BISNIS ══════════
+const KAS_KEY = 'pm_kas_keluar';
+function getKasKeluar(){ try{ return JSON.parse(localStorage.getItem(KAS_KEY)||'[]'); }catch(e){ return []; } }
+function saveKasKeluar(arr){ localStorage.setItem(KAS_KEY, JSON.stringify(arr)); }
+
+function kasFromUnits(){
+  // Hitung kas bisnis dari unit terjual yang punya 2 stakeholder (Panji + Pandu)
+  return units.filter(u => u.status==='terjual' && +u.modalPanji>0 && +u.modalPandu>0).map(u => {
+    const bersih = (u.keuntunganBersih!==''&&u.keuntunganBersih!==undefined)
+      ? +u.keuntunganBersih : (+u.hargaJual-+u.totalModal)-(+u.totalFee||0);
+    const kas = +u.kasBisnis > 0 ? +u.kasBisnis : bersih * 0.10;
+    return { unit: u.nama, tgl: u.tglJual||u.tgl, kas, bersih };
+  });
+}
+
+function renderKas(){
+  const masuk = kasFromUnits();
+  const totalMasuk = masuk.reduce((a,x)=>a+x.kas,0);
+  const keluar = getKasKeluar();
+  const totalKeluar = keluar.reduce((a,x)=>a+(+x.nom||0),0);
+  const saldo = totalMasuk - totalKeluar;
+
+  document.getElementById('kasKPIGrid').innerHTML = [
+    ['Total Kas Masuk', fmtRpShort(totalMasuk), masuk.length+' unit terjual'],
+    ['Total Pengeluaran', fmtRpShort(totalKeluar), keluar.length+' entri'],
+    ['Saldo Kas Bisnis', fmtRpShort(saldo), saldo>=0?'tersedia':'defisit'],
+  ].map(([l,v,s])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${s}</div></div>`).join('');
+
+  // Tabel kas masuk
+  const thead=`<thead><tr><th>Unit</th><th class="num">Tanggal Jual</th><th class="num">Profit Bersih</th><th class="num">Kas Bisnis (10%)</th></tr></thead>`;
+  const tbody=masuk.length
+    ? masuk.map(x=>`<tr><td>${x.unit}</td><td class="num">${x.tgl||'—'}</td><td class="num">${fmtRpShort(x.bersih)}</td><td class="num" style="font-weight:600;color:var(--blue)">${fmtRpShort(x.kas)}</td></tr>`).join('')
+    : `<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:16px">Belum ada unit terjual dengan 2 stakeholder.</td></tr>`;
+  document.getElementById('kasTable').innerHTML = thead+'<tbody>'+tbody+'</tbody>';
+
+  // Tabel pengeluaran
+  const c = document.getElementById('kasKeluarList');
+  if(!keluar.length){ c.innerHTML=`<div style="font-size:13px;color:var(--text3)">Belum ada pengeluaran dicatat.</div>`; return; }
+  c.innerHTML=keluar.slice().reverse().map((x,ri)=>{
+    const idx=keluar.length-1-ri;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px">
+      <div><div style="font-weight:600;font-size:14px">${x.ket}</div><div style="font-size:12px;color:var(--text3)">${x.tgl||'—'}</div></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-weight:600;color:var(--red)">${fmtRpShort(+x.nom)}</div>
+        <button class="btn-sm danger" onclick="hapusKasKeluar(${idx})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function tambahKasKeluar(){
+  const ket=document.getElementById('kasKeluarKet').value.trim();
+  const nom=parseFloat(document.getElementById('kasKeluarNom').value)||0;
+  const tgl=document.getElementById('kasKeluarTgl').value;
+  if(!ket||!nom){ showToast('⚠️ Keterangan dan nominal wajib diisi'); return; }
+  const arr=getKasKeluar();
+  arr.push({ket,nom,tgl:tgl||new Date().toISOString().slice(0,10)});
+  saveKasKeluar(arr);
+  document.getElementById('kasKeluarKet').value='';
+  document.getElementById('kasKeluarNom').value='';
+  renderKas();
+  showToast('✅ Pengeluaran dicatat');
+}
+function hapusKasKeluar(idx){
+  if(!confirm('Hapus entri pengeluaran ini?'))return;
+  const arr=getKasKeluar(); arr.splice(idx,1); saveKasKeluar(arr); renderKas();
+}
+
+// ══════════ INVENTORI ASET ══════════
+const ASET_KEY = 'pm_aset_inventori';
+function getAset(){ try{ return JSON.parse(localStorage.getItem(ASET_KEY)||'[]'); }catch(e){ return []; } }
+function saveAset(arr){ localStorage.setItem(ASET_KEY, JSON.stringify(arr)); }
+
+function renderInventori(){
+  const aset = getAset();
+  const totalBeli = aset.reduce((a,x)=>a+(+x.nilaiBeli||0),0);
+  const totalSkrg = aset.reduce((a,x)=>a+(+x.nilaiSkrg||0),0);
+  const depresiasi = totalBeli - totalSkrg;
+
+  document.getElementById('invKPIGrid').innerHTML = [
+    ['Jumlah Aset', aset.length+' item', 'non-kendaraan'],
+    ['Total Nilai Beli', fmtRpShort(totalBeli), 'harga perolehan'],
+    ['Nilai Saat Ini', fmtRpShort(totalSkrg), 'estimasi pasar'],
+    ['Depresiasi', fmtRpShort(depresiasi), totalBeli>0?(depresiasi/totalBeli*100).toFixed(0)+'%':'—'],
+  ].map(([l,v,s])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${s}</div></div>`).join('');
+
+  const thead=`<thead><tr><th>Nama Aset</th><th>Kategori</th><th class="num">Tgl Beli</th><th class="num">Nilai Beli</th><th class="num">Nilai Skrg</th><th class="num">Catatan</th><th></th></tr></thead>`;
+  const tbody = aset.length
+    ? aset.map((x,i)=>`<tr>
+        <td><b>${x.nama}</b></td>
+        <td><span style="font-size:11px;background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:20px">${x.kategori||'—'}</span></td>
+        <td class="num">${x.tgl||'—'}</td>
+        <td class="num">${fmtRpShort(+x.nilaiBeli||0)}</td>
+        <td class="num" style="font-weight:600">${fmtRpShort(+x.nilaiSkrg||0)}</td>
+        <td style="font-size:12px;color:var(--text3)">${x.catatan||'—'}</td>
+        <td><button class="btn-sm danger" onclick="hapusAset(${i})">Hapus</button></td>
+      </tr>`).join('')
+    : `<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Belum ada aset dicatat.</td></tr>`;
+  document.getElementById('asetTable').innerHTML = thead+'<tbody>'+tbody+'</tbody>';
+
+  // Pre-fill tanggal hari ini
+  if(!document.getElementById('asetTgl').value)
+    document.getElementById('asetTgl').value=new Date().toISOString().slice(0,10);
+}
+
+function tambahAset(){
+  const nama=document.getElementById('asetNama').value.trim();
+  const nilaiBeli=parseFloat(document.getElementById('asetNilaiBeli').value)||0;
+  if(!nama||!nilaiBeli){ showToast('⚠️ Nama dan nilai beli wajib diisi'); return; }
+  const arr=getAset();
+  arr.push({
+    nama, kategori:document.getElementById('asetKategori').value,
+    nilaiBeli, nilaiSkrg:parseFloat(document.getElementById('asetNilaiSkrg').value)||nilaiBeli,
+    tgl:document.getElementById('asetTgl').value||new Date().toISOString().slice(0,10),
+    catatan:document.getElementById('asetCatatan').value.trim()
+  });
+  saveAset(arr);
+  ['asetNama','asetNilaiBeli','asetNilaiSkrg','asetCatatan'].forEach(id=>document.getElementById(id).value='');
+  renderInventori(); showToast('✅ Aset disimpan');
+}
+function hapusAset(idx){
+  if(!confirm('Hapus aset ini?'))return;
+  const arr=getAset(); arr.splice(idx,1); saveAset(arr); renderInventori();
 }
 
 // ══════════ DATA ROOM / PITCH (PHASE 11) ══════════
