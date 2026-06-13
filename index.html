@@ -565,25 +565,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <div class="fg" id="tglJualWrap" style="display:none"><label>Tanggal Jual</label><input type="date" id="tglJual"></div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">Detail Akuisisi &amp; Target</div></div>
-          <div class="form-grid">
-            <div class="fg"><label>Sumber Pembelian</label><input type="text" id="sumberBeli" placeholder="contoh: Lelang / Showroom / Perorangan"></div>
-            <div class="fg"><label>PIC</label><input type="text" id="picUnit" placeholder="contoh: Panji"></div>
-            <div class="fg"><label>Kategori Kendaraan</label><select id="kategoriUnit">
-              <option value="">— Pilih —</option>
-              <option>City Car</option><option>Hatchback</option><option>Sedan</option><option>SUV</option><option>MPV</option><option>Pick Up</option><option>Truck</option>
-              <option>Motor Bebek</option><option>Motor Matic</option><option>Motor Sport</option><option>Lainnya</option>
-            </select></div>
-            <div class="fg"><label>Kondisi Kendaraan</label><select id="kondisiUnit">
-              <option value="">— Pilih —</option>
-              <option>Sangat Baik</option><option>Baik</option><option>Cukup</option><option>Perlu Perbaikan</option>
-            </select></div>
-            <div class="fg full"><label>Lokasi Unit</label><input type="text" id="lokasiUnit" placeholder="contoh: Garasi Pusat / Showroom A"></div>
-            <div class="fg"><label>Harga Beli (Rp)</label><input type="number" id="hargaBeli" placeholder="0" oninput="updateTargetProfit()"></div>
-            <div class="fg"><label>Target Harga Jual (Rp)</label><input type="number" id="targetJual" placeholder="0" oninput="updateTargetProfit()"></div>
-            <div class="fg"><label>Target Profit (Rp)</label><input type="text" id="targetProfit" readonly placeholder="otomatis" style="background:var(--surface2);color:var(--green);font-weight:600"></div>
-          </div>
+        <!-- Phase 4 hidden fields (data sent to sheet but not shown in form) -->
+        <div style="display:none">
+          <input type="text" id="sumberBeli"><input type="text" id="picUnit">
+          <select id="kategoriUnit"><option value=""></option></select>
+          <select id="kondisiUnit"><option value=""></option></select>
+          <input type="text" id="lokasiUnit">
+          <input type="number" id="hargaBeli"><input type="number" id="targetJual">
+          <input type="text" id="targetProfit">
         </div>
         <div class="two-col">
           <div class="partner-card">
@@ -1710,15 +1699,23 @@ function renderProduct(){
 // ═══════════════════════════════════════════════════════════
 // HOME / EXECUTIVE SUMMARY (PHASE 0) + FUNDING LEDGER (PHASE 3)
 // ═══════════════════════════════════════════════════════════
+const PAID_KEY='pm_funding_paid';
+function getFundingPaid(){try{return JSON.parse(localStorage.getItem(PAID_KEY)||'{}');}catch(e){return {};}}
+function setFundingPaid(unitId,investor){
+  const d=getFundingPaid();
+  d[unitId+'__'+investor]=new Date().toISOString().slice(0,10);
+  localStorage.setItem(PAID_KEY,JSON.stringify(d));
+}
+function isFundingPaid(unitId,investor){return !!getFundingPaid()[unitId+'__'+investor];}
+
 function allFundings(){
-  // Flatten partner funding tiap unit menjadi baris ledger
   const rows=[];
   units.forEach(u=>{
     (u.partners||[]).forEach(p=>{
       const fee = p.feeAmount!==undefined ? +p.feeAmount : feeOf(p);
       const sold = u.status==='terjual';
-      // Status: aktif (unit masih dijual) / belum dibayar (terjual, fee outstanding)
-      const status = sold ? 'pending_payment' : 'active';
+      const paid = isFundingPaid(u.id, p.nama||'Partner');
+      const status = paid ? 'paid' : sold ? 'pending_payment' : 'active';
       rows.push({
         unit:u, namaUnit:u.nama, investor:p.nama||'Partner',
         funding:+p.funding||0, feeType:p.feeType, feeValue:p.feeValue,
@@ -1978,7 +1975,9 @@ function renderFunding(){
   const head=`<thead><tr><th>Investor</th><th>Unit</th><th class="num">Funding</th><th>Skema</th><th class="num">Est. Return</th><th>Tgl Funding</th><th>Status</th></tr></thead>`;
   const body=rows.map(f=>{
     const skema=f.feeType==='fixed'?'Fixed '+fmtRpShort(f.feeValue):f.feeType==='percent'?'Bagi '+f.feeValue+'%':'Tanpa fee';
-    return `<tr><td>${f.investor}</td><td>${f.namaUnit}</td><td class="num">${fmtRp(f.funding)}</td><td>${skema}</td><td class="num">${fmtRp(f.estReturn)}</td><td>${f.fundingDate||'—'}</td><td><span class="fund-status ${f.status}">${statusLbl[f.status]}</span></td></tr>`;
+    const lunasBtn=f.status==='pending_payment'
+      ?`<button class="btn-sm success" style="margin-left:8px;font-size:10px;padding:3px 8px" onclick="tandaiLunas('${f.unit.id}','${f.investor}')">Tandai Lunas</button>`:'';
+    return `<tr><td>${f.investor}</td><td>${f.namaUnit}</td><td class="num">${fmtRp(f.funding)}</td><td>${skema}</td><td class="num">${fmtRp(f.estReturn)}</td><td>${f.fundingDate||'—'}</td><td><span class="fund-status ${f.status}">${statusLbl[f.status]}</span>${lunasBtn}</td></tr>`;
   }).join('');
   document.getElementById('fundingTable').innerHTML=head+'<tbody>'+(body||`<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Belum ada data funding. Tambahkan partner saat input unit.</td></tr>`)+'</tbody>';
 }
@@ -1994,6 +1993,13 @@ function updateMetrics(){
   document.getElementById('mModal').textContent=fmtRpShort(units.reduce((a,u)=>a+(+u.totalModal),0));
   document.getElementById('mUntung').textContent=fmtRpShort(totalUntung);
   document.getElementById('mTerjual').textContent=tj.length;
+}
+
+function tandaiLunas(unitId, investor){
+  if(!confirm(`Tandai funding ${investor} sebagai LUNAS? Tindakan ini tidak bisa dibatalkan.`))return;
+  setFundingPaid(unitId, investor);
+  renderFunding();
+  showToast('✅ Funding '+investor+' ditandai lunas');
 }
 
 function showToast(msg){
@@ -2075,10 +2081,10 @@ function applySettings(s){
   document.getElementById('sbBrand').textContent=s.brand;
   document.getElementById('sbTagline').textContent=s.taglineShort||s.tagline;
   document.title=s.brand+' — Dashboard';
-  // Sync favicon with the chosen logo
-  const iconHref=(s.logoType==='image'&&s.image)?s.image:'/logo.png';
+  // Sync favicon + login logo with Settings photo (cache-bust on change)
+  const iconHref=(s.logoType==='image'&&s.image)?s.image:('/logo.png?v='+Date.now());
   const fav=document.getElementById('favicon'),appleI=document.getElementById('appleIcon');
-  if(fav)fav.setAttribute('href',iconHref);
+  if(fav){fav.setAttribute('type', s.logoType==='image'&&s.image?'image/png':'image/png'); fav.setAttribute('href',iconHref);}
   if(appleI)appleI.setAttribute('href',iconHref);
   // Accent color
   document.documentElement.style.setProperty('--accent',s.accent);
