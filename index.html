@@ -895,6 +895,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               Kirim email saat unit ditandai <strong>terjual</strong>
             </label>
             <button class="btn-primary" style="margin-top:0" onclick="saveAdminConfig()">💾 Simpan Pengaturan Admin</button>
+            <button class="btn-ghost" style="color:var(--amber)" onclick="fixKasBisnis()">🔧 Fix Data Lama (Kas Bisnis)</button>
             <button class="btn-ghost" onclick="lockAdmin()">Tutup Panel</button>
 
             <div style="border-top:1px solid var(--border);margin:20px 0 16px"></div>
@@ -2188,6 +2189,14 @@ function lockAdmin(){
   document.getElementById('adminLocked').style.display='block';
   document.getElementById('adminPassInput').value='';
   ['admPanjiPass','admPanduPass','admNewPass'].forEach(id=>document.getElementById(id).value='');
+}
+async function fixKasBisnis(){
+  if(!confirm('Ini akan mengisi ulang kolom Kas Bisnis & kalkulasi bagi hasil semua unit yang sudah terjual di sheet, berdasarkan skema baru (10%/90%). Lanjutkan?'))return;
+  setLoading(true,'Memperbaiki data lama...');
+  const res=await apiPost({action:'fix_kas_bisnis',adminPass:adminPassCache||'__internal__'});
+  setLoading(false);
+  if(res.ok){showToast('✅ '+res.updated+' unit diperbarui di sheet');await loadUnits();}
+  else showToast('❌ '+(res.error||'Gagal'));
 }
 async function saveAdminConfig(){
   const pass=adminPassCache||'__internal__';
