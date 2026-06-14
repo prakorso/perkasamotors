@@ -385,6 +385,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .card{box-shadow:0 1px 3px rgba(21,35,59,0.06),0 1px 2px rgba(21,35,59,0.04);border:1px solid var(--border);}
 .mc{box-shadow:0 1px 3px rgba(21,35,59,0.06);border-radius:var(--rl);}
 .chip.active{background:var(--accent);border-color:var(--accent);}
+.sub-tab-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;border-bottom:2px solid var(--border);padding-bottom:0}
+.stab{padding:8px 16px;border:none;background:none;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;border-radius:var(--r) var(--r) 0 0;transition:color .2s,border-color .2s}
+.stab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--surface)}
+.stab:hover:not(.active){color:var(--text);background:var(--surface2)}
+.stab-panel{display:none}
+.stab-panel.active{display:block}
 </style>
 </head>
 <body>
@@ -638,11 +644,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <!-- ═══════════ FUNDING LEDGER ═══════════ -->
       <!-- ═══════════ FUNDING LEDGER ═══════════ -->
       <div id="sec-funding" class="section">
-  <div class="sub-tab-bar" style="display:flex;gap:6px;margin-bottom:18px">
-    <button class="chip active" data-fund="ledger" onclick="showFundingTab('ledger')">◆ Ledger</button>
-    <button class="chip" data-fund="dataroom" onclick="showFundingTab('dataroom')">◇ Data Room</button>
+  <div class="sub-tab-bar">
+    <button class="stab active" data-st="ftab-ledger" onclick="showSubTab('funding','ftab-ledger')">💰 Funding Ledger</button>
+    <button class="stab" data-st="ftab-dataroom" onclick="showSubTab('funding','ftab-dataroom')">📋 Data Room</button>
   </div>
-  <div id="fund-ledger">
+  <div id="ftab-ledger" class="stab-panel active">
         <div class="section-hint">Funding Ledger menampilkan seluruh pendanaan partner/investor per unit, lengkap dengan status pembayaran dan estimasi return. Data ditarik dari Support Funding Partner pada tiap unit.</div>
         <div class="kpi-grid" id="fundingKpi"></div>
         <div class="filter-bar">
@@ -658,7 +664,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <p style="font-size:11px;color:var(--text3);margin-top:10px">Status <b>Aktif</b> = unit masih dijual; <b>Belum Dibayar</b> = unit terjual namun fee partner belum dicairkan; <b>Lunas</b> = sudah dibayar. Estimasi return dihitung dari skema fee partner.</p>
         </div>
   </div>
-  <div id="fund-dataroom" style="display:none">
+  <div id="ftab-dataroom" class="stab-panel">
         <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
           <p style="font-size:13px;color:var(--text2);margin:0;max-width:520px">Halaman ringkas untuk calon investor: rekam jejak, ROI historis, dan simulasi imbal hasil. Profit nominal bisnis tidak ditonjolkan — fokus pada metrik return yang relevan bagi pemodal.</p>
           <button class="btn-sm no-print" onclick="exportDataRoomPDF()">⬇ Export / Cetak PDF</button>
@@ -721,13 +727,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
       <!-- ═══════════ ANALITIK ═══════════ -->
       <div id="sec-analitik" class="section role-internal">
-  <div class="sub-tab-bar" style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap">
-    <button class="chip active" data-ana="insight" onclick="showAnaTab('insight')">★ Insight</button>
-    <button class="chip " data-ana="evaluasi" onclick="showAnaTab('evaluasi')">◑ Evaluasi</button>
-    <button class="chip " data-ana="inventory-intel" onclick="showAnaTab('inventory-intel')">📈 Inventory Intel</button>
-    <button class="chip " data-ana="invest-dash" onclick="showAnaTab('invest-dash')">💹 Investment Dash</button>
+  <div class="sub-tab-bar">
+    <button class="stab active" data-st="atab-insight" onclick="showSubTab('analitik','atab-insight')">📊 Insight &amp; Growth</button>
+    <button class="stab" data-st="atab-evaluasi" onclick="showSubTab('analitik','atab-evaluasi')">📋 Evaluasi</button>
+    <button class="stab" data-st="atab-inventory-intel" onclick="showSubTab('analitik','atab-inventory-intel')">🔬 Inventory Intel</button>
+    <button class="stab" data-st="atab-invest-dash" onclick="showSubTab('analitik','atab-invest-dash')">💼 Investment</button>
   </div>
-  <div id="ana-insight">
+  <div id="atab-insight" class="stab-panel active">
         <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
           <div class="date-filter" style="margin-bottom:0">
             <span class="filter-label">Periode:</span>
@@ -799,7 +805,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <p style="font-size:11px;color:var(--text3);margin-top:8px">ROI atas modal inti per unit terjual, diurutkan dari tertinggi.</p>
         </div>
   </div>
-  <div id="ana-evaluasi" style="display:none">
+  <div id="atab-evaluasi" class="stab-panel">
         <div class="filter-bar">
           <span class="filter-label">Jenis:</span>
           <button class="chip active" data-es="all" onclick="setEvalSegment('all')">Semua</button>
@@ -828,7 +834,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="table-scroll"><table class="track-table" id="modelTable"></table></div>
         </div>
   </div>
-  <div id="ana-inventory-intel" style="display:none">
+  <div id="atab-inventory-intel" class="stab-panel">
         <div class="kpi-grid" id="invIntelKPI" style="margin-bottom:18px"></div>
         <div class="filter-bar">
           <span class="filter-label">Filter:</span>
@@ -859,7 +865,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div id="invCatGrid" class="segment-grid"></div>
         </div>
   </div>
-  <div id="ana-invest-dash" style="display:none">
+  <div id="atab-invest-dash" class="stab-panel">
         <div class="kpi-grid" id="investKPI" style="margin-bottom:18px"></div>
         <div class="two-col">
           <div class="card">
@@ -886,13 +892,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <!-- ═══════════ KAS BISNIS ═══════════ -->
       <!-- ═══════════ KEUANGAN ═══════════ -->
       <div id="sec-keuangan" class="section role-internal">
-  <div class="sub-tab-bar" style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap">
-    <button class="chip active" data-keu="kas" onclick="showKeuTab('kas')">💰 Kas Bisnis</button>
-    <button class="chip " data-keu="inventori" onclick="showKeuTab('inventori')">📦 Inventori</button>
-    <button class="chip " data-keu="cashflow" onclick="showKeuTab('cashflow')">💵 Cashflow</button>
-    <button class="chip " data-keu="laporan" onclick="showKeuTab('laporan')">📋 Laporan</button>
+  <div class="sub-tab-bar">
+    <button class="stab active" data-st="ktab-kas" onclick="showSubTab('keuangan','ktab-kas')">🏦 Kas Bisnis</button>
+    <button class="stab" data-st="ktab-inventori" onclick="showSubTab('keuangan','ktab-inventori')">📦 Inventori Aset</button>
+    <button class="stab" data-st="ktab-cashflow" onclick="showSubTab('keuangan','ktab-cashflow')">📈 Cashflow</button>
+    <button class="stab" data-st="ktab-laporan" onclick="showSubTab('keuangan','ktab-laporan')">📄 Laporan</button>
   </div>
-  <div id="keu-kas">
+  <div id="ktab-kas" class="stab-panel active">
         <div class="ih-grid" id="kasKPIGrid" style="margin-bottom:18px"></div>
 
         <div class="card">
@@ -926,7 +932,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           </div>
         </div>
   </div>
-  <div id="keu-inventori" style="display:none">
+  <div id="ktab-inventori" class="stab-panel">
         <div class="ih-grid" id="invKPIGrid" style="margin-bottom:18px"></div>
 
         <div class="card">
@@ -975,7 +981,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <button class="btn-primary" style="margin-top:4px" onclick="tambahAset()">💾 Simpan Aset</button>
         </div>
   </div>
-  <div id="keu-cashflow" style="display:none">
+  <div id="ktab-cashflow" class="stab-panel">
         <div class="kpi-grid" id="cfKPIGrid" style="margin-bottom:20px"></div>
         <div class="two-col">
           <div class="card">
@@ -996,7 +1002,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="table-wrap"><table id="cfForecastTable" style="width:100%;border-collapse:collapse;font-size:12px"></table></div>
         </div>
   </div>
-  <div id="keu-laporan" style="display:none">
+  <div id="ktab-laporan" class="stab-panel">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:20px">
           <select id="laporanPeriod" onchange="renderLaporan()" style="padding:8px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;background:var(--surface);color:var(--text)">
             <option value="this_month">Bulan Ini</option>
@@ -1030,11 +1036,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
       <!-- ═══════════ PENGATURAN ═══════════ -->
       <div id="sec-pengaturan" class="section">
-  <div class="sub-tab-bar" style="display:flex;gap:6px;margin-bottom:18px">
-    <button class="chip active" data-peng="settings" onclick="showPengaturanTab('settings')">⚙ Pengaturan</button>
-    <button class="chip" data-peng="audit" onclick="showPengaturanTab('audit')">🔍 Audit Trail</button>
+  <div class="sub-tab-bar">
+    <button class="stab active" data-st="ptab-settings" onclick="showSubTab('pengaturan','ptab-settings')">⚙ Pengaturan</button>
+    <button class="stab" data-st="ptab-audit" onclick="showSubTab('pengaturan','ptab-audit')">📜 Audit Trail</button>
   </div>
-  <div id="peng-settings">
+  <div id="ptab-settings" class="stab-panel active">
         <div class="card">
           <div class="card-hdr"><div class="card-title">Tampilan Logo & Nama</div></div>
 
@@ -1138,7 +1144,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           </div>
         </div>
   </div>
-  <div id="peng-audit" style="display:none">
+  <div id="ptab-audit" class="stab-panel">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
           <p style="font-size:13px;color:var(--text2)">Log aktivitas 50 terakhir. Setiap perubahan data tercatat otomatis.</p>
           <button onclick="loadAuditLog()" style="padding:8px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);font-size:13px;cursor:pointer">↻ Refresh</button>
@@ -1386,49 +1392,41 @@ function showSection(s,fromPop){
   if(!fromPop){ try{ history.pushState({sec:s},''); }catch(e){} }
   if(s==='home')renderHome();
   if(s==='unit')renderUnits();
-  if(s==='funding'){renderFunding();}
-  if(s==='keuangan'){showKeuanganTab('kas');}
-  if(s==='analitik'){showAnalitikTab('insight');}
-  if(s==='pengaturan')loadSettingsForm();
+  if(s==='funding'){renderFunding();showSubTab('funding','ftab-ledger');}
+  if(s==='keuangan'){showSubTab('keuangan','ktab-kas');}
+  if(s==='analitik'){showSubTab('analitik','atab-insight');}
+  if(s==='pengaturan'){showSubTab('pengaturan','ptab-settings');}
+  // sub-section aliases
+  const subMap={kas:'keuangan',inventori:'keuangan',cashflow:'keuangan',laporan:'keuangan',
+    insight:'analitik',evaluasi:'analitik','inventory-intel':'analitik','invest-dash':'analitik',
+    dataroom:'funding',audit:'pengaturan'};
+  const tabMap={kas:'ktab-kas',inventori:'ktab-inventori',cashflow:'ktab-cashflow',laporan:'ktab-laporan',
+    insight:'atab-insight',evaluasi:'atab-evaluasi','inventory-intel':'atab-inventory-intel','invest-dash':'atab-invest-dash',
+    dataroom:'ftab-dataroom',audit:'ptab-audit'};
+  if(subMap[s]){showSection(subMap[s]);showSubTab(subMap[s],tabMap[s]);return;}
 }
-function showKeuanganTab(t){
-  ['kas','inventori','cashflow','laporan'].forEach(x=>{
-    const el=document.getElementById('keu-'+x);
-    if(el)el.style.display=x===t?'':'none';
-  });
-  document.querySelectorAll('[data-keu]').forEach(b=>b.classList.toggle('active',b.dataset.keu===t));
-  if(t==='kas')renderKas();
-  else if(t==='inventori')renderInventori();
-  else if(t==='cashflow')renderCashflow();
-  else if(t==='laporan')renderLaporan();
-}
-function showAnalitikTab(t){
-  ['insight','evaluasi','inventory-intel','invest-dash'].forEach(x=>{
-    const el=document.getElementById('ana-'+x);
-    if(el)el.style.display=x===t?'':'none';
-  });
-  document.querySelectorAll('[data-ana]').forEach(b=>b.classList.toggle('active',b.dataset.ana===t));
-  if(t==='insight')renderInsight();
-  else if(t==='evaluasi')renderEvaluasi();
-  else if(t==='inventory-intel')renderInventoryIntel();
-  else if(t==='invest-dash')renderInvestDash();
-}
-function showFundingTab(t){
-  ['ledger','dataroom'].forEach(x=>{
-    const el=document.getElementById('fund-'+x);
-    if(el)el.style.display=x===t?'':'none';
-  });
-  document.querySelectorAll('[data-fund]').forEach(b=>b.classList.toggle('active',b.dataset.fund===t));
-  if(t==='dataroom')renderDataRoom();
-  else renderFunding();
-}
-function showPengaturanTab(t){
-  ['settings','audit'].forEach(x=>{
-    const el=document.getElementById('peng-'+x);
-    if(el)el.style.display=x===t?'':'none';
-  });
-  document.querySelectorAll('[data-peng]').forEach(b=>b.classList.toggle('active',b.dataset.peng===t));
-  if(t==='audit')loadAuditLog();
+function showSubTab(section,tabId){
+  const secEl=document.getElementById('sec-'+section);
+  if(!secEl)return;
+  secEl.querySelectorAll('.stab-panel').forEach(p=>p.classList.remove('active'));
+  const panel=document.getElementById(tabId);
+  if(panel)panel.classList.add('active');
+  secEl.querySelectorAll('.stab').forEach(b=>b.classList.toggle('active',b.dataset.st===tabId));
+  const renders={
+    'ftab-ledger':()=>renderFunding(),
+    'ftab-dataroom':()=>renderDataRoom(),
+    'ktab-kas':()=>renderKas(),
+    'ktab-inventori':()=>renderInventori(),
+    'ktab-cashflow':()=>renderCashflow(),
+    'ktab-laporan':()=>renderLaporan(),
+    'atab-insight':()=>renderInsight(),
+    'atab-evaluasi':()=>renderEvaluasi(),
+    'atab-inventory-intel':()=>renderInventoryIntel(),
+    'atab-invest-dash':()=>renderInvestDash(),
+    'ptab-settings':()=>loadSettingsForm(),
+    'ptab-audit':()=>loadAuditLog(),
+  };
+  if(renders[tabId])renders[tabId]();
 }
 window.addEventListener('popstate',e=>{
   if(document.getElementById('dashWrap').style.display==='none')return;
