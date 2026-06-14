@@ -1,23 +1,41 @@
-const CACHE = 'pm-v3';
-const SHELL = ['/logo.png', '/icon-192.png', '/manifest.json'];
+const CACHE = 'pm-v4';
+
+// Gunakan scope SW sebagai base agar bekerja di Netlify (/) maupun GitHub Pages (/perkasamotors/)
+function baseURL() {
+  return self.registration.scope;
+}
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)));
+  e.waitUntil(
+    caches.open(CACHE).then(c =>
+      c.addAll([
+        baseURL() + 'logo.png',
+        baseURL() + 'icon-192.png',
+        baseURL() + 'manifest.json',
+      ])
+    )
+  );
   self.skipWaiting();
 });
+
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys =>
     Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
   ));
   self.clients.claim();
 });
+
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
   if (url.hostname.indexOf('google.com') >= 0) return;
   if (url.origin !== self.location.origin) return;
-  // index.html: always network-first so new deploys propagate immediately
-  if (url.pathname === '/' || url.pathname === '/index.html') {
+
+  const scope = new URL(baseURL()).pathname; // /perkasamotors/ atau /
+  const isIndex = url.pathname === scope || url.pathname === scope + 'index.html';
+
+  // index.html: network-first agar deploy baru langsung terasa di semua device
+  if (isIndex) {
     e.respondWith(
       fetch(e.request).then(res => {
         const clone = res.clone();
@@ -27,7 +45,8 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  // Other same-origin assets: cache-first
+
+  // Aset statis: cache-first
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
       if (res.ok) {
