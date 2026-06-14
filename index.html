@@ -438,6 +438,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <button class="nav-btn role-internal" data-nav="kas" onclick="showSection('kas')"><span class="ni">💰</span><span>Kas Bisnis</span></button>
       <button class="nav-btn role-internal" data-nav="inventori" onclick="showSection('inventori')"><span class="ni">📦</span><span>Inventori Aset</span></button>
       <button class="nav-btn role-internal" data-nav="dataroom" onclick="showSection('dataroom')"><span class="ni">◇</span><span>Data Room</span></button>
+      <button class="nav-btn role-internal" data-nav="inventory-intel" onclick="showSection('inventory-intel')"><span class="ni">📈</span><span>Inventory Intel</span></button>
+      <button class="nav-btn role-internal" data-nav="invest-dash" onclick="showSection('invest-dash')"><span class="ni">💹</span><span>Investment Dash</span></button>
       <button class="nav-btn role-internal" data-nav="audit" onclick="showSection('audit')"><span class="ni">🔍</span><span>Audit Trail</span></button>
       <button class="nav-btn" data-nav="pengaturan" onclick="showSection('pengaturan')"><span class="ni">⚙</span><span>Pengaturan</span></button>
     </nav>
@@ -1065,6 +1067,62 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
       </div>
 
+      <!-- ═══════════ INVENTORY INTELLIGENCE ═══════════ -->
+      <div id="sec-inventory-intel" class="section role-internal">
+        <div class="kpi-grid" id="invIntelKPI" style="margin-bottom:18px"></div>
+        <div class="filter-bar">
+          <span class="filter-label">Filter:</span>
+          <button class="chip active" data-ii="all" onclick="setInvIntelFilter('all')">Semua</button>
+          <button class="chip" data-ii="fast" onclick="setInvIntelFilter('fast')">Fast Mover (&lt;30h)</button>
+          <button class="chip" data-ii="slow" onclick="setInvIntelFilter('slow')">Slow Mover (30-90h)</button>
+          <button class="chip" data-ii="dead" onclick="setInvIntelFilter('dead')">Dead Stock (&gt;90h)</button>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-hdr"><div class="card-title">Distribusi Holding Period (Unit Terjual)</div></div>
+            <div class="chart-wrap" style="height:260px"><canvas id="chartInvHolding"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-hdr"><div class="card-title">ROI vs Holding Period</div></div>
+            <div class="chart-wrap" style="height:260px"><canvas id="chartInvRoi"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">
+            <div class="card-title">Velocity Score — Unit Aktif</div>
+            <div style="font-size:12px;color:var(--text3)">Skor berdasarkan holding hari &amp; target profit. Rendah = prioritas jual.</div>
+          </div>
+          <div class="table-scroll"><table class="track-table" id="invIntelTable"></table></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Analisis per Jenis Kendaraan</div></div>
+          <div id="invCatGrid" class="segment-grid"></div>
+        </div>
+      </div>
+
+      <!-- ═══════════ INVESTMENT DASHBOARD ═══════════ -->
+      <div id="sec-invest-dash" class="section role-internal">
+        <div class="kpi-grid" id="investKPI" style="margin-bottom:18px"></div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-hdr"><div class="card-title">ROI per Partner/Investor</div></div>
+            <div class="chart-wrap" style="height:280px"><canvas id="chartInvestRoi"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-hdr"><div class="card-title">Distribusi Modal per Partner</div></div>
+            <div class="chart-wrap" style="height:280px"><canvas id="chartInvestDist"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Profit Distribution Timeline (per Bulan)</div></div>
+          <div class="chart-wrap" style="height:260px"><canvas id="chartInvestTimeline"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Investment Performance per Partner</div></div>
+          <div class="table-scroll"><table class="track-table" id="investTable"></table></div>
+        </div>
+      </div>
+
       <!-- ═══════════ AUDIT TRAIL ═══════════ -->
       <div id="sec-audit" class="section role-internal">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
@@ -1287,9 +1345,9 @@ function closeSidebar(){
 }
 function showSection(s,fromPop){
   // Cegah investor/viewer membuka halaman internal (PHASE 8)
-  const internalOnly=['input','funding','insight','evaluasi','kas','inventori','dataroom','cashflow','laporan','audit'];
+  const internalOnly=['input','funding','insight','evaluasi','kas','inventori','dataroom','cashflow','laporan','audit','inventory-intel','invest-dash'];
   if(!isInternal() && internalOnly.includes(s)) s='home';
-  const titles={home:'Home Dashboard',input: editingId?'Edit Unit':'Input Unit Baru',unit:'Daftar Unit',funding:'Funding Ledger',insight:'Insight & Growth',evaluasi:'Evaluasi & Rekap',kas:'Kas Bisnis',inventori:'Inventori Aset',dataroom:'Data Room — Investor',pengaturan:'Pengaturan',cashflow:'Cashflow & Forecasting',laporan:'Laporan Keuangan',audit:'Audit Trail'};
+  const titles={home:'Home Dashboard',input: editingId?'Edit Unit':'Input Unit Baru',unit:'Daftar Unit',funding:'Funding Ledger',insight:'Insight & Growth',evaluasi:'Evaluasi & Rekap',kas:'Kas Bisnis',inventori:'Inventori Aset',dataroom:'Data Room — Investor',pengaturan:'Pengaturan',cashflow:'Cashflow & Forecasting',laporan:'Laporan Keuangan',audit:'Audit Trail','inventory-intel':'Inventory Intelligence','invest-dash':'Investment Dashboard'};
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav===s));
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.toggle('active',b.dataset.bn===s));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
@@ -1311,6 +1369,8 @@ function showSection(s,fromPop){
   if(s==='laporan')renderLaporan();
   if(s==='audit')loadAuditLog();
   if(s==='dataroom')renderDataRoom();
+  if(s==='inventory-intel')renderInventoryIntel();
+  if(s==='invest-dash')renderInvestDash();
   if(s==='pengaturan')loadSettingsForm();
 }
 window.addEventListener('popstate',e=>{
@@ -3077,6 +3137,239 @@ async function renderLaporan(){
 
 function printLaporan(){
   window.print();
+}
+
+// ══════════════════════════════════════════════════════════
+// INVENTORY INTELLIGENCE
+// ══════════════════════════════════════════════════════════
+let cInvHolding=null, cInvRoi=null;
+let invIntelFilter='all';
+function setInvIntelFilter(f){
+  invIntelFilter=f;
+  document.querySelectorAll('[data-ii]').forEach(b=>b.classList.toggle('active',b.dataset.ii===f));
+  renderInventoryIntel();
+}
+
+function holdingCategory(days){
+  if(days===null||days===undefined)return 'unknown';
+  if(days<30)return 'fast';
+  if(days<=90)return 'slow';
+  return 'dead';
+}
+
+function renderInventoryIntel(){
+  const active=units.filter(u=>u.status!=='terjual');
+  const sold=units.filter(u=>u.status==='terjual');
+
+  // KPI
+  const totalActive=active.length;
+  const fastCount=active.filter(u=>holdingCategory(holdingDays(u))==='fast').length;
+  const slowCount=active.filter(u=>holdingCategory(holdingDays(u))==='slow').length;
+  const deadCount=active.filter(u=>holdingCategory(holdingDays(u))==='dead').length;
+  const avgHoldSold=sold.length?Math.round(sold.reduce((a,u)=>{const h=holdingDays(u);return a+(h!==null?h:0);},0)/sold.length):0;
+  const modalDead=active.filter(u=>holdingCategory(holdingDays(u))==='dead').reduce((a,u)=>a+(+u.totalModal||0),0);
+
+  document.getElementById('invIntelKPI').innerHTML=[
+    ['Unit Aktif',totalActive,'total di inventory','k-blue'],
+    ['Fast Mover',fastCount,'< 30 hari holding','k-green'],
+    ['Slow Mover',slowCount,'30–90 hari holding','k-amber'],
+    ['Dead Stock',deadCount,'> 90 hari','k-red'],
+    ['Avg Holding (Terjual)',avgHoldSold+' hari','rata-rata unit terjual','k-teal'],
+    ['Modal Tertahan',fmtRpShort(modalDead),'di dead stock','k-purple'],
+  ].map(([l,v,s,c])=>`<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
+
+  // Holding Distribution Chart (sold units)
+  const buckets={'0-14':0,'15-29':0,'30-59':0,'60-89':0,'90-119':0,'120+':0};
+  sold.forEach(u=>{
+    const h=holdingDays(u); if(h===null)return;
+    if(h<15)buckets['0-14']++;
+    else if(h<30)buckets['15-29']++;
+    else if(h<60)buckets['30-59']++;
+    else if(h<90)buckets['60-89']++;
+    else if(h<120)buckets['90-119']++;
+    else buckets['120+']++;
+  });
+  if(cInvHolding)cInvHolding.destroy();
+  cInvHolding=new Chart(document.getElementById('chartInvHolding').getContext('2d'),{
+    type:'bar',
+    data:{labels:Object.keys(buckets),datasets:[{label:'Jumlah Unit',data:Object.values(buckets),
+      backgroundColor:['#2563C9','#178A5A','#C07A0E','#C07A0E','#D33A2C','#991B1B'],borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{title:{display:true,text:'Hari Holding'}},y:{title:{display:true,text:'Jumlah Unit'},ticks:{stepSize:1}}}}
+  });
+
+  // ROI vs Holding scatter (sold)
+  const scatterData=sold.filter(u=>{const h=holdingDays(u);const mi=(+u.totalModal||0)-(+u.modalPartner||0);return h!==null&&mi>0;}).map(u=>{
+    const h=holdingDays(u);
+    const mi=(+u.totalModal||0)-(+u.modalPartner||0);
+    const roi=((+u.keuntunganBersih||0)/mi*100);
+    return {x:h,y:parseFloat(roi.toFixed(1)),label:u.nama};
+  });
+  if(cInvRoi)cInvRoi.destroy();
+  cInvRoi=new Chart(document.getElementById('chartInvRoi').getContext('2d'),{
+    type:'scatter',
+    data:{datasets:[{label:'Unit Terjual',data:scatterData,backgroundColor:'rgba(37,99,201,0.6)',pointRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const d=c.raw;return `${d.label}: ROI ${d.y}%, ${d.x}h`;}}}},
+      scales:{x:{title:{display:true,text:'Holding (Hari)'}},y:{title:{display:true,text:'ROI (%)'},ticks:{callback:v=>v+'%'}}}}
+  });
+
+  // Velocity table — active units filtered
+  let filtered=active;
+  if(invIntelFilter==='fast')filtered=active.filter(u=>holdingCategory(holdingDays(u))==='fast');
+  else if(invIntelFilter==='slow')filtered=active.filter(u=>holdingCategory(holdingDays(u))==='slow');
+  else if(invIntelFilter==='dead')filtered=active.filter(u=>holdingCategory(holdingDays(u))==='dead');
+
+  filtered=filtered.slice().sort((a,b)=>(holdingDays(b)||0)-(holdingDays(a)||0));
+  const catColor={fast:'#178A5A',slow:'#C07A0E',dead:'#D33A2C',unknown:'var(--text3)'};
+  const catLabel={fast:'Fast',slow:'Slow',dead:'Dead',unknown:'—'};
+  const head=`<thead><tr style="background:var(--surface2)">
+    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase">Unit</th>
+    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase">Jenis</th>
+    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">Holding</th>
+    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase">Kategori</th>
+    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">Modal</th>
+    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">Target Profit</th>
+    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">ROI Target</th>
+  </tr></thead>`;
+  const body=filtered.map(u=>{
+    const h=holdingDays(u); const cat=holdingCategory(h);
+    const col=catColor[cat]; const mi=(+u.totalModal||0)-(+u.modalPartner||0);
+    const roi=mi>0?((+u.targetProfit||0)/mi*100):0;
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:9px 14px;font-weight:500">${u.nama}</td>
+      <td style="padding:9px 14px;color:var(--text2)">${u.jenis||'—'}</td>
+      <td style="padding:9px 14px;text-align:right;color:var(--text3)">${h!==null?h+' hr':'—'}</td>
+      <td style="padding:9px 14px"><span style="background:${col}18;color:${col};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">${catLabel[cat]}</span></td>
+      <td style="padding:9px 14px;text-align:right">${fmtRp(+u.totalModal||0)}</td>
+      <td style="padding:9px 14px;text-align:right;color:var(--green)">${+u.targetProfit>0?fmtRp(+u.targetProfit):'—'}</td>
+      <td style="padding:9px 14px;text-align:right"><span class="roi-badge">${roi>0?roi.toFixed(1)+'%':'—'}</span></td>
+    </tr>`;
+  }).join('')||`<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text3)">Tidak ada unit.</td></tr>`;
+  document.getElementById('invIntelTable').innerHTML=head+'<tbody>'+body+'</tbody>';
+
+  // Category analysis by jenis
+  const jenisList=[...new Set(units.map(u=>u.jenis||'Lainnya'))];
+  document.getElementById('invCatGrid').innerHTML=jenisList.map(j=>{
+    const all=units.filter(u=>u.jenis===j);
+    const s=all.filter(u=>u.status==='terjual');
+    const a=all.filter(u=>u.status!=='terjual');
+    const avgH=s.length?Math.round(s.reduce((acc,u)=>{const h=holdingDays(u);return acc+(h||0);},0)/s.length):null;
+    const totalProfit=s.reduce((acc,u)=>acc+(+u.keuntunganBersih||0),0);
+    const avgRoi=s.length?s.reduce((acc,u)=>{const mi=(+u.totalModal||0)-(+u.modalPartner||0);return acc+(mi>0?(+u.keuntunganBersih||0)/mi*100:0);},0)/s.length:0;
+    return `<div class="seg-card"><div class="seg-title">${j}</div>
+      <div class="seg-stat"><span>Total</span><b>${all.length} unit</b></div>
+      <div class="seg-stat"><span>Terjual</span><b>${s.length}</b></div>
+      <div class="seg-stat"><span>Aktif</span><b>${a.length}</b></div>
+      <div class="seg-stat"><span>Avg Holding</span><b>${avgH!==null?avgH+' hr':'—'}</b></div>
+      <div class="seg-stat"><span>Total Profit</span><b style="color:var(--green)">${fmtRpShort(totalProfit)}</b></div>
+      <div class="seg-stat"><span>Avg ROI</span><b>${avgRoi.toFixed(1)}%</b></div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+// INVESTMENT DASHBOARD
+// ══════════════════════════════════════════════════════════
+let cInvestRoi=null, cInvestDist=null, cInvestTimeline=null;
+
+function renderInvestDash(){
+  const fundings=allFundings();
+  const sold=units.filter(u=>u.status==='terjual');
+
+  // Aggregate per partner
+  const partnerMap={};
+  fundings.forEach(f=>{
+    const p=f.partner||'—';
+    if(!partnerMap[p])partnerMap[p]={name:p,totalModal:0,totalFee:0,totalReturn:0,unitCount:0,activeModal:0};
+    partnerMap[p].totalModal+=f.funding;
+    partnerMap[p].totalFee+=f.fee;
+    if(f.status==='active')partnerMap[p].activeModal+=f.funding;
+    else partnerMap[p].totalReturn+=f.funding+f.fee;
+    partnerMap[p].unitCount++;
+  });
+  const partners=Object.values(partnerMap);
+  const totalModal=partners.reduce((a,p)=>a+p.totalModal,0);
+  const totalFee=partners.reduce((a,p)=>a+p.totalFee,0);
+  const totalReturn=partners.reduce((a,p)=>a+p.totalReturn,0);
+  const activeModal=partners.reduce((a,p)=>a+p.activeModal,0);
+
+  // KPI
+  document.getElementById('investKPI').innerHTML=[
+    ['Total Modal Partner',fmtRpShort(totalModal),partners.length+' partner/investor','k-blue'],
+    ['Total Fee Dibayar',fmtRpShort(totalFee),'profit sharing','k-green'],
+    ['Total Sudah Kembali',fmtRpShort(totalReturn),'pokok + fee','k-teal'],
+    ['Modal Masih Aktif',fmtRpShort(activeModal),'di unit belum terjual','k-amber'],
+    ['Avg ROI Partner',totalModal>0?(totalFee/totalModal*100).toFixed(1)+'%':'—','fee/modal','k-purple'],
+    ['Unit Didanai',fundings.length,'transaksi funding','k-blue'],
+  ].map(([l,v,s,c])=>`<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
+
+  // ROI per partner bar chart
+  const partnerNames=partners.map(p=>p.name);
+  const partnerRois=partners.map(p=>p.totalModal>0?parseFloat((p.totalFee/p.totalModal*100).toFixed(1)):0);
+  if(cInvestRoi)cInvestRoi.destroy();
+  cInvestRoi=new Chart(document.getElementById('chartInvestRoi').getContext('2d'),{
+    type:'bar',
+    data:{labels:partnerNames,datasets:[{label:'ROI (%)',data:partnerRois,backgroundColor:'rgba(37,99,201,0.75)',borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{ticks:{callback:v=>v+'%'},title:{display:true,text:'ROI (%)'}},x:{ticks:{font:{size:11}}}}}
+  });
+
+  // Distribution donut
+  if(cInvestDist)cInvestDist.destroy();
+  const COLORS=['#2563C9','#178A5A','#C07A0E','#D33A2C','#7A5C9E','#4A7C7C','#C05720','#1A8CA3'];
+  cInvestDist=new Chart(document.getElementById('chartInvestDist').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:partnerNames,datasets:[{data:partners.map(p=>p.totalModal),backgroundColor:COLORS,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+      plugins:{legend:{position:'right',labels:{boxWidth:12,padding:10,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>`${c.label}: ${fmtRpShort(c.raw)}`}}}}
+  });
+
+  // Timeline — profit distribution per month
+  const byMonth={};
+  sold.forEach(u=>{
+    const mk=monthKey(saleDateOf(u)); if(!mk)return;
+    if(!byMonth[mk])byMonth[mk]={fee:0,kasBisnis:0,bagi:0};
+    byMonth[mk].fee+=(+u.totalFee||0);
+    byMonth[mk].kasBisnis+=(+u.kasBisnis||0);
+    byMonth[mk].bagi+=(+u.bagiPanji||0)+(+u.bagiPandu||0);
+  });
+  const mkeys=Object.keys(byMonth).sort();
+  const fmtM=mk=>{const[y,m]=mk.split('-');return BULAN[parseInt(m)-1]+"'"+(y.slice(2));};
+  if(cInvestTimeline)cInvestTimeline.destroy();
+  cInvestTimeline=new Chart(document.getElementById('chartInvestTimeline').getContext('2d'),{
+    data:{labels:mkeys.length?mkeys.map(fmtM):['—'],datasets:[
+      {type:'bar',label:'Fee Partner',data:mkeys.map(k=>byMonth[k].fee),backgroundColor:'rgba(37,99,201,0.7)',borderRadius:3},
+      {type:'bar',label:'Kas Bisnis',data:mkeys.map(k=>byMonth[k].kasBisnis),backgroundColor:'rgba(23,138,90,0.7)',borderRadius:3},
+      {type:'bar',label:'Bagi Hasil',data:mkeys.map(k=>byMonth[k].bagi),backgroundColor:'rgba(122,92,158,0.7)',borderRadius:3},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10,font:{size:11}}}},
+      scales:{x:{stacked:true,ticks:{font:{size:10}}},y:{stacked:true,ticks:{callback:v=>'Rp'+(v/1e6).toFixed(0)+'jt'}}}}
+  });
+
+  // Performance table per partner
+  const thead=`<thead><tr style="background:var(--surface2)">
+    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase">Partner</th>
+    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">Total Modal</th>
+    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">Fee Diterima</th>
+    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">ROI</th>
+    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">Unit</th>
+    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">Modal Aktif</th>
+  </tr></thead>`;
+  const tbody=partners.length?partners.slice().sort((a,b)=>b.totalModal-a.totalModal).map(p=>{
+    const roi=p.totalModal>0?(p.totalFee/p.totalModal*100):0;
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:9px 14px;font-weight:600">${p.name}</td>
+      <td style="padding:9px 14px;text-align:right">${fmtRp(p.totalModal)}</td>
+      <td style="padding:9px 14px;text-align:right;color:var(--green)">${fmtRp(p.totalFee)}</td>
+      <td style="padding:9px 14px;text-align:right"><span class="roi-badge">${roi.toFixed(1)}%</span></td>
+      <td style="padding:9px 14px;text-align:right">${p.unitCount}</td>
+      <td style="padding:9px 14px;text-align:right;color:var(--text3)">${fmtRp(p.activeModal)}</td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3)">Belum ada data funding partner.</td></tr>`;
+  document.getElementById('investTable').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
 }
 
 // Register service worker (PWA)
