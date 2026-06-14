@@ -14,6 +14,7 @@
 <link rel="apple-touch-icon" id="appleIcon" href="logo.png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#F1F4F9;--surface:#FFFFFF;--surface2:#E9EEF6;--border:rgba(30,58,95,0.07);--border2:rgba(30,58,95,0.13);--text:#15233B;--text2:#52617A;--text3:#94A1B3;--accent:#2563C9;--accent-bg:#E8F0FC;--blue:#2563C9;--blue-bg:#E8F0FC;--amber:#C07A0E;--amber-bg:#FCF3E0;--green:#178A5A;--green-bg:#E3F5EC;--red:#D33A2C;--red-bg:#FCEBE9;--r:12px;--rl:18px;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -612,7 +613,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="pv-row" id="pvUR" style="display:none"><span>Profit Bersih (dibagi)</span><span id="pvU">Rp0</span></div>
           <div class="pv-row" id="pvBR" style="display:none"><span>Bagi Panji / Pandu</span><span id="pvB">—</span></div>
         </div>
-        <button class="btn-primary" id="saveBtn" onclick="simpanUnit()">💾 Simpan Unit ke Google Sheets</button>
+        <button class="btn-primary" id="saveBtn" onclick="simpanUnit()">💾 Simpan Unit</button>
       </div>
 
       <div id="sec-unit" class="section">
@@ -1030,10 +1031,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div class="toast" id="toast"></div>
 
 <script>
-// ⚙️ URL Apps Script — SUDAH TERPASANG
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzD3IYh58mQb1JO4Zjg11v52fChB7BrzQwqnwftcU5uqgAgor7gs0tVC2ah3Td5djVleg/exec';
+// ⚙️ Supabase Config
+const SUPABASE_URL = 'https://pefkfuoowzfnbkmygzxo.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZmtmdW9vd3pmbmJrbXlnenhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzOTA2MjIsImV4cCI6MjA5Njk2NjYyMn0.vMlXRGlYEe2r5N7UlO7MKqJZ_l2a8hwiO1nN_G3zf04';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Login divalidasi di server (Google Sheets). Password diatur via panel Admin.
+// Login divalidasi via Supabase RPC. Password diatur via panel Admin.
 
 let units = [];
 let currentUser = null;
@@ -1079,6 +1082,41 @@ const fmtRpShort = n => {
 };
 const sumB = arr => (arr||[]).reduce((a,b)=>a+b.nominal,0);
 
+// Transform DB row (snake_case) → frontend object (camelCase)
+function transformUnit(r){
+  const biayaP=r.biaya_panji||[], biayaD=r.biaya_pandu||[];
+  const modalP=biayaP.reduce((a,b)=>a+(b.nominal||0),0);
+  const modalD=biayaD.reduce((a,b)=>a+(b.nominal||0),0);
+  const modalUtama=modalP+modalD;
+  const partners=r.partners||[];
+  const modalPartner=partners.reduce((a,p)=>a+(p.funding||0),0);
+  const totalFee=partners.reduce((a,p)=>a+feeOf(p),0);
+  const totalModal=modalUtama+modalPartner;
+  const pctP=modalUtama?(modalP/modalUtama*100):0;
+  const pctD=modalUtama?(modalD/modalUtama*100):0;
+  const hargaJual=r.harga_jual||0;
+  const kotor=r.status==='terjual'?hargaJual-totalModal:0;
+  const bersih=(r.keuntungan_bersih!==null&&r.keuntungan_bersih!==undefined)?+r.keuntungan_bersih:kotor-totalFee;
+  const kasBisnis=(r.kas_bisnis!==null&&r.kas_bisnis!==undefined)?+r.kas_bisnis:(r.status==='terjual'?bersih*0.10:0);
+  const bagiBersih=bersih*0.90;
+  const bagiP=(r.bagi_panji!==null&&r.bagi_panji!==undefined)?+r.bagi_panji:bagiBersih*0.5;
+  const bagiD=(r.bagi_pandu!==null&&r.bagi_pandu!==undefined)?+r.bagi_pandu:bagiBersih*0.5;
+  return {
+    id:r.id, nama:r.nama, plat:r.plat||'', tahun:r.tahun||'',
+    jenis:r.jenis||'Mobil', status:r.status||'aktif',
+    tgl:r.tgl, tglJual:r.tgl_jual||'',
+    hargaJual, hargaBeli:r.harga_beli||0,
+    targetJual:r.target_jual||0, targetProfit:r.target_profit||0,
+    sumberBeli:r.sumber_beli||'', pic:r.pic||'',
+    kategori:r.kategori||'', kondisi:r.kondisi||'', lokasi:r.lokasi||'',
+    panji:{total:modalP, biaya:biayaP}, pandu:{total:modalD, biaya:biayaD},
+    pctPanji:pctP.toFixed(2), pctPandu:pctD.toFixed(2),
+    totalModal, totalFee, keuntunganBersih:bersih,
+    kasBisnis, bagiPanji:bagiP, bagiPandu:bagiD,
+    modalPartner, modalPanji:modalP, modalPandu:modalD, partners
+  };
+}
+
 async function doLogin(){
   const u=document.getElementById('loginUser').value.trim().toLowerCase();
   const p=document.getElementById('loginPass').value;
@@ -1087,18 +1125,19 @@ async function doLogin(){
   err.style.display='none';
   btn.disabled=true; btn.textContent='Memeriksa...';
   try{
-    const res=await apiPost({action:'login',user:u,pass:p});
-    if(res.ok){
-      currentUser=res.role;
-      sessionStorage.setItem('pm_session',res.role);
+    const {data,error}=await supabase.rpc('pm_login',{p_user:u,p_pass:p});
+    if(error)throw error;
+    if(data&&data.ok){
+      currentUser=data.role;
+      sessionStorage.setItem('pm_session',data.role);
       document.getElementById('loginWrap').style.display='none';
       document.getElementById('dashWrap').style.display='block';
-      document.getElementById('sbUser').textContent=res.role.charAt(0).toUpperCase()+res.role.slice(1);
+      document.getElementById('sbUser').textContent=data.role.charAt(0).toUpperCase()+data.role.slice(1);
       applyRBAC(); startIdleTimer();
       try{ history.replaceState({sec:'home'},''); }catch(e){}
       showSection('home'); loadUnits();
     }else{
-      err.textContent=res.error||'Username atau password salah.';
+      err.textContent=(data&&data.error)||'Username atau password salah.';
       err.style.display='block';
     }
   }catch(e){
@@ -1137,20 +1176,14 @@ function setLoading(show,text='Memuat data...'){
   document.getElementById('loadingText').textContent=text;
 }
 
-async function apiGet(){
-  const res=await fetch(APPS_SCRIPT_URL,{cache:'no-store'});
-  const data=await res.json();
-  return data.ok?data.units:[];
-}
-async function apiPost(body){
-  const res=await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify(body)});
-  return res.json();
-}
-
 async function loadUnits(){
-  setLoading(true,'Memuat data dari Google Sheets...'); setSyncStatus('syncing');
-  try{ units=await apiGet(); updateMetrics(); setSyncStatus('ok'); }
-  catch(e){ setSyncStatus('error'); showToast('❌ Gagal memuat data. Cek koneksi.'); }
+  setLoading(true,'Memuat data dari Supabase...'); setSyncStatus('syncing');
+  try{
+    const {data,error}=await supabase.from('units').select('*').order('id',{ascending:true});
+    if(error)throw error;
+    units=(data||[]).map(transformUnit);
+    updateMetrics(); setSyncStatus('ok');
+  }catch(e){ setSyncStatus('error'); showToast('❌ Gagal memuat data. Cek koneksi.'); }
   setLoading(false);
   const sec=document.querySelector('.section.active');
   if(sec&&sec.id==='sec-home')renderHome();
@@ -1158,6 +1191,11 @@ async function loadUnits(){
   if(sec&&sec.id==='sec-funding')renderFunding();
   if(sec&&sec.id==='sec-evaluasi')renderEvaluasi();
 }
+
+// Realtime subscription — auto-refresh when another device saves data
+supabase.channel('units-realtime')
+  .on('postgres_changes',{event:'*',schema:'public',table:'units'},()=>{ if(currentUser)loadUnits(); })
+  .subscribe();
 
 function toggleSidebar(){
   const sb=document.getElementById('sidebar');
@@ -1357,7 +1395,7 @@ function cancelEdit(){
   editingId=null;
   document.getElementById('editBanner').classList.remove('show');
   document.getElementById('formCardTitle').textContent='Informasi Unit';
-  document.getElementById('saveBtn').innerHTML='💾 Simpan Unit ke Google Sheets';
+  document.getElementById('saveBtn').innerHTML='💾 Simpan Unit';
   resetForm();
 }
 
@@ -1368,30 +1406,52 @@ async function simpanUnit(){
   if(!sumB(p)&&!sumB(d)){showToast('⚠️ Minimal satu biaya Panji/Pandu harus diisi!');return;}
   const status=document.getElementById('statusUnit').value;
   const harga=status==='terjual'?(parseFloat(document.getElementById('hargaJual').value)||0):0;
-  const tglJual=status==='terjual'?(document.getElementById('tglJual').value||new Date().toISOString().slice(0,10)):'';
+  const tglJual=status==='terjual'?(document.getElementById('tglJual').value||new Date().toISOString().slice(0,10)):null;
   const hargaBeli=parseFloat(document.getElementById('hargaBeli').value)||0;
   const targetJual=parseFloat(document.getElementById('targetJual').value)||0;
-  const payload={nama,plat:document.getElementById('platUnit').value.trim(),tahun:document.getElementById('tahunUnit').value.trim(),jenis:document.getElementById('jenisUnit').value,tgl:document.getElementById('tglMasuk').value||new Date().toISOString().slice(0,10),status,hargaJual:harga,tglJual,panji:{biaya:p},pandu:{biaya:d},partners:getPartners(),
-    sumberBeli:document.getElementById('sumberBeli').value.trim(),pic:document.getElementById('picUnit').value.trim(),kategori:document.getElementById('kategoriUnit').value,kondisi:document.getElementById('kondisiUnit').value,lokasi:document.getElementById('lokasiUnit').value.trim(),hargaBeli,targetJual,targetProfit:targetJual-hargaBeli};
+  const partners=getPartners();
+  const totalFee=partners.reduce((a,x)=>a+feeOf(x),0);
+  const modalP=sumB(p),modalD=sumB(d),modalPartner=partners.reduce((a,x)=>a+x.funding,0);
+  const totalModal=modalP+modalD+modalPartner;
+  const kotor=status==='terjual'?harga-totalModal:0;
+  const bersih=kotor-totalFee;
+
+  const row={
+    nama, plat:document.getElementById('platUnit').value.trim(),
+    tahun:document.getElementById('tahunUnit').value.trim(),
+    jenis:document.getElementById('jenisUnit').value,
+    tgl:document.getElementById('tglMasuk').value||new Date().toISOString().slice(0,10),
+    status, harga_jual:harga, tgl_jual:tglJual,
+    harga_beli:hargaBeli, target_jual:targetJual, target_profit:targetJual-hargaBeli,
+    sumber_beli:document.getElementById('sumberBeli').value.trim(),
+    pic:document.getElementById('picUnit').value.trim(),
+    kategori:document.getElementById('kategoriUnit').value,
+    kondisi:document.getElementById('kondisiUnit').value,
+    lokasi:document.getElementById('lokasiUnit').value.trim(),
+    biaya_panji:p, biaya_pandu:d, partners,
+    keuntungan_bersih:status==='terjual'?bersih:null,
+    kas_bisnis:status==='terjual'?bersih*0.10:null,
+    bagi_panji:status==='terjual'?bersih*0.90*0.5:null,
+    bagi_pandu:status==='terjual'?bersih*0.90*0.5:null,
+    updated_at:new Date().toISOString()
+  };
 
   const btn=document.getElementById('saveBtn');
   btn.disabled=true; btn.textContent='⏳ Menyimpan...'; setSyncStatus('syncing');
 
-  let res;
-  if(editingId){ res=await apiPost({action:'edit',id:editingId,data:payload}); }
-  else{ res=await apiPost({action:'save',data:payload}); }
+  let error;
+  if(editingId){ ({error}=await supabase.from('units').update(row).eq('id',editingId)); }
+  else{ ({error}=await supabase.from('units').insert(row)); }
 
   btn.disabled=false;
-
-  if(res.ok){
+  if(!error){
     setSyncStatus('ok');
     showToast(editingId?'✅ Perubahan tersimpan!':'✅ Unit berhasil disimpan!');
-    cancelEdit();
-    await loadUnits();
+    cancelEdit(); await loadUnits();
   }else{
     setSyncStatus('error');
-    btn.innerHTML=editingId?'💾 Simpan Perubahan':'💾 Simpan Unit ke Google Sheets';
-    showToast('❌ Gagal: '+(res.error||'unknown'));
+    btn.innerHTML=editingId?'💾 Simpan Perubahan':'💾 Simpan Unit';
+    showToast('❌ Gagal: '+(error.message||'unknown'));
   }
 }
 
@@ -1521,20 +1581,28 @@ async function confirmTerjual(){
   const h=parseFloat(document.getElementById('modalHarga').value)||0;
   if(!h){showToast('⚠️ Harga jual harus diisi!');return;}
   const tgl=document.getElementById('modalTglJual').value||new Date().toISOString().slice(0,10);
+  const u=units.find(x=>x.id===pendingTerjualId);
+  const totalModal=u?u.totalModal:0, totalFee=u?u.totalFee:0;
+  const bersih=h-totalModal-totalFee;
   closeModal(); setSyncStatus('syncing'); setLoading(true,'Mengupdate status...');
-  const res=await apiPost({action:'update_status',id:pendingTerjualId,hargaJual:h,tglJual:tgl});
+  const {error}=await supabase.from('units').update({
+    status:'terjual', harga_jual:h, tgl_jual:tgl,
+    keuntungan_bersih:bersih, kas_bisnis:bersih*0.10,
+    bagi_panji:bersih*0.90*0.5, bagi_pandu:bersih*0.90*0.5,
+    updated_at:new Date().toISOString()
+  }).eq('id',pendingTerjualId);
   setLoading(false);
-  if(res.ok){setSyncStatus('ok');showToast('✅ Status berhasil diupdate!');await loadUnits();renderUnits();}
-  else{setSyncStatus('error');showToast('❌ Gagal: '+(res.error||''));}
+  if(!error){setSyncStatus('ok');showToast('✅ Status berhasil diupdate!');await loadUnits();renderUnits();}
+  else{setSyncStatus('error');showToast('❌ Gagal: '+(error.message||''));}
 }
 
 async function hapusUnit(id){
-  if(!confirm('Hapus unit ini dari Google Sheets?'))return;
+  if(!confirm('Hapus unit ini?'))return;
   setSyncStatus('syncing'); setLoading(true,'Menghapus unit...');
-  const res=await apiPost({action:'delete',id});
+  const {error}=await supabase.from('units').delete().eq('id',id);
   setLoading(false);
-  if(res.ok){setSyncStatus('ok');showToast('🗑️ Unit dihapus');await loadUnits();renderUnits();}
-  else{setSyncStatus('error');showToast('❌ Gagal: '+(res.error||''));}
+  if(!error){setSyncStatus('ok');showToast('🗑️ Unit dihapus');await loadUnits();renderUnits();}
+  else{setSyncStatus('error');showToast('❌ Gagal: '+(error.message||''));}
 }
 
 function netProfitOf(u){
@@ -2261,18 +2329,18 @@ async function unlockAdmin(){
   const pass=document.getElementById('adminPassInput').value;
   if(!pass){showToast('⚠️ Masukkan password admin');return;}
   setLoading(true,'Memeriksa akses admin...');
-  const res=await apiPost({action:'get_admin_config',adminPass:pass});
+  const {data,error}=await supabase.rpc('pm_get_admin_config',{p_pass:pass});
   setLoading(false);
-  if(res.ok){
+  if(!error&&data&&data.ok){
     adminUnlocked=true; adminPassCache=pass;
     document.getElementById('adminLocked').style.display='none';
     document.getElementById('adminPanel').style.display='block';
-    document.getElementById('admEmails').value=res.emails||'';
-    document.getElementById('admEmailEnabled').checked=!!res.emailEnabled;
-    renderInvestorList(res.investors||[]);
+    document.getElementById('admEmails').value=data.emails||'';
+    document.getElementById('admEmailEnabled').checked=!!data.emailEnabled;
+    renderInvestorList(data.investors||[]);
     showToast('✅ Panel admin terbuka');
   }else{
-    showToast('❌ '+(res.error||'Password admin salah'));
+    showToast('❌ '+((data&&data.error)||'Password admin salah'));
   }
 }
 function lockAdmin(){
@@ -2283,158 +2351,151 @@ function lockAdmin(){
   ['admPanjiPass','admPanduPass','admNewPass'].forEach(id=>document.getElementById(id).value='');
 }
 async function fixKasBisnis(){
-  if(!confirm('Ini akan mengisi ulang kolom Kas Bisnis & kalkulasi bagi hasil semua unit yang sudah terjual di sheet, berdasarkan skema baru (10%/90%). Lanjutkan?'))return;
-  setLoading(true,'Memperbaiki data lama...');
-  const res=await apiPost({action:'fix_kas_bisnis',adminPass:adminPassCache||'__internal__'});
+  if(!confirm('Update semua unit terjual di Supabase dengan kalkulasi kas bisnis terbaru (10%/90%)?'))return;
+  setLoading(true,'Memperbarui data...');
+  const terjual=units.filter(u=>u.status==='terjual');
+  let updated=0;
+  for(const u of terjual){
+    const bersih=u.keuntunganBersih;
+    const {error}=await supabase.from('units').update({
+      keuntungan_bersih:bersih, kas_bisnis:bersih*0.10,
+      bagi_panji:bersih*0.90*0.5, bagi_pandu:bersih*0.90*0.5,
+      updated_at:new Date().toISOString()
+    }).eq('id',u.id);
+    if(!error)updated++;
+  }
   setLoading(false);
-  if(res.ok){showToast('✅ '+res.updated+' unit diperbarui di sheet');await loadUnits();}
-  else showToast('❌ '+(res.error||'Gagal'));
+  showToast('✅ '+updated+' unit diperbarui');
+  await loadUnits();
 }
 async function saveAdminConfig(){
   const pass=adminPassCache||'__internal__';
   setLoading(true,'Menyimpan pengaturan admin...');
-  const res=await apiPost({
-    action:'save_admin_config',
-    adminPass:pass,
-    panjiPass:document.getElementById('admPanjiPass').value.trim(),
-    panduPass:document.getElementById('admPanduPass').value.trim(),
-    newAdminPass:document.getElementById('admNewPass').value.trim(),
-    emails:document.getElementById('admEmails').value.trim(),
-    emailEnabled:document.getElementById('admEmailEnabled').checked
+  const {data,error}=await supabase.rpc('pm_save_admin_config',{
+    p_admin_pass:pass,
+    p_panji_pass:document.getElementById('admPanjiPass').value.trim(),
+    p_pandu_pass:document.getElementById('admPanduPass').value.trim(),
+    p_new_admin_pass:document.getElementById('admNewPass').value.trim(),
+    p_emails:document.getElementById('admEmails').value.trim(),
+    p_email_enabled:document.getElementById('admEmailEnabled').checked
   });
   setLoading(false);
-  if(res.ok){
+  if(!error&&data&&data.ok){
     if(document.getElementById('admNewPass').value.trim())adminPassCache=document.getElementById('admNewPass').value.trim();
     ['admPanjiPass','admPanduPass','admNewPass'].forEach(id=>document.getElementById(id).value='');
     showToast('✅ Pengaturan admin tersimpan');
   }else{
-    showToast('❌ '+(res.error||'Gagal menyimpan'));
+    showToast('❌ '+((data&&data.error)||'Gagal menyimpan'));
   }
 }
 
 // ══════════ KAS BISNIS ══════════
-const KAS_KEY = 'pm_kas_keluar';
-function getKasKeluar(){ try{ return JSON.parse(localStorage.getItem(KAS_KEY)||'[]'); }catch(e){ return []; } }
-function saveKasKeluar(arr){ localStorage.setItem(KAS_KEY, JSON.stringify(arr)); }
-
 function kasFromUnits(){
-  // Hitung kas bisnis dari unit terjual yang punya 2 stakeholder (Panji + Pandu)
-  return units.filter(u => u.status==='terjual' && +u.modalPanji>0 && +u.modalPandu>0).map(u => {
-    const bersih = (u.keuntunganBersih!==''&&u.keuntunganBersih!==undefined)
-      ? +u.keuntunganBersih : (+u.hargaJual-+u.totalModal)-(+u.totalFee||0);
-    const kas = +u.kasBisnis > 0 ? +u.kasBisnis : bersih * 0.10;
-    return { unit: u.nama, tgl: u.tglJual||u.tgl, kas, bersih };
+  return units.filter(u=>u.status==='terjual'&&+u.modalPanji>0&&+u.modalPandu>0).map(u=>{
+    const bersih=(u.keuntunganBersih!==''&&u.keuntunganBersih!==undefined)?+u.keuntunganBersih:(+u.hargaJual-+u.totalModal)-(+u.totalFee||0);
+    const kas=+u.kasBisnis>0?+u.kasBisnis:bersih*0.10;
+    return {unit:u.nama, tgl:u.tglJual||u.tgl, kas, bersih};
   });
 }
 
-function renderKas(){
-  const masuk = kasFromUnits();
-  const totalMasuk = masuk.reduce((a,x)=>a+x.kas,0);
-  const keluar = getKasKeluar();
-  const totalKeluar = keluar.reduce((a,x)=>a+(+x.nom||0),0);
-  const saldo = totalMasuk - totalKeluar;
+async function renderKas(){
+  const masuk=kasFromUnits();
+  const totalMasuk=masuk.reduce((a,x)=>a+x.kas,0);
+  const {data:keluarData}=await supabase.from('kas_keluar').select('*').order('tgl',{ascending:false});
+  const keluar=keluarData||[];
+  const totalKeluar=keluar.reduce((a,x)=>a+(+x.nominal||0),0);
+  const saldo=totalMasuk-totalKeluar;
 
-  document.getElementById('kasKPIGrid').innerHTML = [
-    ['Total Kas Masuk', fmtRpShort(totalMasuk), masuk.length+' unit terjual'],
-    ['Total Pengeluaran', fmtRpShort(totalKeluar), keluar.length+' entri'],
-    ['Saldo Kas Bisnis', fmtRpShort(saldo), saldo>=0?'tersedia':'defisit'],
+  document.getElementById('kasKPIGrid').innerHTML=[
+    ['Total Kas Masuk',fmtRpShort(totalMasuk),masuk.length+' unit terjual'],
+    ['Total Pengeluaran',fmtRpShort(totalKeluar),keluar.length+' entri'],
+    ['Saldo Kas Bisnis',fmtRpShort(saldo),saldo>=0?'tersedia':'defisit'],
   ].map(([l,v,s])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${s}</div></div>`).join('');
 
-  // Tabel kas masuk
   const thead=`<thead><tr><th>Unit</th><th class="num">Tanggal Jual</th><th class="num">Profit Bersih</th><th class="num">Kas Bisnis (10%)</th></tr></thead>`;
   const tbody=masuk.length
-    ? masuk.map(x=>`<tr><td>${x.unit}</td><td class="num">${x.tgl||'—'}</td><td class="num">${fmtRpShort(x.bersih)}</td><td class="num" style="font-weight:600;color:var(--blue)">${fmtRpShort(x.kas)}</td></tr>`).join('')
-    : `<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:16px">Belum ada unit terjual dengan 2 stakeholder.</td></tr>`;
-  document.getElementById('kasTable').innerHTML = thead+'<tbody>'+tbody+'</tbody>';
+    ?masuk.map(x=>`<tr><td>${x.unit}</td><td class="num">${x.tgl||'—'}</td><td class="num">${fmtRpShort(x.bersih)}</td><td class="num" style="font-weight:600;color:var(--blue)">${fmtRpShort(x.kas)}</td></tr>`).join('')
+    :`<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:16px">Belum ada unit terjual dengan 2 stakeholder.</td></tr>`;
+  document.getElementById('kasTable').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
 
-  // Tabel pengeluaran
-  const c = document.getElementById('kasKeluarList');
-  if(!keluar.length){ c.innerHTML=`<div style="font-size:13px;color:var(--text3)">Belum ada pengeluaran dicatat.</div>`; return; }
-  c.innerHTML=keluar.slice().reverse().map((x,ri)=>{
-    const idx=keluar.length-1-ri;
-    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px">
-      <div><div style="font-weight:600;font-size:14px">${x.ket}</div><div style="font-size:12px;color:var(--text3)">${x.tgl||'—'}</div></div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="font-weight:600;color:var(--red)">${fmtRpShort(+x.nom)}</div>
-        <button class="btn-sm danger" onclick="hapusKasKeluar(${idx})">✕</button>
-      </div>
-    </div>`;
-  }).join('');
+  const c=document.getElementById('kasKeluarList');
+  if(!keluar.length){c.innerHTML=`<div style="font-size:13px;color:var(--text3)">Belum ada pengeluaran dicatat.</div>`;return;}
+  c.innerHTML=keluar.map(x=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px">
+    <div><div style="font-weight:600;font-size:14px">${x.keterangan}</div><div style="font-size:12px;color:var(--text3)">${x.tgl||'—'}</div></div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-weight:600;color:var(--red)">${fmtRpShort(+x.nominal)}</div>
+      <button class="btn-sm danger" onclick="hapusKasKeluar(${x.id})">✕</button>
+    </div>
+  </div>`).join('');
 }
 
-function tambahKasKeluar(){
+async function tambahKasKeluar(){
   const ket=document.getElementById('kasKeluarKet').value.trim();
   const nom=parseFloat(document.getElementById('kasKeluarNom').value)||0;
   const tgl=document.getElementById('kasKeluarTgl').value;
-  if(!ket||!nom){ showToast('⚠️ Keterangan dan nominal wajib diisi'); return; }
-  const arr=getKasKeluar();
-  arr.push({ket,nom,tgl:tgl||new Date().toISOString().slice(0,10)});
-  saveKasKeluar(arr);
+  if(!ket||!nom){showToast('⚠️ Keterangan dan nominal wajib diisi');return;}
+  const {error}=await supabase.from('kas_keluar').insert({keterangan:ket,nominal:nom,tgl:tgl||new Date().toISOString().slice(0,10)});
+  if(error){showToast('❌ Gagal menyimpan');return;}
   document.getElementById('kasKeluarKet').value='';
   document.getElementById('kasKeluarNom').value='';
-  renderKas();
-  showToast('✅ Pengeluaran dicatat');
+  renderKas(); showToast('✅ Pengeluaran dicatat');
 }
-function hapusKasKeluar(idx){
+async function hapusKasKeluar(id){
   if(!confirm('Hapus entri pengeluaran ini?'))return;
-  const arr=getKasKeluar(); arr.splice(idx,1); saveKasKeluar(arr); renderKas();
+  await supabase.from('kas_keluar').delete().eq('id',id);
+  renderKas();
 }
 
 // ══════════ INVENTORI ASET ══════════
-const ASET_KEY = 'pm_aset_inventori';
-function getAset(){ try{ return JSON.parse(localStorage.getItem(ASET_KEY)||'[]'); }catch(e){ return []; } }
-function saveAset(arr){ localStorage.setItem(ASET_KEY, JSON.stringify(arr)); }
+async function renderInventori(){
+  const {data:aset=[]}=await supabase.from('aset_inventori').select('*').order('created_at',{ascending:true});
+  const totalBeli=(aset||[]).reduce((a,x)=>a+(+x.nilai_beli||0),0);
+  const totalSkrg=(aset||[]).reduce((a,x)=>a+(+x.nilai_skrg||0),0);
+  const depresiasi=totalBeli-totalSkrg;
 
-function renderInventori(){
-  const aset = getAset();
-  const totalBeli = aset.reduce((a,x)=>a+(+x.nilaiBeli||0),0);
-  const totalSkrg = aset.reduce((a,x)=>a+(+x.nilaiSkrg||0),0);
-  const depresiasi = totalBeli - totalSkrg;
-
-  document.getElementById('invKPIGrid').innerHTML = [
-    ['Jumlah Aset', aset.length+' item', 'non-kendaraan'],
-    ['Total Nilai Beli', fmtRpShort(totalBeli), 'harga perolehan'],
-    ['Nilai Saat Ini', fmtRpShort(totalSkrg), 'estimasi pasar'],
-    ['Depresiasi', fmtRpShort(depresiasi), totalBeli>0?(depresiasi/totalBeli*100).toFixed(0)+'%':'—'],
+  document.getElementById('invKPIGrid').innerHTML=[
+    ['Jumlah Aset',(aset||[]).length+' item','non-kendaraan'],
+    ['Total Nilai Beli',fmtRpShort(totalBeli),'harga perolehan'],
+    ['Nilai Saat Ini',fmtRpShort(totalSkrg),'estimasi pasar'],
+    ['Depresiasi',fmtRpShort(depresiasi),totalBeli>0?(depresiasi/totalBeli*100).toFixed(0)+'%':'—'],
   ].map(([l,v,s])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${s}</div></div>`).join('');
 
   const thead=`<thead><tr><th>Nama Aset</th><th>Kategori</th><th class="num">Tgl Beli</th><th class="num">Nilai Beli</th><th class="num">Nilai Skrg</th><th class="num">Catatan</th><th></th></tr></thead>`;
-  const tbody = aset.length
-    ? aset.map((x,i)=>`<tr>
+  const tbody=(aset&&aset.length)
+    ?aset.map(x=>`<tr>
         <td><b>${x.nama}</b></td>
         <td><span style="font-size:11px;background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:20px">${x.kategori||'—'}</span></td>
         <td class="num">${x.tgl||'—'}</td>
-        <td class="num">${fmtRpShort(+x.nilaiBeli||0)}</td>
-        <td class="num" style="font-weight:600">${fmtRpShort(+x.nilaiSkrg||0)}</td>
+        <td class="num">${fmtRpShort(+x.nilai_beli||0)}</td>
+        <td class="num" style="font-weight:600">${fmtRpShort(+x.nilai_skrg||0)}</td>
         <td style="font-size:12px;color:var(--text3)">${x.catatan||'—'}</td>
-        <td><button class="btn-sm danger" onclick="hapusAset(${i})">Hapus</button></td>
+        <td><button class="btn-sm danger" onclick="hapusAset(${x.id})">Hapus</button></td>
       </tr>`).join('')
-    : `<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Belum ada aset dicatat.</td></tr>`;
-  document.getElementById('asetTable').innerHTML = thead+'<tbody>'+tbody+'</tbody>';
+    :`<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Belum ada aset dicatat.</td></tr>`;
+  document.getElementById('asetTable').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
 
-  // Pre-fill tanggal hari ini
   if(!document.getElementById('asetTgl').value)
     document.getElementById('asetTgl').value=new Date().toISOString().slice(0,10);
 }
 
-function tambahAset(){
+async function tambahAset(){
   const nama=document.getElementById('asetNama').value.trim();
   const nilaiBeli=parseFloat(document.getElementById('asetNilaiBeli').value)||0;
-  if(!nama||!nilaiBeli){ showToast('⚠️ Nama dan nilai beli wajib diisi'); return; }
-  const arr=getAset();
-  arr.push({
+  if(!nama||!nilaiBeli){showToast('⚠️ Nama dan nilai beli wajib diisi');return;}
+  const {error}=await supabase.from('aset_inventori').insert({
     nama, kategori:document.getElementById('asetKategori').value,
-    nilaiBeli, nilaiSkrg:parseFloat(document.getElementById('asetNilaiSkrg').value)||nilaiBeli,
+    nilai_beli:nilaiBeli, nilai_skrg:parseFloat(document.getElementById('asetNilaiSkrg').value)||nilaiBeli,
     tgl:document.getElementById('asetTgl').value||new Date().toISOString().slice(0,10),
     catatan:document.getElementById('asetCatatan').value.trim()
   });
-  saveAset(arr);
+  if(error){showToast('❌ Gagal menyimpan');return;}
   ['asetNama','asetNilaiBeli','asetNilaiSkrg','asetCatatan'].forEach(id=>document.getElementById(id).value='');
   renderInventori(); showToast('✅ Aset disimpan');
 }
-function hapusAset(idx){
+async function hapusAset(id){
   if(!confirm('Hapus aset ini?'))return;
-  const arr=getAset(); arr.splice(idx,1); saveAset(arr); renderInventori();
+  await supabase.from('aset_inventori').delete().eq('id',id);
+  renderInventori();
 }
 
 // ══════════ DATA ROOM / PITCH (PHASE 11) ══════════
@@ -2528,25 +2589,25 @@ async function addInvestor(){
   const p=document.getElementById('invPass').value.trim();
   if(!u||!p){showToast('⚠️ Username & password wajib diisi');return;}
   setLoading(true,'Menambah akun investor...');
-  const res=await apiPost({action:'save_investor',adminPass:adminPassCache,username:u,password:p});
+  const {data,error}=await supabase.rpc('pm_save_investor',{p_admin_pass:adminPassCache,p_username:u,p_password:p});
   setLoading(false);
-  if(res.ok){
+  if(!error&&data&&data.ok){
     document.getElementById('invUser').value='';document.getElementById('invPass').value='';
-    showToast('✅ Investor '+res.username+' ditambahkan');
+    showToast('✅ Investor '+data.username+' ditambahkan');
     refreshInvestorList();
-  }else showToast('❌ '+(res.error||'Gagal menambah'));
+  }else showToast('❌ '+((data&&data.error)||'Gagal menambah'));
 }
 async function deleteInvestor(username){
   if(!confirm('Hapus akun investor '+username+'?'))return;
   setLoading(true,'Menghapus akun...');
-  const res=await apiPost({action:'delete_investor',adminPass:adminPassCache,username:username});
+  const {data,error}=await supabase.rpc('pm_delete_investor',{p_admin_pass:adminPassCache,p_username:username});
   setLoading(false);
-  if(res.ok){showToast('✅ Akun dihapus');refreshInvestorList();}
-  else showToast('❌ '+(res.error||'Gagal menghapus'));
+  if(!error&&data&&data.ok){showToast('✅ Akun dihapus');refreshInvestorList();}
+  else showToast('❌ '+((data&&data.error)||'Gagal menghapus'));
 }
 async function refreshInvestorList(){
-  const res=await apiPost({action:'get_admin_config',adminPass:adminPassCache});
-  if(res.ok)renderInvestorList(res.investors||[]);
+  const {data}=await supabase.rpc('pm_get_admin_config',{p_pass:adminPassCache});
+  if(data&&data.ok)renderInvestorList(data.investors||[]);
 }
 
 // ══════════ PENGATURAN TAMPILAN ══════════
@@ -2603,15 +2664,14 @@ function loadSettingsForm(){
 }
 
 async function autoUnlockAdmin(){
-  // Internal users (Panji/Pandu) tidak perlu password — gunakan token internal
-  const res=await apiPost({action:'get_admin_config',adminPass:adminPassCache||'__internal__'});
-  if(res.ok){
+  const {data,error}=await supabase.rpc('pm_get_admin_config',{p_pass:adminPassCache||'__internal__'});
+  if(!error&&data&&data.ok){
     adminUnlocked=true;
     document.getElementById('adminLocked').style.display='none';
     document.getElementById('adminPanel').style.display='block';
-    if(res.emails!==undefined)document.getElementById('admEmails').value=res.emails||'';
-    if(res.emailEnabled!==undefined)document.getElementById('admEmailEnabled').checked=!!res.emailEnabled;
-    renderInvestorList(res.investors||[]);
+    if(data.emails!==undefined)document.getElementById('admEmails').value=data.emails||'';
+    if(data.emailEnabled!==undefined)document.getElementById('admEmailEnabled').checked=!!data.emailEnabled;
+    renderInvestorList(data.investors||[]);
   }
 }
 
