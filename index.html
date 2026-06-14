@@ -1034,7 +1034,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 // ⚙️ Supabase Config
 const SUPABASE_URL = 'https://pefkfuoowzfnbkmygzxo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZmtmdW9vd3pmbmJrbXlnenhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzOTA2MjIsImV4cCI6MjA5Njk2NjYyMn0.vMlXRGlYEe2r5N7UlO7MKqJZ_l2a8hwiO1nN_G3zf04';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Login divalidasi via Supabase RPC. Password diatur via panel Admin.
 
@@ -1125,7 +1125,7 @@ async function doLogin(){
   err.style.display='none';
   btn.disabled=true; btn.textContent='Memeriksa...';
   try{
-    const {data,error}=await supabase.rpc('pm_login',{p_user:u,p_pass:p});
+    const {data,error}=await db.rpc('pm_login',{p_user:u,p_pass:p});
     if(error)throw error;
     if(data&&data.ok){
       currentUser=data.role;
@@ -1179,7 +1179,7 @@ function setLoading(show,text='Memuat data...'){
 async function loadUnits(){
   setLoading(true,'Memuat data dari Supabase...'); setSyncStatus('syncing');
   try{
-    const {data,error}=await supabase.from('units').select('*').order('id',{ascending:true});
+    const {data,error}=await db.from('units').select('*').order('id',{ascending:true});
     if(error)throw error;
     units=(data||[]).map(transformUnit);
     updateMetrics(); setSyncStatus('ok');
@@ -1193,7 +1193,7 @@ async function loadUnits(){
 }
 
 // Realtime subscription — auto-refresh when another device saves data
-supabase.channel('units-realtime')
+db.channel('units-realtime')
   .on('postgres_changes',{event:'*',schema:'public',table:'units'},()=>{ if(currentUser)loadUnits(); })
   .subscribe();
 
@@ -1440,8 +1440,8 @@ async function simpanUnit(){
   btn.disabled=true; btn.textContent='⏳ Menyimpan...'; setSyncStatus('syncing');
 
   let error;
-  if(editingId){ ({error}=await supabase.from('units').update(row).eq('id',editingId)); }
-  else{ ({error}=await supabase.from('units').insert(row)); }
+  if(editingId){ ({error}=await db.from('units').update(row).eq('id',editingId)); }
+  else{ ({error}=await db.from('units').insert(row)); }
 
   btn.disabled=false;
   if(!error){
@@ -1585,7 +1585,7 @@ async function confirmTerjual(){
   const totalModal=u?u.totalModal:0, totalFee=u?u.totalFee:0;
   const bersih=h-totalModal-totalFee;
   closeModal(); setSyncStatus('syncing'); setLoading(true,'Mengupdate status...');
-  const {error}=await supabase.from('units').update({
+  const {error}=await db.from('units').update({
     status:'terjual', harga_jual:h, tgl_jual:tgl,
     keuntungan_bersih:bersih, kas_bisnis:bersih*0.10,
     bagi_panji:bersih*0.90*0.5, bagi_pandu:bersih*0.90*0.5,
@@ -1599,7 +1599,7 @@ async function confirmTerjual(){
 async function hapusUnit(id){
   if(!confirm('Hapus unit ini?'))return;
   setSyncStatus('syncing'); setLoading(true,'Menghapus unit...');
-  const {error}=await supabase.from('units').delete().eq('id',id);
+  const {error}=await db.from('units').delete().eq('id',id);
   setLoading(false);
   if(!error){setSyncStatus('ok');showToast('🗑️ Unit dihapus');await loadUnits();renderUnits();}
   else{setSyncStatus('error');showToast('❌ Gagal: '+(error.message||''));}
@@ -2329,7 +2329,7 @@ async function unlockAdmin(){
   const pass=document.getElementById('adminPassInput').value;
   if(!pass){showToast('⚠️ Masukkan password admin');return;}
   setLoading(true,'Memeriksa akses admin...');
-  const {data,error}=await supabase.rpc('pm_get_admin_config',{p_pass:pass});
+  const {data,error}=await db.rpc('pm_get_admin_config',{p_pass:pass});
   setLoading(false);
   if(!error&&data&&data.ok){
     adminUnlocked=true; adminPassCache=pass;
@@ -2357,7 +2357,7 @@ async function fixKasBisnis(){
   let updated=0;
   for(const u of terjual){
     const bersih=u.keuntunganBersih;
-    const {error}=await supabase.from('units').update({
+    const {error}=await db.from('units').update({
       keuntungan_bersih:bersih, kas_bisnis:bersih*0.10,
       bagi_panji:bersih*0.90*0.5, bagi_pandu:bersih*0.90*0.5,
       updated_at:new Date().toISOString()
@@ -2371,7 +2371,7 @@ async function fixKasBisnis(){
 async function saveAdminConfig(){
   const pass=adminPassCache||'__internal__';
   setLoading(true,'Menyimpan pengaturan admin...');
-  const {data,error}=await supabase.rpc('pm_save_admin_config',{
+  const {data,error}=await db.rpc('pm_save_admin_config',{
     p_admin_pass:pass,
     p_panji_pass:document.getElementById('admPanjiPass').value.trim(),
     p_pandu_pass:document.getElementById('admPanduPass').value.trim(),
@@ -2401,7 +2401,7 @@ function kasFromUnits(){
 async function renderKas(){
   const masuk=kasFromUnits();
   const totalMasuk=masuk.reduce((a,x)=>a+x.kas,0);
-  const {data:keluarData}=await supabase.from('kas_keluar').select('*').order('tgl',{ascending:false});
+  const {data:keluarData}=await db.from('kas_keluar').select('*').order('tgl',{ascending:false});
   const keluar=keluarData||[];
   const totalKeluar=keluar.reduce((a,x)=>a+(+x.nominal||0),0);
   const saldo=totalMasuk-totalKeluar;
@@ -2434,7 +2434,7 @@ async function tambahKasKeluar(){
   const nom=parseFloat(document.getElementById('kasKeluarNom').value)||0;
   const tgl=document.getElementById('kasKeluarTgl').value;
   if(!ket||!nom){showToast('⚠️ Keterangan dan nominal wajib diisi');return;}
-  const {error}=await supabase.from('kas_keluar').insert({keterangan:ket,nominal:nom,tgl:tgl||new Date().toISOString().slice(0,10)});
+  const {error}=await db.from('kas_keluar').insert({keterangan:ket,nominal:nom,tgl:tgl||new Date().toISOString().slice(0,10)});
   if(error){showToast('❌ Gagal menyimpan');return;}
   document.getElementById('kasKeluarKet').value='';
   document.getElementById('kasKeluarNom').value='';
@@ -2442,13 +2442,13 @@ async function tambahKasKeluar(){
 }
 async function hapusKasKeluar(id){
   if(!confirm('Hapus entri pengeluaran ini?'))return;
-  await supabase.from('kas_keluar').delete().eq('id',id);
+  await db.from('kas_keluar').delete().eq('id',id);
   renderKas();
 }
 
 // ══════════ INVENTORI ASET ══════════
 async function renderInventori(){
-  const {data:aset=[]}=await supabase.from('aset_inventori').select('*').order('created_at',{ascending:true});
+  const {data:aset=[]}=await db.from('aset_inventori').select('*').order('created_at',{ascending:true});
   const totalBeli=(aset||[]).reduce((a,x)=>a+(+x.nilai_beli||0),0);
   const totalSkrg=(aset||[]).reduce((a,x)=>a+(+x.nilai_skrg||0),0);
   const depresiasi=totalBeli-totalSkrg;
@@ -2482,7 +2482,7 @@ async function tambahAset(){
   const nama=document.getElementById('asetNama').value.trim();
   const nilaiBeli=parseFloat(document.getElementById('asetNilaiBeli').value)||0;
   if(!nama||!nilaiBeli){showToast('⚠️ Nama dan nilai beli wajib diisi');return;}
-  const {error}=await supabase.from('aset_inventori').insert({
+  const {error}=await db.from('aset_inventori').insert({
     nama, kategori:document.getElementById('asetKategori').value,
     nilai_beli:nilaiBeli, nilai_skrg:parseFloat(document.getElementById('asetNilaiSkrg').value)||nilaiBeli,
     tgl:document.getElementById('asetTgl').value||new Date().toISOString().slice(0,10),
@@ -2494,7 +2494,7 @@ async function tambahAset(){
 }
 async function hapusAset(id){
   if(!confirm('Hapus aset ini?'))return;
-  await supabase.from('aset_inventori').delete().eq('id',id);
+  await db.from('aset_inventori').delete().eq('id',id);
   renderInventori();
 }
 
@@ -2589,7 +2589,7 @@ async function addInvestor(){
   const p=document.getElementById('invPass').value.trim();
   if(!u||!p){showToast('⚠️ Username & password wajib diisi');return;}
   setLoading(true,'Menambah akun investor...');
-  const {data,error}=await supabase.rpc('pm_save_investor',{p_admin_pass:adminPassCache,p_username:u,p_password:p});
+  const {data,error}=await db.rpc('pm_save_investor',{p_admin_pass:adminPassCache,p_username:u,p_password:p});
   setLoading(false);
   if(!error&&data&&data.ok){
     document.getElementById('invUser').value='';document.getElementById('invPass').value='';
@@ -2600,13 +2600,13 @@ async function addInvestor(){
 async function deleteInvestor(username){
   if(!confirm('Hapus akun investor '+username+'?'))return;
   setLoading(true,'Menghapus akun...');
-  const {data,error}=await supabase.rpc('pm_delete_investor',{p_admin_pass:adminPassCache,p_username:username});
+  const {data,error}=await db.rpc('pm_delete_investor',{p_admin_pass:adminPassCache,p_username:username});
   setLoading(false);
   if(!error&&data&&data.ok){showToast('✅ Akun dihapus');refreshInvestorList();}
   else showToast('❌ '+((data&&data.error)||'Gagal menghapus'));
 }
 async function refreshInvestorList(){
-  const {data}=await supabase.rpc('pm_get_admin_config',{p_pass:adminPassCache});
+  const {data}=await db.rpc('pm_get_admin_config',{p_pass:adminPassCache});
   if(data&&data.ok)renderInvestorList(data.investors||[]);
 }
 
@@ -2664,7 +2664,7 @@ function loadSettingsForm(){
 }
 
 async function autoUnlockAdmin(){
-  const {data,error}=await supabase.rpc('pm_get_admin_config',{p_pass:adminPassCache||'__internal__'});
+  const {data,error}=await db.rpc('pm_get_admin_config',{p_pass:adminPassCache||'__internal__'});
   if(!error&&data&&data.ok){
     adminUnlocked=true;
     document.getElementById('adminLocked').style.display='none';
