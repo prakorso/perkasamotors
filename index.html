@@ -3428,6 +3428,41 @@ function renderInvestDash(){
   document.getElementById('investTable').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
 }
 
+function showKeuanganTab(t){
+  ['kas','inventori','cashflow','laporan'].forEach(x=>{
+    document.getElementById('ktab-'+x).style.display=x===t?'':'none';
+  });
+  document.querySelectorAll('[data-kt]').forEach(b=>b.classList.toggle('active',b.dataset.kt===t));
+  if(t==='kas')renderKas();
+  else if(t==='inventori')renderInventori();
+  else if(t==='cashflow')renderCashflow();
+  else if(t==='laporan')renderLaporan();
+}
+function showAnalitikTab(t){
+  ['insight','evaluasi','inventory-intel','invest-dash'].forEach(x=>{
+    document.getElementById('atab-'+x).style.display=x===t?'':'none';
+  });
+  document.querySelectorAll('[data-at]').forEach(b=>b.classList.toggle('active',b.dataset.at===t));
+  if(t==='insight')renderInsight();
+  else if(t==='evaluasi')renderEvaluasi();
+  else if(t==='inventory-intel')renderInventoryIntel();
+  else if(t==='invest-dash')renderInvestDash();
+}
+function showFundingTab(t){
+  ['ledger','dataroom'].forEach(x=>{
+    document.getElementById('ftab-'+x).style.display=x===t?'':'none';
+  });
+  document.querySelectorAll('[data-ft]').forEach(b=>b.classList.toggle('active',b.dataset.ft===t));
+  if(t==='dataroom')renderDataRoom();
+}
+function showPengaturanTab(t){
+  ['settings','audit'].forEach(x=>{
+    document.getElementById('ptab-'+x).style.display=x===t?'':'none';
+  });
+  document.querySelectorAll('[data-pt]').forEach(b=>b.classList.toggle('active',b.dataset.pt===t));
+  if(t==='audit')loadAuditLog();
+}
+
 // Register service worker (PWA)
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
