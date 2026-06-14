@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Migrasi Data — Perkasa Motors</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#F1F4F9;color:#15233B;padding:24px}
+h1{font-size:22px;margin-bottom:6px}
+p.sub{font-size:13px;color:#52617A;margin-bottom:24px}
+.card{background:#fff;border:1px solid #dde3ef;border-radius:12px;padding:20px;margin-bottom:16px}
+h2{font-size:15px;font-weight:600;margin-bottom:12px}
+.row{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+label{font-size:13px;color:#52617A;min-width:90px}
+input{flex:1;min-width:200px;padding:8px 10px;border:1px solid #cbd3e0;border-radius:8px;font-size:13px}
+button{padding:10px 18px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer}
+.btn-primary{background:#2563C9;color:#fff}
+.btn-success{background:#178A5A;color:#fff}
+.btn-warn{background:#C07A0E;color:#fff}
+button:disabled{opacity:0.5;cursor:not-allowed}
+.log{background:#0D1117;color:#A8FF78;border-radius:8px;padding:14px;font-family:monospace;font-size:12px;min-height:100px;max-height:300px;overflow-y:auto;white-space:pre-wrap;line-height:1.6}
+.stat{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin:2px}
+.stat.ok{background:#E3F5EC;color:#178A5A}
+.stat.err{background:#FCEBE9;color:#D33A2C}
+.stat.info{background:#E8F0FC;color:#2563C9}
+.divider{border:none;border-top:1px solid #dde3ef;margin:16px 0}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+th{background:#F1F4F9;padding:6px 8px;text-align:left;font-weight:600}
+td{padding:5px 8px;border-bottom:1px solid #edf0f5}
+.warn-box{background:#FCF3E0;border:1px solid #E8C96E;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<h1>🚀 Migrasi Data ke Supabase</h1>
+<p class="sub">Alat ini mengambil data dari Google Sheets lama dan memasukkannya ke database Supabase baru.<br>Jalankan sekali saja. Pastikan sudah menjalankan <code>schema.sql</code> dan <code>seed.sql</code> terlebih dahulu.</p>
+
+<div class="warn-box">
+  ⚠️ <strong>Penting:</strong> Halaman ini hanya boleh dijalankan sekali. Kalau data sudah ada di Supabase, jangan jalankan lagi (akan duplikasi). Jalankan di browser yang sama dengan dashboard (bukan incognito).
+</div>
+
+<div class="card">
+  <h2>1. Konfigurasi Koneksi</h2>
+  <div class="row"><label>Supabase URL</label><input id="sbUrl" value="https://pefkfuoowzfnbkmygzxo.supabase.co" readonly></div>
+  <div class="row"><label>GAS Endpoint</label><input id="gasUrl" value="https://script.google.com/macros/s/AKfycbzD3IYh58mQb1JO4Zjg11v52fChB7BrzQwqnwftcU5uqgAgor7gs0tVC2ah3Td5djVleg/exec"></div>
+</div>
+
+<div class="card">
+  <h2>2. Langkah Migrasi</h2>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+    <button class="btn-primary" id="btnFetch" onclick="fetchGAS()">📥 Ambil Data dari Google Sheets</button>
+    <button class="btn-success" id="btnMigrate" onclick="migrateToSupabase()" disabled>🚀 Masukkan ke Supabase</button>
+    <button class="btn-warn" id="btnMigrateKas" onclick="migrateLocalKas()" disabled>💰 Migrasi Kas Keluar (localStorage)</button>
+  </div>
+  <div id="stats" style="margin-bottom:10px"></div>
+  <div id="log" class="log">Log akan muncul di sini...</div>
+</div>
+
+<div class="card" id="previewCard" style="display:none">
+  <h2>Preview Data (10 unit pertama)</h2>
+  <div style="overflow-x:auto"><table id="previewTable"></table></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://pefkfuoowzfnbkmygzxo.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZmtmdW9vd3pmbmJrbXlnenhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzOTA2MjIsImV4cCI6MjA5Njk2NjYyMn0.vMlXRGlYEe2r5N7UlO7MKqJZ_l2a8hwiO1nN_G3zf04';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let fetchedUnits = [];
+
+function log(msg, type='info'){
+  const el=document.getElementById('log');
+  const ts=new Date().toLocaleTimeString('id-ID');
+  const prefix=type==='ok'?'✅':type==='err'?'❌':'ℹ️';
+  el.textContent+=`[${ts}] ${prefix} ${msg}\n`;
+  el.scrollTop=el.scrollHeight;
+}
+
+function setStats(units){
+  const aktif=units.filter(u=>u.status!=='terjual').length;
+  const terjual=units.filter(u=>u.status==='terjual').length;
+  document.getElementById('stats').innerHTML=
+    `<span class="stat info">${units.length} unit total</span>`+
+    `<span class="stat ok">${aktif} aktif</span>`+
+    `<span class="stat info">${terjual} terjual</span>`;
+}
+
+function feeOf(p){
+  if(p.feeType==='fixed')return p.feeValue||0;
+  if(p.feeType==='percent')return (p.funding||0)*(p.feeValue||0)/100;
+  return p.feeAmount||0;
+}
+
+function transformForSupabase(u){
+  const biayaP=u.panji&&u.panji.biaya?u.panji.biaya:[];
+  const biayaD=u.pandu&&u.pandu.biaya?u.pandu.biaya:[];
+  const partners=u.partners||[];
+  const totalFee=partners.reduce((a,p)=>a+feeOf(p),0);
+  const modalP=biayaP.reduce((a,b)=>a+(b.nominal||0),0);
+  const modalD=biayaD.reduce((a,b)=>a+(b.nominal||0),0);
+  const modalPartner=partners.reduce((a,p)=>a+(p.funding||0),0);
+  const totalModal=modalP+modalD+modalPartner;
+  const hargaJual=+u.hargaJual||0;
+  const kotor=u.status==='terjual'?hargaJual-totalModal:0;
+  const bersih=typeof u.keuntunganBersih==='number'&&u.keuntunganBersih?u.keuntunganBersih:kotor-totalFee;
+  const kasBisnis=typeof u.kasBisnis==='number'&&u.kasBisnis?u.kasBisnis:(u.status==='terjual'?bersih*0.10:null);
+  const bagiP=typeof u.bagiPanji==='number'&&u.bagiPanji?u.bagiPanji:(u.status==='terjual'?bersih*0.90*0.5:null);
+  const bagiD=typeof u.bagiPandu==='number'&&u.bagiPandu?u.bagiPandu:(u.status==='terjual'?bersih*0.90*0.5:null);
+
+  return {
+    nama:u.nama||'',
+    plat:u.plat||'',
+    tahun:u.tahun||'',
+    jenis:u.jenis||'Mobil',
+    status:u.status||'aktif',
+    tgl:u.tgl||null,
+    tgl_jual:u.tglJual||null,
+    harga_jual:hargaJual,
+    harga_beli:+u.hargaBeli||0,
+    target_jual:+u.targetJual||0,
+    target_profit:+u.targetProfit||0,
+    sumber_beli:u.sumberBeli||'',
+    pic:u.pic||'',
+    kategori:u.kategori||'',
+    kondisi:u.kondisi||'',
+    lokasi:u.lokasi||'',
+    biaya_panji:biayaP,
+    biaya_pandu:biayaD,
+    partners:partners,
+    keuntungan_bersih:u.status==='terjual'?bersih:null,
+    kas_bisnis:kasBisnis,
+    bagi_panji:bagiP,
+    bagi_pandu:bagiD,
+  };
+}
+
+async function fetchGAS(){
+  const gasUrl=document.getElementById('gasUrl').value.trim();
+  if(!gasUrl){alert('Masukkan GAS URL');return;}
+  document.getElementById('btnFetch').disabled=true;
+  log('Mengambil data dari Google Sheets...');
+  try{
+    const res=await fetch(gasUrl,{cache:'no-store'});
+    const data=await res.json();
+    if(!data.ok)throw new Error(data.error||'GAS error');
+    fetchedUnits=data.units||[];
+    log(`Berhasil ambil ${fetchedUnits.length} unit dari Google Sheets`,'ok');
+    setStats(fetchedUnits);
+    document.getElementById('btnMigrate').disabled=false;
+    document.getElementById('btnMigrateKas').disabled=false;
+    showPreview(fetchedUnits.slice(0,10));
+  }catch(e){
+    log('Gagal mengambil data: '+e.message,'err');
+  }
+  document.getElementById('btnFetch').disabled=false;
+}
+
+function showPreview(units){
+  const card=document.getElementById('previewCard');
+  card.style.display='block';
+  const cols=['nama','jenis','status','tgl','harga_jual','bagi_panji','kas_bisnis'];
+  const rows=units.map(u=>{const t=transformForSupabase(u);return cols.map(c=>t[c]??'—');});
+  const head=`<tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+  const body=rows.map(r=>`<tr>${r.map(v=>`<td>${typeof v==='number'?v.toLocaleString('id-ID'):v}</td>`).join('')}</tr>`).join('');
+  document.getElementById('previewTable').innerHTML=head+body;
+}
+
+async function migrateToSupabase(){
+  if(!fetchedUnits.length){log('Ambil data dulu dari Google Sheets','err');return;}
+
+  // Cek apakah sudah ada data di Supabase
+  const {count}=await sb.from('units').select('id',{count:'exact',head:true});
+  if(count>0){
+    const ok=confirm(`⚠️ Supabase sudah punya ${count} unit! Lanjutkan akan MENAMBAH data (bukan mengganti). Yakin?`);
+    if(!ok)return;
+  }
+
+  document.getElementById('btnMigrate').disabled=true;
+  log(`Mulai migrasi ${fetchedUnits.length} unit ke Supabase...`);
+  let ok=0,fail=0;
+
+  // Insert dalam batch 10 untuk menghindari timeout
+  const BATCH=10;
+  for(let i=0;i<fetchedUnits.length;i+=BATCH){
+    const batch=fetchedUnits.slice(i,i+BATCH);
+    const rows=batch.map(transformForSupabase);
+    const {error}=await sb.from('units').insert(rows);
+    if(error){
+      log(`Batch ${Math.floor(i/BATCH)+1} gagal: ${error.message}`,'err');
+      fail+=batch.length;
+    }else{
+      ok+=batch.length;
+      log(`Batch ${Math.floor(i/BATCH)+1}: ${batch.length} unit berhasil (${ok}/${fetchedUnits.length} total)`,'ok');
+    }
+  }
+
+  log(`─────────────────────────────────`);
+  log(`Selesai! ${ok} unit berhasil, ${fail} gagal.`,ok>0&&fail===0?'ok':'err');
+  if(ok>0)log('Data sudah ada di Supabase. Dashboard sudah bisa dipakai!','ok');
+  document.getElementById('btnMigrate').disabled=false;
+}
+
+async function migrateLocalKas(){
+  // Ambil dari localStorage (harus dijalankan di browser yang sama)
+  let kasData=[];
+  try{
+    kasData=JSON.parse(localStorage.getItem('pm_kas_keluar')||'[]');
+  }catch(e){
+    log('Tidak ada data Kas Keluar di localStorage browser ini','err');
+    return;
+  }
+  if(!kasData.length){
+    log('localStorage pm_kas_keluar kosong — tidak ada yang dimigrasi');
+    return;
+  }
+  log(`Ditemukan ${kasData.length} entri kas keluar di localStorage...`);
+  const {count}=await sb.from('kas_keluar').select('id',{count:'exact',head:true});
+  if(count>0){
+    const ok=confirm(`⚠️ Supabase sudah punya ${count} entri kas keluar. Lanjutkan akan MENAMBAH data. Yakin?`);
+    if(!ok)return;
+  }
+  const rows=kasData.map(x=>({
+    keterangan:x.ket||x.keterangan||'—',
+    nominal:+x.nom||+x.nominal||0,
+    tgl:x.tgl||new Date().toISOString().slice(0,10)
+  }));
+  const {error}=await sb.from('kas_keluar').insert(rows);
+  if(error){log('Gagal migrasi kas keluar: '+error.message,'err');}
+  else{log(`${rows.length} entri kas keluar berhasil dipindahkan ke Supabase`,'ok');}
+
+  // Migrasi aset inventori
+  let asetData=[];
+  try{asetData=JSON.parse(localStorage.getItem('pm_aset_inventori')||'[]');}catch(e){}
+  if(asetData.length){
+    log(`Ditemukan ${asetData.length} aset inventori di localStorage...`);
+    const asetRows=asetData.map(x=>({
+      nama:x.nama||'—',
+      kategori:x.kategori||'',
+      nilai_beli:+x.nilaiBeli||+x.nilai_beli||0,
+      nilai_skrg:+x.nilaiSkrg||+x.nilai_skrg||0,
+      tgl:x.tgl||new Date().toISOString().slice(0,10),
+      catatan:x.catatan||''
+    }));
+    const {error:aErr}=await sb.from('aset_inventori').insert(asetRows);
+    if(aErr){log('Gagal migrasi aset: '+aErr.message,'err');}
+    else{log(`${asetRows.length} aset inventori berhasil dipindahkan ke Supabase`,'ok');}
+  }else{
+    log('Tidak ada aset inventori di localStorage browser ini');
+  }
+}
+</script>
+</body>
+</html>
