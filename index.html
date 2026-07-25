@@ -433,12 +433,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <p id="sbTagline">Jual Beli Otomotif</p>
     </div>
     <nav class="sb-nav">
-      <button class="nav-btn active" data-nav="home" onclick="showSection('home')"><span class="ni">⌂</span><span>Dashboard</span></button>
-      <button class="nav-btn" data-nav="unit" onclick="showSection('unit')"><span class="ni">≡</span><span>Unit</span></button>
-      <button class="nav-btn" data-nav="funding" onclick="showSection('funding')"><span class="ni">◆</span><span>Funding</span></button>
+      <button class="nav-btn active role-investor" data-nav="investor" onclick="showSection('investor')"><span class="ni">◆</span><span>Portofolio Saya</span></button>
+      <button class="nav-btn role-investor" data-nav="investor-track" onclick="showSection('investor-track')"><span class="ni">★</span><span>Rekam Jejak</span></button>
+      <button class="nav-btn active role-internal" data-nav="home" onclick="showSection('home')"><span class="ni">⌂</span><span>Dashboard</span></button>
+      <button class="nav-btn role-internal" data-nav="unit" onclick="showSection('unit')"><span class="ni">≡</span><span>Unit</span></button>
+      <button class="nav-btn role-internal" data-nav="funding" onclick="showSection('funding')"><span class="ni">◆</span><span>Funding</span></button>
       <button class="nav-btn role-internal" data-nav="keuangan" onclick="showSection('keuangan')"><span class="ni">💰</span><span>Keuangan</span></button>
       <button class="nav-btn role-internal" data-nav="analitik" onclick="showSection('analitik')"><span class="ni">📊</span><span>Analitik</span></button>
-      <button class="nav-btn" data-nav="pengaturan" onclick="showSection('pengaturan')"><span class="ni">⚙</span><span>Pengaturan</span></button>
+      <button class="nav-btn role-internal" data-nav="pengaturan" onclick="showSection('pengaturan')"><span class="ni">⚙</span><span>Pengaturan</span></button>
     </nav>
     <div class="sb-foot">
       <div class="sb-user">Login sebagai <span id="sbUser">—</span></div>
@@ -551,6 +553,64 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <button class="qa-btn role-internal" onclick="showSection('funding')"><span class="qa-ic">💸</span>Catat Pembayaran</button>
             <button class="qa-btn" onclick="showSection('analitik');setTimeout(exportInsightPDF,300)"><span class="qa-ic">⬇</span>Export Report</button>
           </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ PORTOFOLIO INVESTOR (read-only) ═══════════ -->
+      <div id="sec-investor" class="section">
+        <div class="home-hero">
+          <div class="hh-left">
+            <div class="hh-eyebrow">Portofolio Investasi</div>
+            <div class="hh-greet" id="invGreet">Selamat datang</div>
+            <div class="hh-date" id="invDate">—</div>
+          </div>
+        </div>
+        <div class="kpi-grid" id="invPortKPI" style="margin-bottom:18px"></div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Investasi Saya per Unit</div></div>
+          <div class="table-scroll"><table class="track-table" id="invPortTable"></table></div>
+          <p style="font-size:11px;color:var(--text3);margin-top:10px">Estimasi return dihitung dari skema fee yang disepakati per unit. Modal dikembalikan setelah unit terjual. Angka bersifat estimasi, bukan jaminan.</p>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Estimasi Return per Unit</div></div>
+          <div class="chart-wrap" style="height:260px"><canvas id="chartInvPort"></canvas></div>
+        </div>
+      </div>
+
+      <!-- ═══════════ REKAM JEJAK INVESTOR (read-only) ═══════════ -->
+      <div id="sec-investor-track" class="section">
+        <div class="insight-hero">
+          <div class="ih-title">
+            <div>
+              <div class="ih-eyebrow">Rekam Jejak & Simulasi</div>
+              <h2 class="ih-head">Kinerja Historis</h2>
+            </div>
+            <div class="ih-period" id="itPeriod">—</div>
+          </div>
+          <div class="ih-grid" id="itScorecards"></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Ringkasan</div></div>
+          <div id="itNarrative" style="font-size:14px;line-height:1.7;color:var(--text)"></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Simulasi Imbal Hasil</div></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+            <div class="fg" style="flex:1;min-width:160px;margin-bottom:0">
+              <label>Nominal Investasi (Rp)</label>
+              <input type="number" id="itSimNominal" placeholder="50000000" oninput="renderInvestorTrack()">
+            </div>
+            <div class="fg" style="flex:1;min-width:120px;margin-bottom:0">
+              <label>Perputaran / Tahun</label>
+              <input type="number" id="itSimCycles" placeholder="otomatis" oninput="renderInvestorTrack()">
+            </div>
+          </div>
+          <div class="ih-grid" id="itSimResult"></div>
+          <p style="font-size:11px;color:var(--text3);margin-top:10px" id="itSimNote"></p>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Track Record Penjualan</div></div>
+          <div class="table-scroll"><table class="track-table" id="itTrackTable"></table></div>
         </div>
       </div>
 
@@ -1182,12 +1242,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
   <!-- ═══════════ MOBILE BOTTOM NAV + FAB ═══════════ -->
   <nav class="bottom-nav" id="bottomNav">
-    <button class="bn-btn active" data-bn="home" onclick="showSection('home')"><span class="bn-ic">⌂</span>Dashboard</button>
-    <button class="bn-btn" data-bn="unit" onclick="showSection('unit')"><span class="bn-ic">≡</span>Unit</button>
-    <button class="bn-btn" data-bn="funding" onclick="showSection('funding')"><span class="bn-ic">◆</span>Funding</button>
+    <button class="bn-btn role-investor" data-bn="investor" onclick="showSection('investor')"><span class="bn-ic">◆</span>Portofolio</button>
+    <button class="bn-btn role-investor" data-bn="investor-track" onclick="showSection('investor-track')"><span class="bn-ic">★</span>Rekam Jejak</button>
+    <button class="bn-btn active role-internal" data-bn="home" onclick="showSection('home')"><span class="bn-ic">⌂</span>Dashboard</button>
+    <button class="bn-btn role-internal" data-bn="unit" onclick="showSection('unit')"><span class="bn-ic">≡</span>Unit</button>
+    <button class="bn-btn role-internal" data-bn="funding" onclick="showSection('funding')"><span class="bn-ic">◆</span>Funding</button>
     <button class="bn-btn role-internal" data-bn="keuangan" onclick="showSection('keuangan')"><span class="bn-ic">💰</span>Keuangan</button>
     <button class="bn-btn role-internal" data-bn="analitik" onclick="showSection('analitik')"><span class="bn-ic">📊</span>Analitik</button>
-    <button class="bn-btn" data-bn="pengaturan" onclick="showSection('pengaturan')"><span class="bn-ic">⚙</span>Pengaturan</button>
+    <button class="bn-btn role-internal" data-bn="pengaturan" onclick="showSection('pengaturan')"><span class="bn-ic">⚙</span>Pengaturan</button>
   </nav>
   <div class="fab-menu" id="fabMenu">
     <button class="fab-item" onclick="toggleFab();showSection('input')">＋ Tambah Unit</button>
@@ -1234,9 +1296,13 @@ function roleOf(user){
   return 'partner'; // default kompatibilitas: login lama Panji/Pandu
 }
 function isInternal(){ return ROLE_INTERNAL.includes(roleOf(currentUser)); }
+function isInvestor(){ return roleOf(currentUser)==='investor'; }
 function applyRBAC(){
   const internal=isInternal();
+  const investor=isInvestor();
   document.querySelectorAll('.role-internal').forEach(el=>el.classList.toggle('hide-role',!internal));
+  // Elemen khusus investor (nav Portofolio, dll) hanya tampil untuk investor
+  document.querySelectorAll('.role-investor').forEach(el=>el.classList.toggle('hide-role',!investor));
   const rb=document.getElementById('sbRole');
   if(rb)rb.textContent=roleOf(currentUser).replace('_',' ');
 }
@@ -1359,6 +1425,8 @@ async function loadUnits(){
   if(sec&&sec.id==='sec-unit')renderUnits();
   if(sec&&sec.id==='sec-funding')renderFunding();
   if(sec&&sec.id==='sec-evaluasi')renderEvaluasi();
+  if(sec&&sec.id==='sec-investor')renderInvestorPortfolio();
+  if(sec&&sec.id==='sec-investor-track')renderInvestorTrack();
 }
 
 // Realtime subscription — auto-refresh when another device saves data
@@ -1376,17 +1444,21 @@ function closeSidebar(){
   document.getElementById('sbBackdrop').classList.remove('show');
 }
 function showSection(s,fromPop){
-  const internalOnly=['input','keuangan','analitik'];
-  if(!isInternal() && internalOnly.includes(s)) s='home';
+  // Investor hanya boleh membuka halaman miliknya sendiri
+  if(isInvestor() && !['investor','investor-track'].includes(s)) s='investor';
+  const internalOnly=['input','keuangan','analitik','unit','funding','home'];
+  if(!isInternal() && !isInvestor() && internalOnly.includes(s)) s='home';
   const titles={home:'Dashboard',input:editingId?'Edit Unit':'Input Unit Baru',unit:'Daftar Unit',
-    funding:'Funding',keuangan:'Keuangan',analitik:'Analitik',pengaturan:'Pengaturan'};
+    funding:'Funding',keuangan:'Keuangan',analitik:'Analitik',pengaturan:'Pengaturan',
+    investor:'Portofolio Saya','investor-track':'Rekam Jejak & Simulasi'};
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav===s));
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.toggle('active',b.dataset.bn===s));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('sec-'+s);
   if(el)el.classList.add('active');
   document.getElementById('topbarTitle').textContent=titles[s]||'Dashboard';
-  document.getElementById('globalMetrics').style.display=(s==='home')?'none':'grid';
+  const hideMetrics=(s==='home'||s==='investor'||s==='investor-track');
+  document.getElementById('globalMetrics').style.display=hideMetrics?'none':'grid';
   closeSidebar();
   window.scrollTo(0,0);
   if(!fromPop){ try{ history.pushState({sec:s},''); }catch(e){} }
@@ -1396,6 +1468,8 @@ function showSection(s,fromPop){
   if(s==='keuangan'){showSubTab('keuangan','ktab-kas');}
   if(s==='analitik'){showSubTab('analitik','atab-insight');}
   if(s==='pengaturan'){showSubTab('pengaturan','ptab-settings');}
+  if(s==='investor')renderInvestorPortfolio();
+  if(s==='investor-track')renderInvestorTrack();
   // sub-section aliases
   const subMap={kas:'keuangan',inventori:'keuangan',cashflow:'keuangan',laporan:'keuangan',
     insight:'analitik',evaluasi:'analitik','inventory-intel':'analitik','invest-dash':'analitik',
@@ -2708,6 +2782,119 @@ function dataRoomStats(){
   const cyclesPerYear=avgHold>0?365/avgHold:0;
   return {ins,roiCycle,avgHold,cyclesPerYear,
     annualRoi:roiCycle*cyclesPerYear};
+}
+
+// ══════════════════════════════════════════════════════════
+// INVESTOR — PORTOFOLIO (read-only, data pribadi)
+// ══════════════════════════════════════════════════════════
+let cInvPort=null;
+function myFundings(){
+  const me=(currentUser||'').toLowerCase();
+  return allFundings().filter(f=>{
+    const inv=(f.investor||'').toLowerCase();
+    return inv && (inv.includes(me)||me.includes(inv));
+  });
+}
+function renderInvestorPortfolio(){
+  const hr=new Date().getHours();
+  const greet=hr<11?'Selamat pagi':hr<15?'Selamat siang':hr<19?'Selamat sore':'Selamat malam';
+  document.getElementById('invGreet').textContent=greet+', '+(currentUser||'Investor').charAt(0).toUpperCase()+(currentUser||'Investor').slice(1);
+  document.getElementById('invDate').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  const mine=myFundings();
+  const totalModal=mine.reduce((a,f)=>a+f.funding,0);
+  const modalAktif=mine.filter(f=>f.status==='active').reduce((a,f)=>a+f.funding,0);
+  const modalKembali=mine.filter(f=>f.status!=='active').reduce((a,f)=>a+f.funding,0);
+  const totalReturn=mine.reduce((a,f)=>a+f.fee,0);
+  const returnCair=mine.filter(f=>f.status==='paid').reduce((a,f)=>a+f.fee,0);
+  const roi=totalModal>0?(totalReturn/totalModal*100):0;
+  const unitAktif=mine.filter(f=>f.status==='active').length;
+  const unitSelesai=mine.filter(f=>f.status!=='active').length;
+
+  document.getElementById('invPortKPI').innerHTML=[
+    ['Total Modal Ditanam',fmtRpShort(totalModal),mine.length+' unit didanai','k-blue'],
+    ['Modal Aktif',fmtRpShort(modalAktif),unitAktif+' unit berjalan','k-teal'],
+    ['Modal Sudah Kembali',fmtRpShort(modalKembali),unitSelesai+' unit selesai','k-green'],
+    ['Estimasi Total Return',fmtRpShort(totalReturn),'dari fee unit','k-purple'],
+    ['Return Sudah Cair',fmtRpShort(returnCair),'sudah dibayar','k-green'],
+    ['ROI Investasi',roi.toFixed(1)+'%','return / modal','k-amber'],
+  ].map(([l,v,s,c])=>`<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
+
+  const stLabel={active:['Aktif','var(--amber,#C07A0E)'],pending_payment:['Menunggu Pembayaran','var(--red)'],paid:['Lunas','var(--green)']};
+  const head=`<thead><tr><th>Unit</th><th class="num">Tgl Danai</th><th class="num">Modal</th><th>Status</th><th class="num">Est. Return</th></tr></thead>`;
+  const body=mine.length?mine.slice().sort((a,b)=>(b.fundingDate||'').localeCompare(a.fundingDate||'')).map(f=>{
+    const st=stLabel[f.status]||['—','var(--text3)'];
+    return `<tr>
+      <td><b>${f.namaUnit}</b></td>
+      <td class="num" style="color:var(--text3)">${f.fundingDate||'—'}</td>
+      <td class="num">${fmtRp(f.funding)}</td>
+      <td><span style="background:${st[1]}18;color:${st[1]};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">${st[0]}</span></td>
+      <td class="num" style="color:var(--green);font-weight:600">${fmtRp(f.fee)}</td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:24px">Belum ada investasi atas nama Anda.</td></tr>`;
+  document.getElementById('invPortTable').innerHTML=head+'<tbody>'+body+'</tbody>';
+
+  // Chart: estimasi return per unit
+  const labels=mine.map(f=>f.namaUnit);
+  if(cInvPort)cInvPort.destroy();
+  cInvPort=new Chart(document.getElementById('chartInvPort').getContext('2d'),{
+    type:'bar',
+    data:{labels:labels.length?labels:['—'],datasets:[
+      {label:'Modal',data:mine.map(f=>f.funding),backgroundColor:'rgba(37,99,201,0.35)',borderRadius:4},
+      {label:'Est. Return',data:mine.map(f=>f.fee),backgroundColor:'rgba(23,138,90,0.85)',borderRadius:4},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtRp(c.parsed.x)}}},
+      scales:{x:{ticks:{callback:v=>'Rp'+(v/1e6).toFixed(0)+'jt'}}}}
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// INVESTOR — REKAM JEJAK & SIMULASI (read-only)
+// ══════════════════════════════════════════════════════════
+function renderInvestorTrack(){
+  const st=dataRoomStats(), ins=st.ins;
+  const fmtMonth=mk=>{ if(!mk)return '—'; const[y,m]=mk.split('-'); return BULAN[parseInt(m)-1]+' '+y; };
+  document.getElementById('itPeriod').textContent=ins.sold.length?(fmtMonth(ins.firstMonth)+' – '+fmtMonth(ins.lastMonth)):'Belum ada penjualan';
+
+  const cards=[
+    ['ROI / Siklus',st.roiCycle.toFixed(1)+'%','rata-rata per unit terjual'],
+    ['Estimasi ROI Tahunan',st.annualRoi.toFixed(0)+'%','ROI siklus × perputaran'],
+    ['Win Rate',ins.winRate.toFixed(0)+'%','unit menghasilkan profit'],
+    ['Avg Holding',st.avgHold.toFixed(0)+' hari','modal → cair'],
+    ['Perputaran/Tahun',(st.cyclesPerYear||0).toFixed(1)+'×','estimasi'],
+    ['Unit Terjual',ins.sold.length,'rekam jejak'],
+  ];
+  document.getElementById('itScorecards').innerHTML=cards.map(([l,v,sub])=>
+    `<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${sub}</div></div>`).join('');
+
+  const cyc=st.cyclesPerYear>0?st.cyclesPerYear.toFixed(1):'—';
+  document.getElementById('itNarrative').innerHTML=
+    `<p style="margin:0 0 10px">Perkasa Motors menjalankan model jual-beli kendaraan dengan perputaran modal cepat. Dari <b>${ins.sold.length} transaksi</b> yang sudah terealisasi, modal menghasilkan rata-rata <b>ROI ${st.roiCycle.toFixed(1)}% per siklus</b> dengan masa tahan rata-rata <b>${st.avgHold.toFixed(0)} hari</b>.</p>
+     <p style="margin:0 0 10px">Dengan holding sependek itu, modal dapat berputar sekitar <b>${cyc}× per tahun</b>, sehingga potensi ROI tahunan mencapai <b>~${st.annualRoi.toFixed(0)}%</b>.</p>
+     <p style="margin:0;color:var(--text2);font-size:13px">Imbal hasil diberikan sebagai bagi hasil / fee tetap per unit yang disepakati di awal; modal dikembalikan setelah unit terjual. Angka bersifat estimasi historis, bukan jaminan.</p>`;
+
+  // Simulasi
+  const nominal=parseFloat(document.getElementById('itSimNominal').value)||50000000;
+  const cyclesIn=parseFloat(document.getElementById('itSimCycles').value);
+  const cycles=(cyclesIn>0)?cyclesIn:Math.max(1,st.cyclesPerYear);
+  const perCycle=nominal*st.roiCycle/100;
+  const annual=perCycle*cycles;
+  const total=nominal+annual;
+  document.getElementById('itSimResult').innerHTML=[
+    ['Return / Siklus',fmtRpShort(perCycle),st.roiCycle.toFixed(1)+'% × modal'],
+    ['Perputaran / Tahun',(cycles||0).toFixed(1)+'×','holding '+st.avgHold.toFixed(0)+' hari'],
+    ['Est. Return Tahunan',fmtRpShort(annual),'~'+(st.roiCycle*cycles).toFixed(0)+'% p.a.'],
+    ['Total Modal + Return',fmtRpShort(total),'akhir '+cycles.toFixed(0)+' siklus'],
+  ].map(([l,v,sub])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${sub}</div></div>`).join('');
+  document.getElementById('itSimNote').textContent='Basis: ROI historis '+st.roiCycle.toFixed(1)+'% per siklus. Estimasi, bukan jaminan.';
+
+  const rows=ins.perUnit.slice().sort((a,b)=>(saleDateOf(b.u)||'').localeCompare(saleDateOf(a.u)||''));
+  const head=`<thead><tr><th>Unit</th><th>Jenis</th><th class="num">ROI</th><th class="num">Holding</th></tr></thead>`;
+  const body=rows.map(x=>`<tr><td>${x.u.nama}</td><td>${x.u.jenis||'—'}</td><td class="num"><span class="roi-badge">${x.roi.toFixed(1)}%</span></td><td class="num">${x.hold!==null?x.hold+' hr':'—'}</td></tr>`).join('')
+    ||`<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">Belum ada unit terjual.</td></tr>`;
+  document.getElementById('itTrackTable').innerHTML=head+'<tbody>'+body+'</tbody>';
 }
 function renderDataRoom(){
   const s=getSettings();
