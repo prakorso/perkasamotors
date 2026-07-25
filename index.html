@@ -788,12 +788,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <!-- ═══════════ ANALITIK ═══════════ -->
       <div id="sec-analitik" class="section role-internal">
   <div class="sub-tab-bar">
-    <button class="stab active" data-st="atab-insight" onclick="showSubTab('analitik','atab-insight')">📊 Insight &amp; Growth</button>
-    <button class="stab" data-st="atab-evaluasi" onclick="showSubTab('analitik','atab-evaluasi')">📋 Evaluasi</button>
-    <button class="stab" data-st="atab-inventory-intel" onclick="showSubTab('analitik','atab-inventory-intel')">🔬 Inventory Intel</button>
-    <button class="stab" data-st="atab-invest-dash" onclick="showSubTab('analitik','atab-invest-dash')">💼 Investment</button>
+    <button class="stab active" data-st="atab-kinerja" onclick="showSubTab('analitik','atab-kinerja')">📊 Kinerja Bisnis</button>
+    <button class="stab" data-st="atab-inventori-partner" onclick="showSubTab('analitik','atab-inventori-partner')">📦 Inventori &amp; Partner</button>
   </div>
-  <div id="atab-insight" class="stab-panel active">
+  <div id="atab-kinerja" class="stab-panel active">
         <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
           <div class="date-filter" style="margin-bottom:0">
             <span class="filter-label">Periode:</span>
@@ -846,17 +844,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <p style="font-size:11px;color:var(--text3);margin-top:10px">ROI dihitung atas modal inti (Panji+Pandu), profit setelah fee partner. Holding = lama hari dari masuk sampai terjual.</p>
         </div>
 
-        <div class="two-col">
-          <div class="card">
-            <div class="card-hdr"><div class="card-title">Holding Distribution</div></div>
-            <div class="chart-wrap"><canvas id="chartHolding" role="img" aria-label="Distribusi holding period"></canvas></div>
-            <p style="font-size:11px;color:var(--text3);margin-top:8px">Distribusi lama hari modal berputar per unit terjual.</p>
-          </div>
-          <div class="card">
-            <div class="card-hdr"><div class="card-title">Win Rate Trend per Kuartal</div></div>
-            <div class="chart-wrap"><canvas id="chartWinRate" role="img" aria-label="Win rate per kuartal"></canvas></div>
-            <p style="font-size:11px;color:var(--text3);margin-top:8px">Persentase unit yang menghasilkan profit positif per kuartal.</p>
-          </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Win Rate Trend per Kuartal</div></div>
+          <div class="chart-wrap"><canvas id="chartWinRate" role="img" aria-label="Win rate per kuartal"></canvas></div>
+          <p style="font-size:11px;color:var(--text3);margin-top:8px">Persentase unit yang menghasilkan profit positif per kuartal. Distribusi holding period lengkap tersedia di tab Inventori &amp; Partner.</p>
         </div>
 
         <div class="card">
@@ -864,8 +855,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="chart-wrap" style="height:280px"><canvas id="chartRoiBar" role="img" aria-label="ROI bar chart per unit"></canvas></div>
           <p style="font-size:11px;color:var(--text3);margin-top:8px">ROI atas modal inti per unit terjual, diurutkan dari tertinggi.</p>
         </div>
-  </div>
-  <div id="atab-evaluasi" class="stab-panel">
         <div class="filter-bar">
           <span class="filter-label">Jenis:</span>
           <button class="chip active" data-es="all" onclick="setEvalSegment('all')">Semua</button>
@@ -885,16 +874,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="card-hdr"><div class="card-title">Omzet (Nilai Penjualan) per Bulan</div></div>
           <div class="chart-wrap"><canvas id="chartOmzet" role="img" aria-label="Grafik omzet per bulan"></canvas></div>
         </div>
-        <div class="two-col">
-          <div class="card"><div class="card-hdr"><div class="card-title">Profit per Tahun</div></div><div class="chart-wrap"><canvas id="chartYearly" role="img" aria-label="Grafik profit per tahun"></canvas></div></div>
-          <div class="card"><div class="card-hdr"><div class="card-title">Performa per Jenis</div></div><div class="chart-wrap"><canvas id="chartProduct" role="img" aria-label="Grafik performa per jenis kendaraan"></canvas></div></div>
-        </div>
+        <div class="card"><div class="card-hdr"><div class="card-title">Profit per Tahun</div></div><div class="chart-wrap"><canvas id="chartYearly" role="img" aria-label="Grafik profit per tahun"></canvas></div></div>
         <div class="card">
           <div class="card-hdr"><div class="card-title">Model Terlaris (Unit Terbanyak Terjual)</div></div>
           <div class="table-scroll"><table class="track-table" id="modelTable"></table></div>
         </div>
   </div>
-  <div id="atab-inventory-intel" class="stab-panel">
+  <div id="atab-inventori-partner" class="stab-panel">
         <div class="kpi-grid" id="invIntelKPI" style="margin-bottom:18px"></div>
         <div class="filter-bar">
           <span class="filter-label">Filter:</span>
@@ -924,8 +910,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="card-hdr"><div class="card-title">Analisis per Jenis Kendaraan</div></div>
           <div id="invCatGrid" class="segment-grid"></div>
         </div>
-  </div>
-  <div id="atab-invest-dash" class="stab-panel">
+        <div class="card-hdr" style="margin-top:26px"><div class="card-title" style="font-size:16px">Pendanaan Partner / Investor</div></div>
         <div class="kpi-grid" id="investKPI" style="margin-bottom:18px"></div>
         <div class="two-col">
           <div class="card">
@@ -1470,16 +1455,18 @@ function showSection(s,fromPop){
   if(s==='unit')renderUnits();
   if(s==='funding'){renderFunding();showSubTab('funding','ftab-ledger');}
   if(s==='keuangan'){showSubTab('keuangan','ktab-kas');}
-  if(s==='analitik'){showSubTab('analitik','atab-insight');}
+  if(s==='analitik'){showSubTab('analitik','atab-kinerja');}
   if(s==='pengaturan'){showSubTab('pengaturan','ptab-settings');}
   if(s==='investor')renderInvestorPortfolio();
   if(s==='investor-track')renderInvestorTrack();
   // sub-section aliases
   const subMap={kas:'keuangan',inventori:'keuangan',cashflow:'keuangan',laporan:'keuangan',
     insight:'analitik',evaluasi:'analitik','inventory-intel':'analitik','invest-dash':'analitik',
+    kinerja:'analitik','inventori-partner':'analitik',
     dataroom:'funding',audit:'pengaturan'};
   const tabMap={kas:'ktab-kas',inventori:'ktab-inventori',cashflow:'ktab-cashflow',laporan:'ktab-laporan',
-    insight:'atab-insight',evaluasi:'atab-evaluasi','inventory-intel':'atab-inventory-intel','invest-dash':'atab-invest-dash',
+    insight:'atab-kinerja',evaluasi:'atab-kinerja',kinerja:'atab-kinerja',
+    'inventory-intel':'atab-inventori-partner','invest-dash':'atab-inventori-partner','inventori-partner':'atab-inventori-partner',
     dataroom:'ftab-dataroom',audit:'ptab-audit'};
   if(subMap[s]){showSection(subMap[s]);showSubTab(subMap[s],tabMap[s]);return;}
 }
@@ -1497,10 +1484,8 @@ function showSubTab(section,tabId){
     'ktab-inventori':()=>renderInventori(),
     'ktab-cashflow':()=>renderCashflow(),
     'ktab-laporan':()=>renderLaporan(),
-    'atab-insight':()=>renderInsight(),
-    'atab-evaluasi':()=>renderEvaluasi(),
-    'atab-inventory-intel':()=>renderInventoryIntel(),
-    'atab-invest-dash':()=>renderInvestDash(),
+    'atab-kinerja':()=>{renderInsight();renderEvaluasi();},
+    'atab-inventori-partner':()=>{renderInventoryIntel();renderInvestDash();},
     'ptab-settings':()=>loadSettingsForm(),
     'ptab-audit':()=>loadAuditLog(),
   };
@@ -2019,7 +2004,7 @@ function computeInsights(){
 }
 
 function setInsightPreset(p){
-  document.querySelectorAll('#sec-insight .chip[data-ip]').forEach(b=>b.classList.toggle('active',b.dataset.ip===p));
+  document.querySelectorAll('#atab-kinerja .chip[data-ip]').forEach(b=>b.classList.toggle('active',b.dataset.ip===p));
   if(p==='all'){insightFrom='';insightTo='';}
   else{insightFrom=p+'-01-01';insightTo=p+'-12-31';}
   document.getElementById('insFrom').value=insightFrom;
@@ -2029,12 +2014,12 @@ function setInsightPreset(p){
 function applyInsightDates(){
   insightFrom=document.getElementById('insFrom').value||'';
   insightTo=document.getElementById('insTo').value||'';
-  document.querySelectorAll('#sec-insight .chip[data-ip]').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#atab-kinerja .chip[data-ip]').forEach(b=>b.classList.remove('active'));
   renderInsight();
 }
 function setTrackSegment(s){
   trackSegment=s;
-  document.querySelectorAll('#sec-insight .chip[data-ts]').forEach(b=>b.classList.toggle('active',b.dataset.ts===s));
+  document.querySelectorAll('#atab-kinerja .chip[data-ts]').forEach(b=>b.classList.toggle('active',b.dataset.ts===s));
   renderInsight();
 }
 
@@ -2189,7 +2174,7 @@ function exportInsightPDF(){
 
 function setEvalSegment(s){
   evalSegment=s;
-  document.querySelectorAll('#sec-evaluasi .chip[data-es]').forEach(b=>b.classList.toggle('active',b.dataset.es===s));
+  document.querySelectorAll('#atab-kinerja .chip[data-es]').forEach(b=>b.classList.toggle('active',b.dataset.es===s));
   renderEvaluasi();
 }
 function renderEvaluasi(){
@@ -2281,6 +2266,8 @@ function renderYearly(){
 }
 
 function renderProduct(){
+  const canvas=document.getElementById('chartProduct');
+  if(!canvas)return; // chart dipindah/dihapus saat penggabungan tab Analitik
   if(cProduct)cProduct.destroy();
   const jenisList=['Mobil','Motor'];
   const stats=jenisList.map(j=>{
@@ -2556,7 +2543,7 @@ function renderInvestorHome(){
 // ═══════════ FUNDING LEDGER RENDER (PHASE 3) ═══════════
 function setFundingFilter(f){
   fundingFilter=f;
-  document.querySelectorAll('#sec-funding .chip[data-fs]').forEach(b=>b.classList.toggle('active',b.dataset.fs===f));
+  document.querySelectorAll('#ftab-ledger .chip[data-fs]').forEach(b=>b.classList.toggle('active',b.dataset.fs===f));
   renderFunding();
 }
 function renderFunding(){
