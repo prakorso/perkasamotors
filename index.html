@@ -638,7 +638,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <select id="kategoriUnit"><option value=""></option></select>
           <select id="kondisiUnit"><option value=""></option></select>
           <input type="text" id="lokasiUnit">
-          <input type="number" id="hargaBeli"><input type="number" id="targetJual">
+          <input type="number" id="hargaBeli"><input type="number" id="targetJual" oninput="updatePreview()">
           <input type="text" id="targetProfit">
         </div>
         <div class="two-col">
@@ -660,6 +660,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           </div>
           <div id="partners-list"></div>
           <button class="add-row-btn" style="color:var(--green)" onclick="addPartner()">+ Tambah partner</button>
+          <p style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.6">Skema fee bisa diatur per partner sesuai kesepakatan:<br>
+            • <b>Fee Rp (manual)</b> — nominal komisi tetap yang kamu tentukan sendiri.<br>
+            • <b>Fee % dari modal</b> — komisi = persentase × dana yang disetor partner.<br>
+            • <b>Fee % dari profit</b> — bagi hasil = persentase × keuntungan unit (harga jual / target − total modal).</p>
         </div>
         <div class="preview">
           <div class="pv-title">Preview Kalkulasi</div>
@@ -1314,11 +1318,13 @@ function transformUnit(r){
   const modalUtama=modalP+modalD;
   const partners=r.partners||[];
   const modalPartner=partners.reduce((a,p)=>a+(p.funding||0),0);
-  const totalFee=partners.reduce((a,p)=>a+feeOf(p),0);
   const totalModal=modalUtama+modalPartner;
   const pctP=modalUtama?(modalP/modalUtama*100):0;
   const pctD=modalUtama?(modalD/modalUtama*100):0;
   const hargaJual=r.harga_jual||0;
+  // Basis profit untuk fee "% dari profit": harga jual (jika terjual) / target jual (jika masih aktif) − total modal
+  const grossProfit=(r.status==='terjual'?hargaJual:(+r.target_jual||0))-totalModal;
+  const totalFee=partners.reduce((a,p)=>a+feeOf(p,grossProfit),0);
   const kotor=r.status==='terjual'?hargaJual-totalModal:0;
   const bersih=(r.keuntungan_bersih!==null&&r.keuntungan_bersih!==undefined)?+r.keuntungan_bersih:kotor-totalFee;
   const kasBisnis=(r.kas_bisnis!==null&&r.kas_bisnis!==undefined)?+r.kas_bisnis:(r.status==='terjual'?bersih*0.10:0);
@@ -1571,8 +1577,9 @@ function addPartner(nama='',funding='',feeType='none',feeValue=''){
     <input type="number" class="pf-fund" placeholder="Funding (Rp)" value="${funding}" oninput="updatePreview()">
     <select class="pf-type" onchange="updatePreview()">
       <option value="none"${feeType==='none'?' selected':''}>Tanpa fee</option>
-      <option value="fixed"${feeType==='fixed'?' selected':''}>Fee Rp</option>
-      <option value="percent"${feeType==='percent'?' selected':''}>Fee %</option>
+      <option value="fixed"${feeType==='fixed'?' selected':''}>Fee Rp (manual)</option>
+      <option value="percent"${feeType==='percent'?' selected':''}>Fee % dari modal</option>
+      <option value="percent_profit"${feeType==='percent_profit'?' selected':''}>Fee % dari profit</option>
     </select>
     <input type="number" class="pf-val" placeholder="Nilai" value="${feeValue}" oninput="updatePreview()" step="0.1">
     <button onclick="this.parentElement.remove();updatePreview()">✕</button>`;
@@ -1592,9 +1599,11 @@ function getPartners(){
   return items;
 }
 
-function feeOf(p){
-  if(p.feeType==='fixed')return p.feeValue;
-  if(p.feeType==='percent')return p.funding*p.feeValue/100;
+function feeOf(p,grossProfit){
+  const v=+p.feeValue||0;
+  if(p.feeType==='fixed')return v;                                  // nominal manual (Rp)
+  if(p.feeType==='percent')return (+p.funding||0)*v/100;            // % dari modal partner
+  if(p.feeType==='percent_profit')return Math.max(0,+grossProfit||0)*v/100; // % dari profit (bagi hasil)
   return 0;
 }
 function updatePreview(){
@@ -1602,8 +1611,12 @@ function updatePreview(){
   const tP=sumB(p),tD=sumB(d);
   const modalUtama=tP+tD;
   const modalPartner=partners.reduce((a,x)=>a+x.funding,0);
-  const totalFee=partners.reduce((a,x)=>a+feeOf(x),0);
   const tot=modalUtama+modalPartner;
+  // Basis profit untuk fee "% dari profit": harga jual (jika diisi) / target jual − total modal
+  const hargaPrev=parseFloat(document.getElementById('hargaJual').value)||0;
+  const targetPrev=parseFloat((document.getElementById('targetJual')||{}).value)||0;
+  const grossPrev=(hargaPrev>0?hargaPrev:targetPrev)-tot;
+  const totalFee=partners.reduce((a,x)=>a+feeOf(x,grossPrev),0);
   const pctP=modalUtama?(tP/modalUtama*100).toFixed(2):0,pctD=modalUtama?(tD/modalUtama*100).toFixed(2):0;
   document.getElementById('pvPanji').textContent=fmtRp(tP);
   document.getElementById('pvPandu').textContent=fmtRp(tD);
@@ -1684,9 +1697,10 @@ async function simpanUnit(){
   const hargaBeli=parseFloat(document.getElementById('hargaBeli').value)||0;
   const targetJual=parseFloat(document.getElementById('targetJual').value)||0;
   const partners=getPartners();
-  const totalFee=partners.reduce((a,x)=>a+feeOf(x),0);
   const modalP=sumB(p),modalD=sumB(d),modalPartner=partners.reduce((a,x)=>a+x.funding,0);
   const totalModal=modalP+modalD+modalPartner;
+  const grossSave=(status==='terjual'?harga:targetJual)-totalModal;
+  const totalFee=partners.reduce((a,x)=>a+feeOf(x,grossSave),0);
   const kotor=status==='terjual'?harga-totalModal:0;
   const bersih=kotor-totalFee;
 
@@ -1795,8 +1809,10 @@ function renderUnits(){
     const bP=sold&&bagiBersih!==null?(+u.bagiPanji||bagiBersih*0.5):null;
     const bD=sold&&bagiBersih!==null?(+u.bagiPandu||bagiBersih*0.5):null;
     const hasPartner=(u.partners&&u.partners.length>0)||(+u.modalPartner>0);
+    const uGross=(sold?(+u.hargaJual||0):(+u.targetJual||0))-(+u.totalModal||0);
     const partnerChips=(u.partners||[]).map(p=>{
-      const fee=p.feeAmount?` · fee ${fmtRp(p.feeAmount)}`:'';
+      const feeAmt=p.feeAmount!==undefined?+p.feeAmount:feeOf(p,uGross);
+      const fee=feeAmt?` · fee ${fmtRp(feeAmt)}`:'';
       return `<span class="partner-chip">🤝 ${p.nama||'Partner'}: ${fmtRp(p.funding)}${fee}</span>`;
     }).join('');
     const metaParts=[u.jenis];
@@ -2304,8 +2320,9 @@ function isFundingPaid(unitId,investor){return !!getFundingPaid()[unitId+'__'+in
 function allFundings(){
   const rows=[];
   units.forEach(u=>{
+    const gross=(u.status==='terjual'?(+u.hargaJual||0):(+u.targetJual||0))-(+u.totalModal||0);
     (u.partners||[]).forEach(p=>{
-      const fee = p.feeAmount!==undefined ? +p.feeAmount : feeOf(p);
+      const fee = p.feeAmount!==undefined ? +p.feeAmount : feeOf(p,gross);
       const sold = u.status==='terjual';
       const paid = isFundingPaid(u.id, p.nama||'Partner');
       const status = paid ? 'paid' : sold ? 'pending_payment' : 'active';
@@ -2567,7 +2584,10 @@ function renderFunding(){
   const statusLbl={active:'Aktif',pending_payment:'Belum Dibayar',paid:'Lunas',cancelled:'Batal'};
   const head=`<thead><tr><th>Investor</th><th>Unit</th><th class="num">Funding</th><th>Skema</th><th class="num">Est. Return</th><th>Tgl Funding</th><th>Status</th></tr></thead>`;
   const body=rows.map(f=>{
-    const skema=f.feeType==='fixed'?'Fixed '+fmtRpShort(f.feeValue):f.feeType==='percent'?'Bagi '+f.feeValue+'%':'Tanpa fee';
+    const skema=f.feeType==='fixed'?'Manual '+fmtRpShort(f.feeValue)
+      :f.feeType==='percent'?f.feeValue+'% dari modal'
+      :f.feeType==='percent_profit'?f.feeValue+'% dari profit'
+      :'Tanpa fee';
     const lunasBtn=f.status==='pending_payment'
       ?`<button class="btn-sm success" style="margin-left:8px;font-size:10px;padding:3px 8px" onclick="tandaiLunas('${f.unit.id}','${f.investor}')">Tandai Lunas</button>`:'';
     return `<tr><td>${f.investor}</td><td>${f.namaUnit}</td><td class="num">${fmtRp(f.funding)}</td><td>${skema}</td><td class="num">${fmtRp(f.estReturn)}</td><td>${f.fundingDate||'—'}</td><td><span class="fund-status ${f.status}">${statusLbl[f.status]}</span>${lunasBtn}</td></tr>`;
