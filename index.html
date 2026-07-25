@@ -972,39 +972,39 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
 
         <div class="card">
-          <div class="card-hdr"><div class="card-title">Pengeluaran Kas Bisnis</div></div>
-          <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Catat penggunaan kas bisnis (beli aset, operasional, dll). Tersimpan lokal di browser ini.</p>
-          <div id="kasKeluarList" style="margin-bottom:14px"></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
-            <div class="fg" style="flex:2;min-width:160px;margin-bottom:0">
-              <label>Keterangan</label>
-              <input type="text" id="kasKeluarKet" placeholder="mis. Beli kamera, operasional">
-            </div>
-            <div class="fg" style="flex:1;min-width:130px;margin-bottom:0">
-              <label>Nominal (Rp)</label>
-              <input type="number" id="kasKeluarNom" placeholder="0">
-            </div>
-            <div class="fg" style="flex:1;min-width:120px;margin-bottom:0">
-              <label>Tanggal</label>
-              <input type="date" id="kasKeluarTgl">
-            </div>
-            <button class="btn-sm" style="height:40px" onclick="tambahKasKeluar()">+ Catat</button>
+          <div class="card-hdr">
+            <div class="card-title">Pengeluaran Kas Bisnis</div>
+            <button class="btn-sm" onclick="toggleCollapse('kasKeluarForm',this)">+ Catat Pengeluaran</button>
           </div>
+          <div id="kasKeluarForm" style="display:none;margin-bottom:16px;padding:14px;background:var(--bg);border-radius:var(--r)">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+              <div class="fg" style="flex:2;min-width:160px;margin-bottom:0">
+                <label>Keterangan</label>
+                <input type="text" id="kasKeluarKet" placeholder="mis. Beli kamera, operasional">
+              </div>
+              <div class="fg" style="flex:1;min-width:130px;margin-bottom:0">
+                <label>Nominal (Rp)</label>
+                <input type="number" id="kasKeluarNom" placeholder="0">
+              </div>
+              <div class="fg" style="flex:1;min-width:120px;margin-bottom:0">
+                <label>Tanggal</label>
+                <input type="date" id="kasKeluarTgl">
+              </div>
+              <button class="btn-sm" style="height:40px" onclick="tambahKasKeluar()">💾 Simpan</button>
+            </div>
+          </div>
+          <div id="kasKeluarList"></div>
         </div>
   </div>
   <div id="ktab-inventori" class="stab-panel">
         <div class="ih-grid" id="invKPIGrid" style="margin-bottom:18px"></div>
 
         <div class="card">
-          <div class="card-hdr"><div class="card-title">Daftar Aset Non-Kendaraan</div></div>
-          <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Catat aset bisnis seperti kamera, peralatan, dll. Tersimpan lokal di browser ini.</p>
-          <div class="table-scroll">
-            <table class="track-table" id="asetTable"></table>
+          <div class="card-hdr">
+            <div class="card-title">Daftar Aset Non-Kendaraan</div>
+            <button class="btn-sm" onclick="toggleCollapse('asetForm',this)">+ Tambah Aset</button>
           </div>
-        </div>
-
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">+ Tambah Aset</div></div>
+          <div id="asetForm" style="display:none;margin-bottom:16px;padding:14px;background:var(--bg);border-radius:var(--r)">
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <div class="fg" style="flex:2;min-width:160px;margin-bottom:10px">
               <label>Nama Aset</label>
@@ -1039,6 +1039,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             </div>
           </div>
           <button class="btn-primary" style="margin-top:4px" onclick="tambahAset()">💾 Simpan Aset</button>
+          </div>
+          <div class="table-scroll">
+            <table class="track-table" id="asetTable"></table>
+          </div>
         </div>
   </div>
   <div id="ktab-cashflow" class="stab-panel">
@@ -1512,6 +1516,20 @@ window.addEventListener('popstate',e=>{
 function toggleFab(){
   const f=document.getElementById('fab'),m=document.getElementById('fabMenu');
   const open=f.classList.toggle('open'); m.classList.toggle('show',open);
+}
+// Buka/tutup panel form (pisah aksi input dari tampilan baca)
+function toggleCollapse(id,btn){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const show=el.style.display==='none';
+  el.style.display=show?'block':'none';
+  if(btn){ if(!btn.dataset.orig)btn.dataset.orig=btn.textContent; btn.textContent=show?'✕ Tutup':btn.dataset.orig; }
+}
+function closeCollapse(id){
+  const el=document.getElementById(id); if(!el)return;
+  el.style.display='none';
+  const btn=el.parentElement&&el.parentElement.querySelector('.card-hdr .btn-sm');
+  if(btn&&btn.dataset.orig)btn.textContent=btn.dataset.orig;
 }
 let idleTimer=null;
 function startIdleTimer(){
@@ -2712,6 +2730,7 @@ async function tambahKasKeluar(){
   logAudit('KAS','kas_keluar','',`${ket} — ${fmtRp(nom)}`);
   document.getElementById('kasKeluarKet').value='';
   document.getElementById('kasKeluarNom').value='';
+  closeCollapse('kasKeluarForm');
   renderKas(); showToast('✅ Pengeluaran dicatat');
 }
 async function hapusKasKeluar(id){
@@ -2765,6 +2784,7 @@ async function tambahAset(){
   });
   if(error){showToast('❌ Gagal menyimpan');return;}
   ['asetNama','asetNilaiBeli','asetNilaiSkrg','asetCatatan'].forEach(id=>document.getElementById(id).value='');
+  closeCollapse('asetForm');
   renderInventori(); showToast('✅ Aset disimpan');
 }
 async function hapusAset(id){
