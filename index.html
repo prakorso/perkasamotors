@@ -1853,10 +1853,12 @@ function openTerjualModal(id){
 }
 function closeModal(){document.getElementById('modalOverlay').classList.remove('show');pendingTerjualId=null;}
 async function confirmTerjual(){
+  const targetId=pendingTerjualId; // simpan sebelum closeModal mereset ke null
+  if(targetId===null||targetId===undefined){showToast('⚠️ Unit tidak ditemukan.');return;}
   const h=parseFloat(document.getElementById('modalHarga').value)||0;
   if(!h){showToast('⚠️ Harga jual harus diisi!');return;}
   const tgl=document.getElementById('modalTglJual').value||new Date().toISOString().slice(0,10);
-  const u=units.find(x=>x.id===pendingTerjualId);
+  const u=units.find(x=>x.id===targetId);
   const totalModal=u?u.totalModal:0, totalFee=u?u.totalFee:0;
   const bersih=h-totalModal-totalFee;
   closeModal(); setSyncStatus('syncing'); setLoading(true,'Mengupdate status...');
@@ -1865,9 +1867,9 @@ async function confirmTerjual(){
     keuntungan_bersih:bersih, kas_bisnis:bersih*0.10,
     bagi_panji:bersih*0.90*0.5, bagi_pandu:bersih*0.90*0.5,
     updated_at:new Date().toISOString()
-  }).eq('id',pendingTerjualId);
+  }).eq('id',targetId);
   setLoading(false);
-  if(!error){setSyncStatus('ok');showToast('✅ Status berhasil diupdate!');logAudit('TERJUAL','unit',pendingTerjualId,`Harga jual: ${fmtRp(h)} — ${tgl}`);await loadUnits();renderUnits();}
+  if(!error){setSyncStatus('ok');showToast('✅ Status berhasil diupdate!');logAudit('TERJUAL','unit',targetId,`Harga jual: ${fmtRp(h)} — ${tgl}`);await loadUnits();renderUnits();}
   else{setSyncStatus('error');showToast('❌ Gagal: '+(error.message||''));}
 }
 
