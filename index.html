@@ -425,16 +425,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--border)"><span style="color:var(--text2);font-weight:600">Profit Bersih (dibagi)</span><b id="mdBersih" style="color:var(--green)">—</b></div>
     </div>
 
-    <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">Pembagian Profit <span style="font-weight:400;color:var(--text3)">— bisa diatur manual</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:12px;font-weight:600;color:var(--text2)">Pembagian Profit</span>
+      <div style="display:flex;gap:4px">
+        <button type="button" class="chip active" id="distModeRp" onclick="setDistMode('rp')">Rp</button>
+        <button type="button" class="chip" id="distModePct" onclick="setDistMode('pct')">%</button>
+      </div>
+    </div>
     <div style="display:flex;gap:8px;margin-bottom:6px">
-      <div class="fg" style="flex:1;margin-bottom:0"><label style="font-size:11px">Kas Bisnis (Rp)</label><input type="number" id="modalKas" oninput="onDistEdit()" placeholder="0"></div>
-      <div class="fg" style="flex:1;margin-bottom:0"><label style="font-size:11px">Bagi Panji (Rp)</label><input type="number" id="modalPanji" oninput="onDistEdit()" placeholder="0"></div>
-      <div class="fg" style="flex:1;margin-bottom:0"><label style="font-size:11px">Bagi Pandu (Rp)</label><input type="number" id="modalPandu" oninput="onDistEdit()" placeholder="0"></div>
+      <div class="fg" style="flex:1;margin-bottom:0"><label style="font-size:11px" id="lblKas">Kas Bisnis (Rp)</label><input type="number" id="modalKas" oninput="onDistEdit()" placeholder="0"></div>
+      <div class="fg" style="flex:1;margin-bottom:0"><label style="font-size:11px" id="lblPanji">Bagi Panji (Rp)</label><input type="number" id="modalPanji" oninput="onDistEdit()" placeholder="0"></div>
+      <div class="fg" style="flex:1;margin-bottom:0"><label style="font-size:11px" id="lblPandu">Bagi Pandu (Rp)</label><input type="number" id="modalPandu" oninput="onDistEdit()" placeholder="0"></div>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
       <button type="button" class="chip" onclick="applyDistPreset('10-45-45')">Kas 10% · 45/45</button>
       <button type="button" class="chip" onclick="applyDistPreset('kas-rest')">Isi Kas → sisa rata</button>
     </div>
+    <div id="modalDistCalc" style="font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500"></div>
     <div id="modalDistNote" style="font-size:11px;color:var(--text3);margin-bottom:4px"></div>
 
     <div class="modal-btns">
@@ -1898,6 +1905,7 @@ function renderUnits(){
 }
 
 let distTouched=false; // apakah user sudah mengubah pembagian secara manual
+let distMode='rp';     // 'rp' = input nominal, 'pct' = input persentase
 function openTerjualModal(id){
   pendingTerjualId=id;
   distTouched=false;
@@ -1918,6 +1926,30 @@ function terjualBersih(){
   const totalFee=(u&&u.partners?u.partners:[]).reduce((a,p)=>a+feeOf(p,gross),0);
   return {u,h,totalModal,totalFee,bersih:h-totalModal-totalFee};
 }
+// Kembalikan nominal Rp dari input, apa pun modenya (pct dikali profit bersih)
+function distNominals(){
+  const {bersih}=terjualBersih();
+  const raw=id=>parseFloat(document.getElementById(id).value);
+  const toRp=v=>isNaN(v)?NaN:(distMode==='pct'?bersih*v/100:v);
+  return {bersih,kas:toRp(raw('modalKas')),pj:toRp(raw('modalPanji')),pd:toRp(raw('modalPandu'))};
+}
+function setDistMode(m){
+  if(m===distMode)return;
+  const {bersih}=terjualBersih();
+  ['modalKas','modalPanji','modalPandu'].forEach(id=>{
+    const el=document.getElementById(id); const v=parseFloat(el.value);
+    if(isNaN(v))return;
+    el.value=(m==='pct')?(bersih>0?+(v/bersih*100).toFixed(1):0):Math.round(bersih*v/100);
+  });
+  distMode=m;
+  document.getElementById('distModeRp').classList.toggle('active',m==='rp');
+  document.getElementById('distModePct').classList.toggle('active',m==='pct');
+  const sfx=m==='pct'?'(%)':'(Rp)';
+  document.getElementById('lblKas').textContent='Kas Bisnis '+sfx;
+  document.getElementById('lblPanji').textContent='Bagi Panji '+sfx;
+  document.getElementById('lblPandu').textContent='Bagi Pandu '+sfx;
+  updateDistNote();
+}
 function recalcTerjualDist(){
   const {h,totalModal,totalFee,bersih}=terjualBersih();
   document.getElementById('mdModal').textContent=fmtRp(totalModal);
@@ -1925,42 +1957,52 @@ function recalcTerjualDist(){
   document.getElementById('mdBersih').textContent=fmtRp(bersih);
   document.getElementById('mdBersih').style.color=bersih>=0?'var(--green)':'var(--red)';
   if(!distTouched && h>0){
-    // default: Kas 10%, sisa 90% dibagi rata Panji/Pandu
-    document.getElementById('modalKas').value=Math.round(bersih*0.10);
-    document.getElementById('modalPanji').value=Math.round(bersih*0.90*0.5);
-    document.getElementById('modalPandu').value=Math.round(bersih*0.90*0.5);
+    if(distMode==='pct'){ setDistInputs(10,45,45); }
+    else { setDistInputs(Math.round(bersih*0.10),Math.round(bersih*0.45),Math.round(bersih*0.45)); }
   }
   updateDistNote();
+}
+function setDistInputs(k,pj,pd){
+  document.getElementById('modalKas').value=k;
+  document.getElementById('modalPanji').value=pj;
+  document.getElementById('modalPandu').value=pd;
 }
 function onDistEdit(){ distTouched=true; updateDistNote(); }
 function applyDistPreset(preset){
   const {bersih}=terjualBersih();
   if(preset==='10-45-45'){
-    document.getElementById('modalKas').value=Math.round(bersih*0.10);
-    document.getElementById('modalPanji').value=Math.round(bersih*0.90*0.5);
-    document.getElementById('modalPandu').value=Math.round(bersih*0.90*0.5);
+    if(distMode==='pct')setDistInputs(10,45,45);
+    else setDistInputs(Math.round(bersih*0.10),Math.round(bersih*0.45),Math.round(bersih*0.45));
   }else if(preset==='kas-rest'){
-    const kas=parseFloat(document.getElementById('modalKas').value)||0;
-    const sisa=bersih-kas;
-    document.getElementById('modalPanji').value=Math.round(sisa*0.5);
-    document.getElementById('modalPandu').value=Math.round(sisa*0.5);
+    const n=distNominals();
+    const kasRp=isNaN(n.kas)?0:n.kas;
+    const sisa=bersih-kasRp;
+    if(distMode==='pct'){
+      const kasPct=bersih>0?+(kasRp/bersih*100).toFixed(1):0;
+      const restPct=bersih>0?+(sisa/bersih*100/2).toFixed(1):0;
+      setDistInputs(kasPct,restPct,restPct);
+    }else setDistInputs(Math.round(kasRp),Math.round(sisa*0.5),Math.round(sisa*0.5));
   }
   distTouched=true; updateDistNote();
 }
 function updateDistNote(){
-  const {bersih}=terjualBersih();
-  const kas=parseFloat(document.getElementById('modalKas').value)||0;
-  const pj=parseFloat(document.getElementById('modalPanji').value)||0;
-  const pd=parseFloat(document.getElementById('modalPandu').value)||0;
-  const sum=kas+pj+pd, diff=Math.round(bersih-sum);
+  const {bersih,kas,pj,pd}=distNominals();
+  const k=isNaN(kas)?0:kas, p=isNaN(pj)?0:pj, d=isNaN(pd)?0:pd;
+  const sum=k+p+d, diff=Math.round(bersih-sum);
+  // Baris kalkulasi: tampilkan nominal jika mode %, tampilkan % jika mode Rp
+  const calc=document.getElementById('modalDistCalc');
+  if(distMode==='pct'){
+    calc.textContent=`= Kas ${fmtRp(k)} · Panji ${fmtRp(p)} · Pandu ${fmtRp(d)}`;
+  }else{
+    const pc=v=>bersih>0?(v/bersih*100).toFixed(0)+'%':'—';
+    calc.textContent=`= Kas ${pc(k)} · Panji ${pc(p)} · Pandu ${pc(d)}`;
+  }
   const el=document.getElementById('modalDistNote');
-  const pct=v=>bersih>0?' ('+(v/bersih*100).toFixed(0)+'%)':'';
-  let s=`Kas${pct(kas)} · Panji${pct(pj)} · Pandu${pct(pd)}. `;
-  if(Math.abs(diff)<=1)s+='✅ Total pas dengan profit bersih.';
-  else if(diff>0)s+=`⚠️ Masih ada ${fmtRp(diff)} belum dialokasikan.`;
-  else s+=`⚠️ Kelebihan ${fmtRp(-diff)} dari profit bersih.`;
+  let s='';
+  if(Math.abs(diff)<=1){s='✅ Total pas dengan profit bersih.';el.style.color='var(--green)';}
+  else if(diff>0){s=`⚠️ Masih ada ${fmtRp(diff)} belum dialokasikan.`;el.style.color='var(--amber,#C07A0E)';}
+  else{s=`⚠️ Kelebihan ${fmtRp(-diff)} dari profit bersih.`;el.style.color='var(--amber,#C07A0E)';}
   el.textContent=s;
-  el.style.color=Math.abs(diff)<=1?'var(--green)':'var(--amber,#C07A0E)';
 }
 async function confirmTerjual(){
   const targetId=pendingTerjualId; // simpan sebelum closeModal mereset ke null
@@ -1968,11 +2010,8 @@ async function confirmTerjual(){
   const h=parseFloat(document.getElementById('modalHarga').value)||0;
   if(!h){showToast('⚠️ Harga jual harus diisi!');return;}
   const tgl=document.getElementById('modalTglJual').value||new Date().toISOString().slice(0,10);
-  const {totalModal,totalFee,bersih}=terjualBersih();
-  // Pembagian manual dari input (fallback ke default jika kosong)
-  const kas=parseFloat(document.getElementById('modalKas').value);
-  const pj=parseFloat(document.getElementById('modalPanji').value);
-  const pd=parseFloat(document.getElementById('modalPandu').value);
+  const {bersih,kas,pj,pd}=distNominals();
+  // Pembagian dari input (nominal atau % → nominal); fallback ke default jika kosong
   const kasBisnis=isNaN(kas)?bersih*0.10:kas;
   const bagiPanji=isNaN(pj)?bersih*0.90*0.5:pj;
   const bagiPandu=isNaN(pd)?bersih*0.90*0.5:pd;
