@@ -163,7 +163,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .toast.show{transform:translateY(0);opacity:1;}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:200;display:none;align-items:center;justify-content:center;}
 .overlay.show{display:flex;}
-.modal{background:var(--surface);border-radius:var(--rl);padding:28px;width:360px;box-shadow:0 8px 40px rgba(0,0,0,0.15);}
+.modal{background:var(--surface);border-radius:var(--rl);padding:28px;width:400px;max-width:calc(100vw - 32px);max-height:calc(100vh - 40px);overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.15);}
 .modal h2{font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:16px;}
 .modal input{width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface);margin-bottom:12px;}
 .modal input:focus{outline:0;border-color:var(--accent);}
@@ -416,8 +416,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="modal">
     <h2>Tandai Terjual</h2>
     <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Masukkan harga jual dan tanggal:</p>
-    <input type="number" id="modalHarga" placeholder="Harga jual (Rp)" style="margin-bottom:10px">
-    <input type="date" id="modalTglJual" style="margin-bottom:0">
+    <input type="number" id="modalHarga" placeholder="Harga jual (Rp)" style="margin-bottom:10px" oninput="recalcTerjualDist()">
+    <input type="date" id="modalTglJual" style="margin-bottom:12px" onchange="recalcTerjualDist()">
+
+    <div id="modalDistBox" style="background:var(--bg);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;font-size:13px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--text3)">Total Modal</span><b id="mdModal">—</b></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--text3)">Fee Partner</span><b id="mdFee">—</b></div>
+      <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--border)"><span style="color:var(--text2);font-weight:600">Profit Bersih (dibagi)</span><b id="mdBersih" style="color:var(--green)">—</b></div>
+    </div>
+
+    <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">Pembagian Profit <span style="font-weight:400;color:var(--text3)">— bisa diatur manual</span></div>
+    <div style="display:flex;gap:8px;margin-bottom:6px">
+      <div class="fg" style="flex:1;margin-bottom:0"><label style="font-size:11px">Kas Bisnis (Rp)</label><input type="number" id="modalKas" oninput="onDistEdit()" placeholder="0"></div>
+      <div class="fg" style="flex:1;margin-bottom:0"><label style="font-size:11px">Bagi Panji (Rp)</label><input type="number" id="modalPanji" oninput="onDistEdit()" placeholder="0"></div>
+      <div class="fg" style="flex:1;margin-bottom:0"><label style="font-size:11px">Bagi Pandu (Rp)</label><input type="number" id="modalPandu" oninput="onDistEdit()" placeholder="0"></div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+      <button type="button" class="chip" onclick="applyDistPreset('10-45-45')">Kas 10% · 45/45</button>
+      <button type="button" class="chip" onclick="applyDistPreset('kas-rest')">Isi Kas → sisa rata</button>
+    </div>
+    <div id="modalDistNote" style="font-size:11px;color:var(--text3);margin-bottom:4px"></div>
+
     <div class="modal-btns">
       <button class="cancel" onclick="closeModal()">Batal</button>
       <button class="confirm" onclick="confirmTerjual()">Simpan</button>
@@ -630,6 +649,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <div class="fg"><label>Status</label><select id="statusUnit" onchange="toggleHJ()"><option value="aktif">Aktif (belum terjual)</option><option value="terjual">Terjual</option></select></div>
             <div class="fg" id="hjWrap" style="display:none"><label>Harga Jual (Rp)</label><input type="number" id="hargaJual" placeholder="0" oninput="updatePreview()"></div>
             <div class="fg" id="tglJualWrap" style="display:none"><label>Tanggal Jual</label><input type="date" id="tglJual"></div>
+          </div>
+          <div id="distWrap" style="display:none">
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin:6px 0 8px">Pembagian Profit <span style="font-weight:400;color:var(--text3)">— kosongkan untuk otomatis (Kas 10%, sisa 45/45)</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+              <div class="fg"><label>Kas Bisnis (Rp)</label><input type="number" id="fKas" placeholder="otomatis"></div>
+              <div class="fg"><label>Bagi Panji (Rp)</label><input type="number" id="fPanji" placeholder="otomatis"></div>
+              <div class="fg"><label>Bagi Pandu (Rp)</label><input type="number" id="fPandu" placeholder="otomatis"></div>
+            </div>
           </div>
         </div>
         <!-- Phase 4 hidden fields (data sent to sheet but not shown in form) -->
@@ -953,7 +980,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="card">
           <div class="card-hdr">
             <div class="card-title">Riwayat Kas Bisnis (dari unit terjual)</div>
-            <div style="font-size:12px;color:var(--text3)">10% dari profit bersih setiap unit dengan 2 stakeholder (Panji & Pandu)</div>
+            <div style="font-size:12px;color:var(--text3)">Porsi kas bisnis per unit (default 10% profit, bisa diatur manual saat tandai terjual)</div>
           </div>
           <div class="table-scroll">
             <table class="track-table" id="kasTable"></table>
@@ -1548,6 +1575,7 @@ function toggleHJ(){
   const isSold=document.getElementById('statusUnit').value==='terjual';
   document.getElementById('hjWrap').style.display=isSold?'flex':'none';
   document.getElementById('tglJualWrap').style.display=isSold?'flex':'none';
+  const dw=document.getElementById('distWrap'); if(dw)dw.style.display=isSold?'block':'none';
   if(isSold&&!document.getElementById('tglJual').value)document.getElementById('tglJual').value=new Date().toISOString().slice(0,10);
   updatePreview();
 }
@@ -1662,7 +1690,13 @@ function startEdit(id){
   updateTargetProfit();
   document.getElementById('statusUnit').value=u.status;
   toggleHJ();
-  if(u.status==='terjual'){document.getElementById('hargaJual').value=u.hargaJual;document.getElementById('tglJual').value=u.tglJual||u.tgl||'';}
+  if(u.status==='terjual'){
+    document.getElementById('hargaJual').value=u.hargaJual;
+    document.getElementById('tglJual').value=u.tglJual||u.tgl||'';
+    document.getElementById('fKas').value=(u.kasBisnis!==undefined&&u.kasBisnis!==null)?Math.round(u.kasBisnis):'';
+    document.getElementById('fPanji').value=(u.bagiPanji!==undefined&&u.bagiPanji!==null)?Math.round(u.bagiPanji):'';
+    document.getElementById('fPandu').value=(u.bagiPandu!==undefined&&u.bagiPandu!==null)?Math.round(u.bagiPandu):'';
+  }
   document.getElementById('biayas-panji').innerHTML='';
   document.getElementById('biayas-pandu').innerHTML='';
   const pBiaya=((u.panji&&u.panji.biaya)||[]);
@@ -1686,6 +1720,8 @@ function cancelEdit(){
   resetForm();
 }
 
+// Ambil nilai pembagian manual dari form; jika kosong pakai default otomatis
+function distVal(id,def){ const v=parseFloat(document.getElementById(id).value); return isNaN(v)?def:v; }
 async function simpanUnit(){
   const nama=document.getElementById('namaUnit').value.trim();
   if(!nama){showToast('⚠️ Nama unit wajib diisi!');return;}
@@ -1718,9 +1754,9 @@ async function simpanUnit(){
     lokasi:document.getElementById('lokasiUnit').value.trim(),
     biaya_panji:p, biaya_pandu:d, partners,
     keuntungan_bersih:status==='terjual'?bersih:null,
-    kas_bisnis:status==='terjual'?bersih*0.10:null,
-    bagi_panji:status==='terjual'?bersih*0.90*0.5:null,
-    bagi_pandu:status==='terjual'?bersih*0.90*0.5:null,
+    kas_bisnis:status==='terjual'?distVal('fKas',bersih*0.10):null,
+    bagi_panji:status==='terjual'?distVal('fPanji',bersih*0.90*0.5):null,
+    bagi_pandu:status==='terjual'?distVal('fPandu',bersih*0.90*0.5):null,
     updated_at:new Date().toISOString()
   };
 
@@ -1745,7 +1781,7 @@ async function simpanUnit(){
 }
 
 function resetForm(){
-  ['namaUnit','hargaJual','tglJual','platUnit','tahunUnit','sumberBeli','picUnit','lokasiUnit','hargaBeli','targetJual','targetProfit'].forEach(id=>document.getElementById(id).value='');
+  ['namaUnit','hargaJual','tglJual','platUnit','tahunUnit','sumberBeli','picUnit','lokasiUnit','hargaBeli','targetJual','targetProfit','fKas','fPanji','fPandu'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('jenisUnit').value='Mobil';
   document.getElementById('kategoriUnit').value='';
   document.getElementById('kondisiUnit').value='';
@@ -1753,6 +1789,7 @@ function resetForm(){
   document.getElementById('tglMasuk').value=new Date().toISOString().slice(0,10);
   document.getElementById('hjWrap').style.display='none';
   document.getElementById('tglJualWrap').style.display='none';
+  document.getElementById('distWrap').style.display='none';
   document.getElementById('biayas-panji').innerHTML='';
   document.getElementById('biayas-pandu').innerHTML='';
   document.getElementById('partners-list').innerHTML='';
@@ -1804,10 +1841,10 @@ function renderUnits(){
     const sold=u.status==='terjual';
     const kotor=sold?(+u.hargaJual-+u.totalModal):null;
     const bersih=sold?(u.keuntunganBersih!==undefined&&u.keuntunganBersih!==''?+u.keuntunganBersih:kotor-(+u.totalFee||0)):null;
-    const kasBisnis=sold&&bersih!==null?bersih*0.10:null;
+    const kasBisnis=sold&&bersih!==null?((u.kasBisnis!==undefined&&u.kasBisnis!==null)?+u.kasBisnis:bersih*0.10):null;
     const bagiBersih=sold&&bersih!==null?bersih*0.90:null;
-    const bP=sold&&bagiBersih!==null?(+u.bagiPanji||bagiBersih*0.5):null;
-    const bD=sold&&bagiBersih!==null?(+u.bagiPandu||bagiBersih*0.5):null;
+    const bP=sold&&bagiBersih!==null?((u.bagiPanji!==undefined&&u.bagiPanji!==null)?+u.bagiPanji:bagiBersih*0.5):null;
+    const bD=sold&&bagiBersih!==null?((u.bagiPandu!==undefined&&u.bagiPandu!==null)?+u.bagiPandu:bagiBersih*0.5):null;
     const hasPartner=(u.partners&&u.partners.length>0)||(+u.modalPartner>0);
     const uGross=(sold?(+u.hargaJual||0):(+u.targetJual||0))-(+u.totalModal||0);
     const partnerChips=(u.partners||[]).map(p=>{
@@ -1849,7 +1886,7 @@ function renderUnits(){
           <div><span class="sl">Profit Bersih: </span><span class="sv ${bersih>=0?'untung':'rugi'}">${fmtRp(bersih)}</span></div>
           <div><span class="sl">Bagi Panji: </span><span class="sv untung">${fmtRp(bP)}</span></div>
           <div><span class="sl">Bagi Pandu: </span><span class="sv untung">${fmtRp(bD)}</span></div>
-          <div><span class="sl">Kas Bisnis (10%): </span><span class="sv" style="color:var(--blue)">${fmtRp(kasBisnis)}</span></div>
+          <div><span class="sl">Kas Bisnis: </span><span class="sv" style="color:var(--blue)">${fmtRp(kasBisnis)}</span></div>
         `:`<div><span class="sl">Status: </span><span class="sv ${sold?'untung':'pending'}">${sold?'Terjual':'Belum terjual'}</span></div>
            <div><span class="sl">Holding: </span><span class="sv">${holdingDays(u)} hari</span></div>
            ${ig&&+u.hargaBeli>0?`<div><span class="sl">Harga Beli: </span><span class="sv">${fmtRp(u.hargaBeli)}</span></div>`:''}
@@ -1860,32 +1897,94 @@ function renderUnits(){
   }).join('');
 }
 
+let distTouched=false; // apakah user sudah mengubah pembagian secara manual
 function openTerjualModal(id){
   pendingTerjualId=id;
+  distTouched=false;
   document.getElementById('modalHarga').value='';
   document.getElementById('modalTglJual').value=new Date().toISOString().slice(0,10);
+  ['modalKas','modalPanji','modalPandu'].forEach(x=>document.getElementById(x).value='');
+  recalcTerjualDist();
   document.getElementById('modalOverlay').classList.add('show');
   setTimeout(()=>document.getElementById('modalHarga').focus(),100);
 }
 function closeModal(){document.getElementById('modalOverlay').classList.remove('show');pendingTerjualId=null;}
+// Hitung ulang basis profit di modal terjual (fee % profit ikut harga)
+function terjualBersih(){
+  const u=units.find(x=>x.id===pendingTerjualId);
+  const h=parseFloat(document.getElementById('modalHarga').value)||0;
+  const totalModal=u?+u.totalModal||0:0;
+  const gross=h-totalModal;
+  const totalFee=(u&&u.partners?u.partners:[]).reduce((a,p)=>a+feeOf(p,gross),0);
+  return {u,h,totalModal,totalFee,bersih:h-totalModal-totalFee};
+}
+function recalcTerjualDist(){
+  const {h,totalModal,totalFee,bersih}=terjualBersih();
+  document.getElementById('mdModal').textContent=fmtRp(totalModal);
+  document.getElementById('mdFee').textContent=fmtRp(totalFee);
+  document.getElementById('mdBersih').textContent=fmtRp(bersih);
+  document.getElementById('mdBersih').style.color=bersih>=0?'var(--green)':'var(--red)';
+  if(!distTouched && h>0){
+    // default: Kas 10%, sisa 90% dibagi rata Panji/Pandu
+    document.getElementById('modalKas').value=Math.round(bersih*0.10);
+    document.getElementById('modalPanji').value=Math.round(bersih*0.90*0.5);
+    document.getElementById('modalPandu').value=Math.round(bersih*0.90*0.5);
+  }
+  updateDistNote();
+}
+function onDistEdit(){ distTouched=true; updateDistNote(); }
+function applyDistPreset(preset){
+  const {bersih}=terjualBersih();
+  if(preset==='10-45-45'){
+    document.getElementById('modalKas').value=Math.round(bersih*0.10);
+    document.getElementById('modalPanji').value=Math.round(bersih*0.90*0.5);
+    document.getElementById('modalPandu').value=Math.round(bersih*0.90*0.5);
+  }else if(preset==='kas-rest'){
+    const kas=parseFloat(document.getElementById('modalKas').value)||0;
+    const sisa=bersih-kas;
+    document.getElementById('modalPanji').value=Math.round(sisa*0.5);
+    document.getElementById('modalPandu').value=Math.round(sisa*0.5);
+  }
+  distTouched=true; updateDistNote();
+}
+function updateDistNote(){
+  const {bersih}=terjualBersih();
+  const kas=parseFloat(document.getElementById('modalKas').value)||0;
+  const pj=parseFloat(document.getElementById('modalPanji').value)||0;
+  const pd=parseFloat(document.getElementById('modalPandu').value)||0;
+  const sum=kas+pj+pd, diff=Math.round(bersih-sum);
+  const el=document.getElementById('modalDistNote');
+  const pct=v=>bersih>0?' ('+(v/bersih*100).toFixed(0)+'%)':'';
+  let s=`Kas${pct(kas)} · Panji${pct(pj)} · Pandu${pct(pd)}. `;
+  if(Math.abs(diff)<=1)s+='✅ Total pas dengan profit bersih.';
+  else if(diff>0)s+=`⚠️ Masih ada ${fmtRp(diff)} belum dialokasikan.`;
+  else s+=`⚠️ Kelebihan ${fmtRp(-diff)} dari profit bersih.`;
+  el.textContent=s;
+  el.style.color=Math.abs(diff)<=1?'var(--green)':'var(--amber,#C07A0E)';
+}
 async function confirmTerjual(){
   const targetId=pendingTerjualId; // simpan sebelum closeModal mereset ke null
   if(targetId===null||targetId===undefined){showToast('⚠️ Unit tidak ditemukan.');return;}
   const h=parseFloat(document.getElementById('modalHarga').value)||0;
   if(!h){showToast('⚠️ Harga jual harus diisi!');return;}
   const tgl=document.getElementById('modalTglJual').value||new Date().toISOString().slice(0,10);
-  const u=units.find(x=>x.id===targetId);
-  const totalModal=u?u.totalModal:0, totalFee=u?u.totalFee:0;
-  const bersih=h-totalModal-totalFee;
+  const {totalModal,totalFee,bersih}=terjualBersih();
+  // Pembagian manual dari input (fallback ke default jika kosong)
+  const kas=parseFloat(document.getElementById('modalKas').value);
+  const pj=parseFloat(document.getElementById('modalPanji').value);
+  const pd=parseFloat(document.getElementById('modalPandu').value);
+  const kasBisnis=isNaN(kas)?bersih*0.10:kas;
+  const bagiPanji=isNaN(pj)?bersih*0.90*0.5:pj;
+  const bagiPandu=isNaN(pd)?bersih*0.90*0.5:pd;
   closeModal(); setSyncStatus('syncing'); setLoading(true,'Mengupdate status...');
   const {error}=await db.from('units').update({
     status:'terjual', harga_jual:h, tgl_jual:tgl,
-    keuntungan_bersih:bersih, kas_bisnis:bersih*0.10,
-    bagi_panji:bersih*0.90*0.5, bagi_pandu:bersih*0.90*0.5,
+    keuntungan_bersih:bersih, kas_bisnis:kasBisnis,
+    bagi_panji:bagiPanji, bagi_pandu:bagiPandu,
     updated_at:new Date().toISOString()
   }).eq('id',targetId);
   setLoading(false);
-  if(!error){setSyncStatus('ok');showToast('✅ Status berhasil diupdate!');logAudit('TERJUAL','unit',targetId,`Harga jual: ${fmtRp(h)} — ${tgl}`);await loadUnits();renderUnits();}
+  if(!error){setSyncStatus('ok');showToast('✅ Status berhasil diupdate!');logAudit('TERJUAL','unit',targetId,`Harga jual: ${fmtRp(h)} — Kas ${fmtRp(kasBisnis)}, Panji ${fmtRp(bagiPanji)}, Pandu ${fmtRp(bagiPandu)}`);await loadUnits();renderUnits();}
   else{setSyncStatus('error');showToast('❌ Gagal: '+(error.message||''));}
 }
 
@@ -2712,7 +2811,7 @@ async function renderKas(){
     ['Saldo Kas Bisnis',fmtRpShort(saldo),saldo>=0?'tersedia':'defisit'],
   ].map(([l,v,s])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${s}</div></div>`).join('');
 
-  const thead=`<thead><tr><th>Unit</th><th class="num">Tanggal Jual</th><th class="num">Profit Bersih</th><th class="num">Kas Bisnis (10%)</th></tr></thead>`;
+  const thead=`<thead><tr><th>Unit</th><th class="num">Tanggal Jual</th><th class="num">Profit Bersih</th><th class="num">Kas Bisnis</th></tr></thead>`;
   const tbody=masuk.length
     ?masuk.map(x=>`<tr><td>${x.unit}</td><td class="num">${x.tgl||'—'}</td><td class="num">${fmtRpShort(x.bersih)}</td><td class="num" style="font-weight:600;color:var(--blue)">${fmtRpShort(x.kas)}</td></tr>`).join('')
     :`<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:16px">Belum ada unit terjual dengan 2 stakeholder.</td></tr>`;
@@ -3233,7 +3332,7 @@ async function renderCashflow(){
   document.getElementById('cfKPIGrid').innerHTML=[
     ['Total Penjualan',fmtRpShort(totalPenjualan),sold.length+' unit terjual','k-blue'],
     ['Net Profit Terealisasi',fmtRpShort(netProfit),'setelah HPP & fee','k-green'],
-    ['Kas Bisnis (10%)',fmtRpShort(totalKasBisnis),'akumulasi','k-teal'],
+    ['Kas Bisnis',fmtRpShort(totalKasBisnis),'akumulasi','k-teal'],
     ['Pengeluaran Ops',fmtRpShort(totalKeluar),keluar.length+' entri','k-amber'],
     ['Saldo Kas',fmtRpShort(saldoKas),saldoKas>=0?'tersedia':'defisit','k-'+(saldoKas>=0?'green':'red')],
     ['Modal di Inventory',fmtRpShort(active.reduce((a,u)=>a+(+u.totalModal||0),0)),active.length+' unit aktif','k-purple'],
@@ -3249,7 +3348,7 @@ async function renderCashflow(){
     ['Fee Partner/Investor',fmtRp(totalFee),'out'],
     ['Pengeluaran Operasional',fmtRp(totalKeluar),'out'],
     ['DISTRIBUSI','','header'],
-    ['Kas Bisnis (10%)',fmtRp(totalKasBisnis),'dist'],
+    ['Kas Bisnis',fmtRp(totalKasBisnis),'dist'],
     ['Bagi Hasil Panji + Pandu',fmtRp(totalBagiHasil),'dist'],
     ['SALDO KAS',fmtRp(saldoKas),'net'],
   ];
@@ -3400,7 +3499,7 @@ async function renderLaporan(){
 
   // Distribusi
   document.getElementById('distribusiGrid').innerHTML=[
-    ['Kas Bisnis (10%)',fmtRpShort(kasBisnis),soldInPeriod.length+' unit','k-blue'],
+    ['Kas Bisnis',fmtRpShort(kasBisnis),soldInPeriod.length+' unit','k-blue'],
     ['Bagi Panji (45%)',fmtRpShort(bagiPanji),'dari profit bersih','k-teal'],
     ['Bagi Pandu (45%)',fmtRpShort(bagiPandu),'dari profit bersih','k-teal'],
     ['Total Distribusi',fmtRpShort(kasBisnis+bagiPanji+bagiPandu),'akumulasi periode','k-green'],
