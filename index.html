@@ -525,23 +525,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="card-hdr" style="margin:4px 0 12px"><div class="card-title">CEO KPI Overview</div></div>
         <div class="kpi-grid" id="kpiGrid"></div>
 
-        <div class="two-col">
-          <div class="card role-internal">
-            <div class="card-hdr"><div class="card-title">Cash Position</div></div>
-            <div class="chart-wrap" style="height:240px"><canvas id="chartCash"></canvas></div>
-          </div>
-          <div class="card">
-            <div class="card-hdr">
-              <div class="card-title">Profit Trend</div>
-              <div style="display:flex;gap:5px">
-                <button class="chip active" data-pt="3" onclick="setProfitRange('3')">3B</button>
-                <button class="chip" data-pt="6" onclick="setProfitRange('6')">6B</button>
-                <button class="chip" data-pt="12" onclick="setProfitRange('12')">12B</button>
-                <button class="chip" data-pt="all" onclick="setProfitRange('all')">All</button>
-              </div>
+        <div class="card">
+          <div class="card-hdr">
+            <div class="card-title">Profit Trend</div>
+            <div style="display:flex;gap:5px">
+              <button class="chip active" data-pt="3" onclick="setProfitRange('3')">3B</button>
+              <button class="chip" data-pt="6" onclick="setProfitRange('6')">6B</button>
+              <button class="chip" data-pt="12" onclick="setProfitRange('12')">12B</button>
+              <button class="chip" data-pt="all" onclick="setProfitRange('all')">All</button>
             </div>
-            <div class="chart-wrap" style="height:240px"><canvas id="chartProfitTrend"></canvas></div>
           </div>
+          <div class="chart-wrap" style="height:240px"><canvas id="chartProfitTrend"></canvas></div>
         </div>
 
         <div class="card">
@@ -910,15 +904,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="chart-wrap" style="height:240px"><canvas id="chartMOM" role="img" aria-label="Grafik profit penjualan per bulan"></canvas></div>
           <div id="momBreakdown" style="margin-top:16px"></div>
         </div>
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">Omzet (Nilai Penjualan) per Bulan</div></div>
-          <div class="chart-wrap"><canvas id="chartOmzet" role="img" aria-label="Grafik omzet per bulan"></canvas></div>
-        </div>
         <div class="card"><div class="card-hdr"><div class="card-title">Profit per Tahun</div></div><div class="chart-wrap"><canvas id="chartYearly" role="img" aria-label="Grafik profit per tahun"></canvas></div></div>
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">Model Terlaris (Unit Terbanyak Terjual)</div></div>
-          <div class="table-scroll"><table class="track-table" id="modelTable"></table></div>
-        </div>
   </div>
   <div id="atab-inventori-partner" class="stab-panel">
         <div class="kpi-grid" id="invIntelKPI" style="margin-bottom:18px"></div>
@@ -2423,6 +2409,7 @@ function renderEvaluasi(){
 }
 
 function renderOmzet(){
+  if(!document.getElementById('chartOmzet'))return; // chart dihapus (audit simplify)
   if(cOmzet)cOmzet.destroy();
   const byMonth={};
   evalUnits().filter(u=>u.status==='terjual').forEach(u=>{
@@ -2440,6 +2427,7 @@ function renderOmzet(){
 }
 
 function renderModelTable(){
+  if(!document.getElementById('modelTable'))return; // tabel dihapus (audit simplify)
   // Kelompokkan unit terjual per nama model
   const grp={};
   evalUnits().filter(u=>u.status==='terjual').forEach(u=>{
@@ -2638,15 +2626,16 @@ function renderHome(){
   document.getElementById('kpiGrid').innerHTML=kpis.map(([l,v,s,c])=>
     `<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
 
-  renderCashChart(h);
   renderProfitTrend();
   renderAgingDist(h);
   renderTopPerformance(h);
 }
 
 function renderCashChart(h){
+  const cashCanvas=document.getElementById('chartCash');
+  if(!cashCanvas)return; // Cash Position dihapus dari homepage
   if(cCash)cCash.destroy();
-  cCash=new Chart(document.getElementById('chartCash').getContext('2d'),{
+  cCash=new Chart(cashCanvas.getContext('2d'),{
     type:'doughnut',
     data:{labels:['Cash (est.)','Inventory','Piutang','Hutang Investor'],
       datasets:[{data:[h.cashProxy,h.inventoryVal,0,h.outstanding],
@@ -3421,14 +3410,13 @@ async function renderCashflow(){
   const saldoKas=totalKasBisnis-totalKeluar;
   const netProfit=sold.reduce((a,u)=>a+(+u.keuntunganBersih||0),0);
 
-  // KPI
+  // KPI — inti kas (5 metrik terpenting)
   document.getElementById('cfKPIGrid').innerHTML=[
-    ['Total Penjualan',fmtRpShort(totalPenjualan),sold.length+' unit terjual','k-blue'],
     ['Net Profit Terealisasi',fmtRpShort(netProfit),'setelah HPP & fee','k-green'],
-    ['Kas Bisnis',fmtRpShort(totalKasBisnis),'akumulasi','k-teal'],
-    ['Pengeluaran Ops',fmtRpShort(totalKeluar),keluar.length+' entri','k-amber'],
     ['Saldo Kas',fmtRpShort(saldoKas),saldoKas>=0?'tersedia':'defisit','k-'+(saldoKas>=0?'green':'red')],
+    ['Pengeluaran Ops',fmtRpShort(totalKeluar),keluar.length+' entri','k-amber'],
     ['Modal di Inventory',fmtRpShort(active.reduce((a,u)=>a+(+u.totalModal||0),0)),active.length+' unit aktif','k-purple'],
+    ['Total Penjualan',fmtRpShort(totalPenjualan),sold.length+' unit terjual','k-blue'],
   ].map(([l,v,s,c])=>`<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
 
   // Cashflow Statement
@@ -3487,9 +3475,7 @@ async function renderCashflow(){
   const avgRoi=active.length?active.reduce((a,u)=>{const mi=(+u.totalModal||0)-(+u.modalPartner||0);return a+(mi>0?(+u.targetProfit||0)/mi*100:0);},0)/active.length:0;
   document.getElementById('cfForecastKPI').innerHTML=[
     ['Total Potensi Profit',fmtRpShort(totalPotensi),active.length+' unit aktif','k-green'],
-    ['Total Target Penjualan',fmtRpShort(totalTargetJual),'jika semua terjual di target','k-blue'],
     ['Rata-rata ROI Target',avgRoi.toFixed(1)+'%','dari modal inti','k-teal'],
-    ['Estimasi Kas Bisnis',fmtRpShort(totalPotensi*0.10),'10% dari potensi profit','k-amber'],
   ].map(([l,v,s,c])=>`<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
 
   const fcHead=`<thead><tr style="background:var(--surface2)"><th style="padding:8px 12px;text-align:left;font-size:11px">Unit</th><th style="padding:8px 12px;text-align:left;font-size:11px">Jenis</th><th style="padding:8px 12px;text-align:right;font-size:11px">Holding</th><th style="padding:8px 12px;text-align:right;font-size:11px">Modal</th><th style="padding:8px 12px;text-align:right;font-size:11px">Target Jual</th><th style="padding:8px 12px;text-align:right;font-size:11px">Potensi Profit</th><th style="padding:8px 12px;text-align:right;font-size:11px">ROI Target</th></tr></thead>`;
