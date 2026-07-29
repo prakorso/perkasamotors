@@ -2631,18 +2631,14 @@ function renderHome(){
     return `<div class="alert ${lvl}"><span class="a-ic">${ic}</span><div>${msg}</div></div>`;
   }).join('');
 
-  // KPI cards
+  // KPI cards — inti CEO (info detail lain ada di section Inventory/Investor di bawah)
   const kpis=[
     ['Cash Available (est.)',fmtRpShort(h.cashProxy),'profit terealisasi','k-green'],
     ['Modal Berjalan',fmtRpShort(h.modalBerjalan),h.active.length+' unit aktif','k-teal'],
-    ['Profit Bulan Ini',fmtRpShort(h.profitMonth),'bulan berjalan','k-amber'],
-    ['Profit Tahun Ini',fmtRpShort(h.profitYear),thisYear(),''],
+    ['Profit Tahun Ini',fmtRpShort(h.profitYear),thisYear(),'k-amber'],
     ['ROI Tahun Berjalan',h.roiYear.toFixed(1)+'%','atas modal inti','k-blue'],
-    ['Inventory Ready',h.active.length,'unit belum terjual','k-purple'],
-    ['Total Asset',fmtRpShort(h.totalAsset),'kas + inventory','k-green'],
-    ['Investor Fund Active',fmtRpShort(h.investorActive),'dana partner aktif','k-blue'],
+    ['Total Asset',fmtRpShort(h.totalAsset),'kas + inventory','k-purple'],
     ['Outstanding Payment',fmtRpShort(h.outstanding),'kewajiban belum dibayar','k-red'],
-    ['Average Holding',h.avgHold.toFixed(0)+' hari','masuk → terjual','k-teal'],
   ];
   document.getElementById('kpiGrid').innerHTML=kpis.map(([l,v,s,c])=>
     `<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
