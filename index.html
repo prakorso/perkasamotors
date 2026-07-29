@@ -566,11 +566,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">Investor Summary</div></div>
-          <div class="kpi-grid" id="investorSummary" style="margin-bottom:0"></div>
-        </div>
-
         <div class="card no-print">
           <div class="card-hdr"><div class="card-title">Quick Action</div></div>
           <div class="qa-grid">
@@ -2647,7 +2642,6 @@ function renderHome(){
   renderProfitTrend();
   renderAgingDist(h);
   renderTopPerformance(h);
-  renderInvestorSummary(h);
 }
 
 function renderCashChart(h){
@@ -2704,8 +2698,8 @@ function renderAgingDist(h){
 function renderTopPerformance(h){
   const modalIntiOf=u=>(+u.totalModal)-(+u.modalPartner||0);
   const perUnit=h.sold.map(u=>{const np=netProfitOf(u);const mi=modalIntiOf(u);return {u,np,roi:mi>0?np/mi*100:0,hold:daysBetween(u.tgl,saleDateOf(u))};});
-  const byProfit=perUnit.slice().sort((a,b)=>b.np-a.np).slice(0,5);
-  const byRoi=perUnit.slice().sort((a,b)=>b.roi-a.roi).slice(0,5);
+  const byProfit=perUnit.slice().sort((a,b)=>b.np-a.np).slice(0,3);
+  const byRoi=perUnit.slice().sort((a,b)=>b.roi-a.roi).slice(0,3);
   const fill=(el,arr,valFn,metaFn)=>{
     const html=arr.map((x,i)=>`<div class="top-row"><div class="top-rank">${i+1}</div><div class="top-name">${x.u.nama}<div class="top-meta">${metaFn(x)}</div></div><div class="top-val">${valFn(x)}</div></div>`).join('');
     document.getElementById(el).innerHTML=html||`<div class="empty-state" style="padding:20px">Belum ada unit terjual.</div>`;
