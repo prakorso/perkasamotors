@@ -646,19 +646,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <div class="fg" id="tglJualWrap" style="display:none"><label>Tanggal Jual</label><input type="date" id="tglJual"></div>
           </div>
           <div id="distWrap" style="display:none">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin:6px 0 8px">
-              <span style="font-size:12px;font-weight:600;color:var(--text2)">Pembagian Profit <span style="font-weight:400;color:var(--text3)">— kosongkan untuk otomatis (Kas 10%, sisa 45/45)</span></span>
+            <div style="background:var(--bg);border-radius:var(--r);padding:10px 12px;margin:6px 0 12px;font-size:13px">
+              <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Keuntungan (harga − modal − fee tetap)</span><b id="fKeuntungan">—</b></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:12px;font-weight:700;color:var(--text2)">1. Ambil Kas Bisnis</span>
               <div style="display:flex;gap:4px">
-                <button type="button" class="chip active" id="fDistModeRp" onclick="setFormDistMode('rp')">Rp</button>
-                <button type="button" class="chip" id="fDistModePct" onclick="setFormDistMode('pct')">%</button>
+                <button type="button" class="chip active" id="fKasModeRp" onclick="setFormKasMode('rp')">Rp</button>
+                <button type="button" class="chip" id="fKasModePct" onclick="setFormKasMode('pct')">%</button>
               </div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
-              <div class="fg"><label id="flblKas">Kas Bisnis (Rp)</label><input type="number" id="fKas" placeholder="otomatis" oninput="updatePreview()"></div>
-              <div class="fg"><label id="flblPanji">Bagi Panji (Rp)</label><input type="number" id="fPanji" placeholder="otomatis" oninput="updatePreview()"></div>
-              <div class="fg"><label id="flblPandu">Bagi Pandu (Rp)</label><input type="number" id="fPandu" placeholder="otomatis" oninput="updatePreview()"></div>
-            </div>
-            <div id="fDistCalc" style="font-size:12px;color:var(--text2);margin-top:8px;font-weight:500"></div>
+            <div class="fg" style="margin-bottom:4px"><input type="number" id="fKas" placeholder="otomatis (10%)" oninput="updatePreview()"></div>
+            <div id="fKasCalc" style="font-size:12px;color:var(--text2);margin-bottom:12px;font-weight:500"></div>
+            <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:2px">2. Bagi Sisa ke Stakeholder <span style="font-weight:400;color:var(--text3)">(total 100%)</span></div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Sisa dibagi: <b id="fSisa">—</b></div>
+            <div id="fStakeRows"></div>
+            <div id="fStakeTotal" style="font-size:12px;font-weight:600;margin-top:4px"></div>
           </div>
         </div>
         <!-- Phase 4 hidden fields (data sent to sheet but not shown in form) -->
@@ -689,10 +692,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           </div>
           <div id="partners-list"></div>
           <button class="add-row-btn" style="color:var(--green)" onclick="addPartner()">+ Tambah partner</button>
-          <p style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.6">Skema fee bisa diatur per partner sesuai kesepakatan:<br>
-            • <b>Fee Rp (manual)</b> — nominal komisi tetap yang kamu tentukan sendiri.<br>
-            • <b>Fee % dari modal</b> — komisi = persentase × dana yang disetor partner.<br>
-            • <b>Fee % dari profit</b> — bagi hasil = persentase × keuntungan unit (harga jual / target − total modal).</p>
+          <p style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.6">Skema fee diatur per partner sesuai kesepakatan:<br>
+            • <b>Fee tetap Rp</b> / <b>Fee % modal</b> — partner dapat komisi tetap yang <b>dipotong lebih dulu</b> sebelum keuntungan dibagi (tidak ikut split).<br>
+            • <b>Bagi hasil % profit</b> — partner jadi <b>stakeholder</b> dan ikut pembagian keuntungan bersama Panji & Pandu (total 100%).</p>
         </div>
         <div class="preview">
           <div class="pv-title">Preview Kalkulasi</div>
@@ -1600,9 +1602,9 @@ function addPartner(nama='',funding='',feeType='none',feeValue=''){
     <input type="number" class="pf-fund" placeholder="Funding (Rp)" value="${funding}" oninput="updatePreview()">
     <select class="pf-type" onchange="updatePreview()">
       <option value="none"${feeType==='none'?' selected':''}>Tanpa fee</option>
-      <option value="fixed"${feeType==='fixed'?' selected':''}>Fee Rp (manual)</option>
-      <option value="percent"${feeType==='percent'?' selected':''}>Fee % dari modal</option>
-      <option value="percent_profit"${feeType==='percent_profit'?' selected':''}>Fee % dari profit</option>
+      <option value="fixed"${feeType==='fixed'?' selected':''}>Fee tetap Rp (dipotong dulu)</option>
+      <option value="percent"${feeType==='percent'?' selected':''}>Fee % modal (dipotong dulu)</option>
+      <option value="percent_profit"${feeType==='percent_profit'?' selected':''}>Bagi hasil % profit (ikut split)</option>
     </select>
     <input type="number" class="pf-val" placeholder="Nilai" value="${feeValue}" oninput="updatePreview()" step="0.1">
     <button onclick="this.parentElement.remove();updatePreview()">✕</button>`;
@@ -1661,56 +1663,85 @@ function updatePreview(){
     ['pvHR','pvKKR','pvUR','pvBR'].forEach(id=>document.getElementById(id).style.display='flex');
     document.getElementById('pvUR').className='pv-row '+(bersih>=0?'profit':'loss');
   }else{['pvHR','pvKKR','pvUR','pvBR'].forEach(id=>document.getElementById(id).style.display='none');}
-  updateFormDistCalc();
+  updateFormDist();
 }
-// Profit bersih versi form (untuk konversi % pembagian)
-function formBersih(){
+// Keuntungan versi form = base(harga/target) − total modal − fee partner tetap
+function formKeuntungan(){
   const p=getBiayas('panji'),d=getBiayas('pandu'),partners=getPartners();
   const tot=sumB(p)+sumB(d)+partners.reduce((a,x)=>a+x.funding,0);
   const status=document.getElementById('statusUnit').value;
   const harga=parseFloat(document.getElementById('hargaJual').value)||0;
   const base=status==='terjual'?harga:(parseFloat(document.getElementById('targetJual').value)||0);
-  const totalFee=partners.reduce((a,x)=>a+feeOf(x,base-tot),0);
-  return (base>0)?(base-tot-totalFee):0;
+  const feeTetap=feeTetapPartner(partners);
+  return {keuntungan:(base>0)?(base-tot-feeTetap):0, partners};
 }
-let formDistMode='rp';
-function setFormDistMode(m){
-  if(m===formDistMode)return;
-  const bersih=formBersih();
-  ['fKas','fPanji','fPandu'].forEach(id=>{
-    const el=document.getElementById(id); const v=parseFloat(el.value);
-    if(isNaN(v))return;
-    el.value=(m==='pct')?(bersih>0?+(v/bersih*100).toFixed(1):0):Math.round(bersih*v/100);
-  });
-  formDistMode=m;
-  document.getElementById('fDistModeRp').classList.toggle('active',m==='rp');
-  document.getElementById('fDistModePct').classList.toggle('active',m==='pct');
-  const sfx=m==='pct'?'(%)':'(Rp)';
-  document.getElementById('flblKas').textContent='Kas Bisnis '+sfx;
-  document.getElementById('flblPanji').textContent='Bagi Panji '+sfx;
-  document.getElementById('flblPandu').textContent='Bagi Pandu '+sfx;
-  updateFormDistCalc();
+let fKasMode='rp';
+function setFormKasMode(m){
+  if(m===fKasMode)return;
+  const {keuntungan}=formKeuntungan();
+  const el=document.getElementById('fKas'); const v=parseFloat(el.value);
+  if(!isNaN(v))el.value=(m==='pct')?(keuntungan>0?+(v/keuntungan*100).toFixed(1):0):Math.round(keuntungan*v/100);
+  fKasMode=m;
+  document.getElementById('fKasModeRp').classList.toggle('active',m==='rp');
+  document.getElementById('fKasModePct').classList.toggle('active',m==='pct');
+  el.placeholder=m==='pct'?'% dari keuntungan':'otomatis (10%)';
+  updatePreview();
 }
 function resetFormDistMode(){
-  formDistMode='rp';
-  const rp=document.getElementById('fDistModeRp'),pct=document.getElementById('fDistModePct');
+  fKasMode='rp';
+  const rp=document.getElementById('fKasModeRp'),pct=document.getElementById('fKasModePct');
   if(rp)rp.classList.add('active'); if(pct)pct.classList.remove('active');
-  const set=(id,t)=>{const e=document.getElementById(id);if(e)e.textContent=t;};
-  set('flblKas','Kas Bisnis (Rp)');set('flblPanji','Bagi Panji (Rp)');set('flblPandu','Bagi Pandu (Rp)');
+  const k=document.getElementById('fKas'); if(k)k.placeholder='otomatis (10%)';
 }
-function updateFormDistCalc(){
-  const el=document.getElementById('fDistCalc'); if(!el)return;
-  const bersih=formBersih();
-  const raw=id=>parseFloat(document.getElementById(id).value);
-  const toRp=v=>isNaN(v)?NaN:(formDistMode==='pct'?bersih*v/100:v);
-  const k=toRp(raw('fKas')),p=toRp(raw('fPanji')),d=toRp(raw('fPandu'));
-  if(isNaN(k)&&isNaN(p)&&isNaN(d)){el.textContent='';return;}
-  if(formDistMode==='pct'){
-    el.textContent=`= Kas ${fmtRp(k||0)} · Panji ${fmtRp(p||0)} · Pandu ${fmtRp(d||0)}`;
-  }else{
-    const pc=v=>bersih>0?((v||0)/bersih*100).toFixed(0)+'%':'—';
-    el.textContent=`= Kas ${pc(k)} · Panji ${pc(p)} · Pandu ${pc(d)}`;
-  }
+function formKasNominal(keuntungan){
+  const v=parseFloat(document.getElementById('fKas').value);
+  if(isNaN(v))return keuntungan*0.10; // default 10%
+  return fKasMode==='pct'?keuntungan*v/100:v;
+}
+function fStakePct(key){const i=document.querySelector('.fstake-pct[data-key="'+key+'"]');return i?parseFloat(i.value)||0:0;}
+// Bangun baris stakeholder form; rebuild HANYA jika daftar stakeholder berubah (biar fokus tidak hilang)
+function buildFormStakeRows(){
+  const {partners}=formKeuntungan();
+  const cont=document.getElementById('fStakeRows'); if(!cont)return;
+  const defs=[{key:'panji',label:'Panji'},{key:'pandu',label:'Pandu'}];
+  partners.forEach((p,i)=>{ if(p.feeType==='percent_profit')defs.push({key:'p'+i,label:p.nama||'Partner',partner:true,defPct:+p.feeValue||0}); });
+  const curKeys=[...cont.querySelectorAll('.fstake-pct')].map(i=>i.dataset.key).join(',');
+  const newKeys=defs.map(s=>s.key).join(',');
+  if(curKeys===newKeys && cont.children.length) return; // struktur sama → jangan rebuild
+  const prev={}; cont.querySelectorAll('.fstake-pct').forEach(i=>prev[i.dataset.key]=i.value);
+  const partnerSum=defs.filter(s=>s.partner).reduce((a,s)=>a+(s.defPct||0),0);
+  const rest=Math.max(0,100-partnerSum);
+  const dflt={panji:+(rest/2).toFixed(1),pandu:+(rest/2).toFixed(1)};
+  defs.forEach(s=>{ if(s.partner)dflt[s.key]=s.defPct; });
+  cont.innerHTML=defs.map(s=>{
+    const val=prev[s.key]!==undefined?prev[s.key]:dflt[s.key];
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="flex:1;font-size:13px">${s.label}${s.partner?' <span style="color:var(--text3);font-size:11px">(partner)</span>':''}</span>
+      <input type="number" class="fstake-pct" data-key="${s.key}" value="${val}" oninput="updatePreview()" style="width:64px;text-align:right">
+      <span style="color:var(--text3)">%</span>
+      <span class="fstake-rp" data-key="${s.key}" style="width:96px;text-align:right;font-size:12px;color:var(--text2)">—</span>
+    </div>`;
+  }).join('');
+}
+function updateFormDist(){
+  if(document.getElementById('statusUnit').value!=='terjual')return;
+  const {keuntungan}=formKeuntungan();
+  const kel=document.getElementById('fKeuntungan'); if(kel)kel.textContent=fmtRp(keuntungan);
+  const kas=formKasNominal(keuntungan);
+  const sisa=keuntungan-kas;
+  const kc=document.getElementById('fKasCalc'); if(kc)kc.textContent=`= Kas ${fmtRp(kas)}${keuntungan>0?' ('+(kas/keuntungan*100).toFixed(0)+'% dari keuntungan)':''}`;
+  const se=document.getElementById('fSisa'); if(se)se.textContent=fmtRp(sisa);
+  buildFormStakeRows();
+  let totalPct=0;
+  document.querySelectorAll('.fstake-pct').forEach(inp=>{
+    const pct=parseFloat(inp.value)||0; totalPct+=pct;
+    const rp=document.querySelector('.fstake-rp[data-key="'+inp.dataset.key+'"]');
+    if(rp)rp.textContent=fmtRp(sisa*pct/100);
+  });
+  const el=document.getElementById('fStakeTotal');
+  const diff=+(100-totalPct).toFixed(1);
+  if(Math.abs(diff)<0.5){el.textContent=`Total ${totalPct.toFixed(0)}% ✅ pas`;el.style.color='var(--green)';}
+  else{el.textContent=`Total ${totalPct.toFixed(1)}% — harus 100% (${diff>0?'kurang':'lebih'} ${Math.abs(diff).toFixed(1)}%)`;el.style.color='var(--amber,#C07A0E)';}
 }
 
 // ── EDIT ─────────────────────────────────────────────────────
@@ -1738,8 +1769,6 @@ function startEdit(id){
     document.getElementById('hargaJual').value=u.hargaJual;
     document.getElementById('tglJual').value=u.tglJual||u.tgl||'';
     document.getElementById('fKas').value=(u.kasBisnis!==undefined&&u.kasBisnis!==null)?Math.round(u.kasBisnis):'';
-    document.getElementById('fPanji').value=(u.bagiPanji!==undefined&&u.bagiPanji!==null)?Math.round(u.bagiPanji):'';
-    document.getElementById('fPandu').value=(u.bagiPandu!==undefined&&u.bagiPandu!==null)?Math.round(u.bagiPandu):'';
   }
   document.getElementById('biayas-panji').innerHTML='';
   document.getElementById('biayas-pandu').innerHTML='';
@@ -1749,6 +1778,16 @@ function startEdit(id){
   (dBiaya.length?dBiaya:[{keterangan:'',nominal:''}]).forEach(b=>addBiaya('pandu',b.keterangan,b.nominal));
   document.getElementById('partners-list').innerHTML='';
   (u.partners||[]).forEach(p=>addPartner(p.nama,p.funding,p.feeType,p.feeValue));
+  // Setelah partner dimuat, isi ulang persentase pembagian dari nilai tersimpan
+  if(u.status==='terjual'){
+    updatePreview(); // bangun baris stakeholder (Panji/Pandu/partner)
+    const kas=(u.kasBisnis!=null)?+u.kasBisnis:0;
+    const sisa=(+u.keuntunganBersih||0)-kas;
+    const setPct=(key,amt)=>{const i=document.querySelector('.fstake-pct[data-key="'+key+'"]');if(i&&sisa>0)i.value=+((+amt||0)/sisa*100).toFixed(1);};
+    setPct('panji',u.bagiPanji); setPct('pandu',u.bagiPandu);
+    (u.partners||[]).forEach((pt,i)=>{ if(pt.feeType==='percent_profit')setPct('p'+i,pt.feeAmount); });
+    updatePreview();
+  }
   document.getElementById('editBanner').classList.add('show');
   document.getElementById('editUnitName').textContent=u.nama;
   document.getElementById('formCardTitle').textContent='Edit Informasi Unit';
@@ -1764,13 +1803,6 @@ function cancelEdit(){
   resetForm();
 }
 
-// Ambil nilai pembagian manual dari form; jika kosong pakai default otomatis.
-// Jika mode %, konversi ke nominal berdasarkan profit bersih.
-function distVal(id,def,bersih){
-  const v=parseFloat(document.getElementById(id).value);
-  if(isNaN(v))return def;
-  return formDistMode==='pct'?(bersih*v/100):v;
-}
 async function simpanUnit(){
   const nama=document.getElementById('namaUnit').value.trim();
   if(!nama){showToast('⚠️ Nama unit wajib diisi!');return;}
@@ -1781,13 +1813,24 @@ async function simpanUnit(){
   const tglJual=status==='terjual'?(document.getElementById('tglJual').value||new Date().toISOString().slice(0,10)):null;
   const hargaBeli=parseFloat(document.getElementById('hargaBeli').value)||0;
   const targetJual=parseFloat(document.getElementById('targetJual').value)||0;
-  const partners=getPartners();
+  let partners=getPartners();
   const modalP=sumB(p),modalD=sumB(d),modalPartner=partners.reduce((a,x)=>a+x.funding,0);
   const totalModal=modalP+modalD+modalPartner;
   // Hanya fee partner tetap (Rp / % modal) yang dipotong dari keuntungan di sini.
   const totalFee=feeTetapPartner(partners);
   const kotor=status==='terjual'?harga-totalModal:0;
   const bersih=kotor-totalFee;
+
+  // Pembagian keuntungan (langkah kas → bagi sisa 100%), hanya jika terjual
+  let kasBisnis=null,bagiPanji=null,bagiPandu=null;
+  if(status==='terjual'){
+    const kas=formKasNominal(bersih);
+    const sisa=bersih-kas;
+    kasBisnis=kas;
+    bagiPanji=sisa*fStakePct('panji')/100;
+    bagiPandu=sisa*fStakePct('pandu')/100;
+    partners=partners.map((pt,i)=> pt.feeType==='percent_profit' ? {...pt, feeAmount:sisa*fStakePct('p'+i)/100} : pt);
+  }
 
   const row={
     nama, plat:document.getElementById('platUnit').value.trim(),
@@ -1803,9 +1846,7 @@ async function simpanUnit(){
     lokasi:document.getElementById('lokasiUnit').value.trim(),
     biaya_panji:p, biaya_pandu:d, partners,
     keuntungan_bersih:status==='terjual'?bersih:null,
-    kas_bisnis:status==='terjual'?distVal('fKas',bersih*0.10,bersih):null,
-    bagi_panji:status==='terjual'?distVal('fPanji',bersih*0.90*0.5,bersih):null,
-    bagi_pandu:status==='terjual'?distVal('fPandu',bersih*0.90*0.5,bersih):null,
+    kas_bisnis:kasBisnis, bagi_panji:bagiPanji, bagi_pandu:bagiPandu,
     updated_at:new Date().toISOString()
   };
 
@@ -1831,7 +1872,8 @@ async function simpanUnit(){
 
 function resetForm(){
   resetFormDistMode();
-  ['namaUnit','hargaJual','tglJual','platUnit','tahunUnit','sumberBeli','picUnit','lokasiUnit','hargaBeli','targetJual','targetProfit','fKas','fPanji','fPandu'].forEach(id=>document.getElementById(id).value='');
+  ['namaUnit','hargaJual','tglJual','platUnit','tahunUnit','sumberBeli','picUnit','lokasiUnit','hargaBeli','targetJual','targetProfit','fKas'].forEach(id=>document.getElementById(id).value='');
+  const sr=document.getElementById('fStakeRows'); if(sr)sr.innerHTML='';
   document.getElementById('jenisUnit').value='Mobil';
   document.getElementById('kategoriUnit').value='';
   document.getElementById('kondisiUnit').value='';
