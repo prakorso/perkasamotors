@@ -84,7 +84,7 @@ CREATE TRIGGER units_updated_at
 -- RPC FUNCTIONS (called by frontend via supabase.rpc())
 -- ════════════════════════════════════════════════════════════
 
--- Login: returns {ok, role} — passwords never returned to client
+-- Login: returns {ok, role, username} — passwords never returned to client
 CREATE OR REPLACE FUNCTION public.pm_login(p_user text, p_pass text)
 RETURNS json LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE acc record;
@@ -95,7 +95,7 @@ BEGIN
   IF NOT FOUND THEN
     RETURN json_build_object('ok', false, 'error', 'Username atau password salah.');
   END IF;
-  RETURN json_build_object('ok', true, 'role', acc.role);
+  RETURN json_build_object('ok', true, 'role', acc.role, 'username', acc.username);
 END; $$;
 
 -- Get admin config
