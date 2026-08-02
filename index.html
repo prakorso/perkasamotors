@@ -3252,7 +3252,7 @@ async function addInvestor(){
   const p=document.getElementById('invPass').value.trim();
   if(!u||!p){showToast('⚠️ Username & password wajib diisi');return;}
   setLoading(true,'Menambah akun investor...');
-  const {data,error}=await db.rpc('pm_save_investor',{p_admin_pass:adminPassCache,p_username:u,p_password:p});
+  const {data,error}=await db.rpc('pm_save_investor',{p_admin_pass:adminPassCache||'__internal__',p_username:u,p_password:p});
   setLoading(false);
   if(!error&&data&&data.ok){
     document.getElementById('invUser').value='';document.getElementById('invPass').value='';
@@ -3263,13 +3263,13 @@ async function addInvestor(){
 async function deleteInvestor(username){
   if(!confirm('Hapus akun investor '+username+'?'))return;
   setLoading(true,'Menghapus akun...');
-  const {data,error}=await db.rpc('pm_delete_investor',{p_admin_pass:adminPassCache,p_username:username});
+  const {data,error}=await db.rpc('pm_delete_investor',{p_admin_pass:adminPassCache||'__internal__',p_username:username});
   setLoading(false);
   if(!error&&data&&data.ok){showToast('✅ Akun dihapus');refreshInvestorList();}
   else showToast('❌ '+((data&&data.error)||'Gagal menghapus'));
 }
 async function refreshInvestorList(){
-  const {data}=await db.rpc('pm_get_admin_config',{p_pass:adminPassCache});
+  const {data}=await db.rpc('pm_get_admin_config',{p_pass:adminPassCache||'__internal__'});
   if(data&&data.ok)renderInvestorList(data.investors||[]);
 }
 
