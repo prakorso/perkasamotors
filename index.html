@@ -562,7 +562,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="card no-print">
           <div class="card-hdr"><div class="card-title">Quick Action</div></div>
           <div class="qa-grid">
-            <button class="qa-btn role-internal" onclick="showSection('input')"><span class="qa-ic">＋</span>Tambah Unit</button>
+            <button class="qa-btn role-internal" onclick="bukaInputBaru()"><span class="qa-ic">＋</span>Tambah Unit</button>
             <button class="qa-btn role-internal" onclick="showSection('funding')"><span class="qa-ic">◆</span>Tambah Funding</button>
             <button class="qa-btn role-internal" onclick="showSection('funding')"><span class="qa-ic">💸</span>Catat Pembayaran</button>
             <button class="qa-btn" onclick="showSection('analitik');setTimeout(exportInsightPDF,300)"><span class="qa-ic">⬇</span>Export Report</button>
@@ -715,7 +715,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
       <div id="sec-unit" class="section">
         <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-          <button class="btn-sm role-internal" onclick="showSection('input')" style="padding:10px 18px;font-size:14px;font-weight:600">+ Input Unit Baru</button>
+          <button class="btn-sm role-internal" onclick="bukaInputBaru()" style="padding:10px 18px;font-size:14px;font-weight:600">+ Input Unit Baru</button>
         </div>
         <div class="filter-bar">
           <span class="filter-label">Filter:</span>
@@ -1202,11 +1202,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
             <div style="border-top:1px solid var(--border);margin:20px 0 16px"></div>
             <div class="card-title" style="margin-bottom:6px">👥 Akun Investor</div>
-            <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Buat login untuk investor. Mereka hanya melihat data investasi pribadinya — profit & margin bisnis disembunyikan. Tips: pakai nama yang sama dengan nama partner di funding (mis. partner "Budi" → username <b>inv_budi</b>).</p>
+            <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Buat login untuk investor / partner sharing modal. Mereka hanya melihat portofolio investasinya sendiri — profit & margin bisnis disembunyikan. <b>Penting:</b> pakai username yang sama dengan nama partner di funding (mis. partner "Budi" → username <b>budi</b>) supaya datanya otomatis cocok.</p>
             <div id="invList" style="margin-bottom:14px"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
               <div class="fg" style="flex:1;min-width:130px;margin-bottom:0">
-                <label>Username (otomatis diawali inv_)</label>
+                <label>Username</label>
                 <input type="text" id="invUser" placeholder="budi">
               </div>
               <div class="fg" style="flex:1;min-width:130px;margin-bottom:0">
@@ -1216,7 +1216,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               <button class="btn-sm" style="height:40px" onclick="addInvestor()">+ Tambah</button>
             </div>
 
-            <p style="font-size:12px;color:var(--text3);margin-top:16px">Catatan: ini gerbang akses sederhana, bukan keamanan tingkat tinggi. Password tersimpan di Google Sheets kamu (sheet "Config").</p>
+            <p style="font-size:12px;color:var(--text3);margin-top:16px">Catatan: ini gerbang akses sederhana. Password tersimpan aman di database Supabase (tidak pernah dikirim balik ke browser).</p>
           </div>
         </div>
   </div>
@@ -1268,7 +1268,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="bn-btn role-internal" data-bn="pengaturan" onclick="showSection('pengaturan')"><span class="bn-ic">⚙</span>Pengaturan</button>
   </nav>
   <div class="fab-menu" id="fabMenu">
-    <button class="fab-item" onclick="toggleFab();showSection('input')">＋ Tambah Unit</button>
+    <button class="fab-item" onclick="toggleFab();bukaInputBaru()">＋ Tambah Unit</button>
     <button class="fab-item" onclick="toggleFab();showSection('funding')">◆ Tambah Funding</button>
     <button class="fab-item" onclick="toggleFab();showSection('keuangan')">💸 Keuangan</button>
   </div>
@@ -1286,7 +1286,8 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // Login divalidasi via Supabase RPC. Password diatur via panel Admin.
 
 let units = [];
-let currentUser = null;
+let currentUser = null;   // username yang login (untuk identitas & cocokkan funding investor)
+let currentRole = null;   // role dari database (partner/admin/investor/...)
 let pendingTerjualId = null;
 let editingId = null;
 let unitFilter = 'all';
@@ -1302,17 +1303,21 @@ let agingFilter='all', fundingFilter='all', profitRange='3';
 // Peran ditentukan dari username login. partner = Panji/Pandu (akses penuh internal).
 // investor = hanya lihat data sendiri. Profit bisnis disembunyikan untuk investor/viewer.
 const ROLE_INTERNAL = ['super_admin','admin','partner','panji','pandu'];
-function roleOf(user){
-  const u=(user||'').toLowerCase();
-  if(u==='panji'||u==='pandu'||u==='partner')return 'partner';
-  if(u==='admin')return 'admin';
-  if(u==='super_admin'||u==='superadmin')return 'super_admin';
-  if(u==='viewer')return 'viewer';
-  if(u.startsWith('investor')||u.startsWith('inv_'))return 'investor';
-  return 'partner'; // default kompatibilitas: login lama Panji/Pandu
+// Role ditentukan dari DATABASE (kolom role), bukan dari nama username.
+function roleOf(role){
+  const r=(role||'').toLowerCase();
+  if(r==='panji'||r==='pandu'||r==='partner')return 'partner';
+  if(r==='admin')return 'admin';
+  if(r==='super_admin'||r==='superadmin')return 'super_admin';
+  if(r==='investor')return 'investor';
+  if(r==='viewer')return 'viewer';
+  // Kompatibilitas: sesi lama menyimpan username; kenali pola lama
+  if(r.startsWith('inv'))return 'investor';
+  return 'partner';
 }
-function isInternal(){ return ROLE_INTERNAL.includes(roleOf(currentUser)); }
-function isInvestor(){ return roleOf(currentUser)==='investor'; }
+function myRole(){ return roleOf(currentRole); }
+function isInternal(){ return ROLE_INTERNAL.includes(myRole()); }
+function isInvestor(){ return myRole()==='investor'; }
 function applyRBAC(){
   const internal=isInternal();
   const investor=isInvestor();
@@ -1320,7 +1325,7 @@ function applyRBAC(){
   // Elemen khusus investor (nav Portofolio, dll) hanya tampil untuk investor
   document.querySelectorAll('.role-investor').forEach(el=>el.classList.toggle('hide-role',!investor));
   const rb=document.getElementById('sbRole');
-  if(rb)rb.textContent=roleOf(currentUser).replace('_',' ');
+  if(rb)rb.textContent=myRole().replace('_',' ');
 }
 
 const fmtRp = n => 'Rp'+Math.round(n).toLocaleString('id-ID');
@@ -1382,11 +1387,12 @@ async function doLogin(){
     const {data,error}=await db.rpc('pm_login',{p_user:u,p_pass:p});
     if(error)throw error;
     if(data&&data.ok){
-      currentUser=data.role;
-      sessionStorage.setItem('pm_session',data.role);
+      currentUser=(data.username||u||'').toLowerCase();  // username, untuk identitas
+      currentRole=data.role;                              // role dari database
+      sessionStorage.setItem('pm_session',JSON.stringify({u:currentUser,role:currentRole}));
       document.getElementById('loginWrap').style.display='none';
       document.getElementById('dashWrap').style.display='block';
-      document.getElementById('sbUser').textContent=data.role.charAt(0).toUpperCase()+data.role.slice(1);
+      document.getElementById('sbUser').textContent=currentUser.charAt(0).toUpperCase()+currentUser.slice(1);
       applyRBAC(); startIdleTimer();
       try{ history.replaceState({sec:'home'},''); }catch(e){}
       showSection('home'); loadUnits();
@@ -1401,7 +1407,7 @@ async function doLogin(){
   btn.disabled=false; btn.textContent='Masuk';
 }
 function doLogout(){
-  sessionStorage.removeItem('pm_session'); currentUser=null; adminUnlocked=false;
+  sessionStorage.removeItem('pm_session'); currentUser=null; currentRole=null; adminUnlocked=false;
   document.getElementById('dashWrap').style.display='none';
   document.getElementById('loginWrap').style.display='flex';
   document.getElementById('loginPass').value='';
@@ -1409,10 +1415,12 @@ function doLogout(){
 window.addEventListener('DOMContentLoaded',()=>{
   const s=sessionStorage.getItem('pm_session');
   if(s){
-    currentUser=s;
+    let uName=s, uRole=s;
+    try{ const o=JSON.parse(s); if(o&&o.u){ uName=o.u; uRole=o.role; } }catch(e){ /* sesi lama: string role/username */ }
+    currentUser=uName; currentRole=uRole;
     document.getElementById('loginWrap').style.display='none';
     document.getElementById('dashWrap').style.display='block';
-    document.getElementById('sbUser').textContent=s.charAt(0).toUpperCase()+s.slice(1);
+    document.getElementById('sbUser').textContent=(uName||'').charAt(0).toUpperCase()+(uName||'').slice(1);
     applyRBAC(); startIdleTimer();
     try{ history.replaceState({sec:'home'},''); }catch(e){}
     showSection('home'); loadUnits();
@@ -1792,6 +1800,19 @@ function startEdit(id){
   document.getElementById('editUnitName').textContent=u.nama;
   document.getElementById('formCardTitle').textContent='Edit Informasi Unit';
   document.getElementById('saveBtn').innerHTML='💾 Simpan Perubahan';
+  showSection('input');
+  window.scrollTo(0,0);
+}
+// Buka form input untuk unit BARU (bersihkan sisa edit/isian sebelumnya)
+function bukaInputBaru(){
+  editingId=null;
+  document.getElementById('editBanner').classList.remove('show');
+  document.getElementById('formCardTitle').textContent='Informasi Unit';
+  document.getElementById('saveBtn').innerHTML='💾 Simpan Unit';
+  resetForm();
+  // pastikan minimal satu baris biaya Panji/Pandu tersedia
+  if(!document.querySelector('#biayas-panji .biaya-row'))addBiaya('panji');
+  if(!document.querySelector('#biayas-pandu .biaya-row'))addBiaya('pandu');
   showSection('input');
   window.scrollTo(0,0);
 }
