@@ -975,8 +975,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
         <div class="card">
           <div class="card-hdr">
-            <div class="card-title">Riwayat Kas Bisnis (dari unit terjual)</div>
-            <div style="font-size:12px;color:var(--text3)">Porsi kas bisnis per unit (default 10% profit, bisa diatur manual saat tandai terjual)</div>
+            <div class="card-title">Riwayat Kas Bisnis (otomatis dari unit terjual)</div>
+            <div style="font-size:12px;color:var(--text3)">Porsi kas bisnis per unit (default 10% profit, diatur saat tandai terjual)</div>
           </div>
           <div class="table-scroll">
             <table class="track-table" id="kasTable"></table>
@@ -985,24 +985,34 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
         <div class="card">
           <div class="card-hdr">
+            <div class="card-title">Kas Masuk Manual</div>
+            <button class="btn-sm" onclick="bukaKasForm('masuk')">+ Tambah Kas Masuk</button>
+          </div>
+          <p style="font-size:12px;color:var(--text3);margin-bottom:12px">Untuk pemasukan di luar penjualan (mis. modal awal, top-up kas). Kas dari penjualan unit otomatis tercatat di tabel atas.</p>
+          <div id="kasMasukForm" style="display:none;margin-bottom:16px;padding:14px;background:var(--bg);border-radius:var(--r)">
+            <input type="hidden" id="kasMasukId">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+              <div class="fg" style="flex:2;min-width:160px;margin-bottom:0"><label>Keterangan</label><input type="text" id="kasMasukKet" placeholder="mis. Modal awal, setoran"></div>
+              <div class="fg" style="flex:1;min-width:130px;margin-bottom:0"><label>Nominal (Rp)</label><input type="number" id="kasMasukNom" placeholder="0"></div>
+              <div class="fg" style="flex:1;min-width:120px;margin-bottom:0"><label>Tanggal</label><input type="date" id="kasMasukTgl"></div>
+              <button class="btn-sm" style="height:40px" id="kasMasukSaveBtn" onclick="simpanKasMasuk()">💾 Simpan</button>
+            </div>
+          </div>
+          <div id="kasMasukList"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr">
             <div class="card-title">Pengeluaran Kas Bisnis</div>
-            <button class="btn-sm" onclick="toggleCollapse('kasKeluarForm',this)">+ Catat Pengeluaran</button>
+            <button class="btn-sm" onclick="bukaKasForm('keluar')">+ Catat Pengeluaran</button>
           </div>
           <div id="kasKeluarForm" style="display:none;margin-bottom:16px;padding:14px;background:var(--bg);border-radius:var(--r)">
+            <input type="hidden" id="kasKeluarId">
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
-              <div class="fg" style="flex:2;min-width:160px;margin-bottom:0">
-                <label>Keterangan</label>
-                <input type="text" id="kasKeluarKet" placeholder="mis. Beli kamera, operasional">
-              </div>
-              <div class="fg" style="flex:1;min-width:130px;margin-bottom:0">
-                <label>Nominal (Rp)</label>
-                <input type="number" id="kasKeluarNom" placeholder="0">
-              </div>
-              <div class="fg" style="flex:1;min-width:120px;margin-bottom:0">
-                <label>Tanggal</label>
-                <input type="date" id="kasKeluarTgl">
-              </div>
-              <button class="btn-sm" style="height:40px" onclick="tambahKasKeluar()">💾 Simpan</button>
+              <div class="fg" style="flex:2;min-width:160px;margin-bottom:0"><label>Keterangan</label><input type="text" id="kasKeluarKet" placeholder="mis. Beli kamera, operasional"></div>
+              <div class="fg" style="flex:1;min-width:130px;margin-bottom:0"><label>Nominal (Rp)</label><input type="number" id="kasKeluarNom" placeholder="0"></div>
+              <div class="fg" style="flex:1;min-width:120px;margin-bottom:0"><label>Tanggal</label><input type="date" id="kasKeluarTgl"></div>
+              <button class="btn-sm" style="height:40px" id="kasKeluarSaveBtn" onclick="simpanKasKeluar()">💾 Simpan</button>
             </div>
           </div>
           <div id="kasKeluarList"></div>
@@ -2944,53 +2954,108 @@ function kasFromUnits(){
   });
 }
 
+// Ambil kas masuk manual (tabel kas_masuk). Aman jika tabel belum dibuat.
+async function fetchKasMasuk(){
+  try{ const {data,error}=await db.from('kas_masuk').select('*').order('tgl',{ascending:false}); if(error)throw error; return data||[]; }
+  catch(e){ return null; } // null = tabel belum ada
+}
+let kasMasukTableExists=true;
 async function renderKas(){
-  const masuk=kasFromUnits();
-  const totalMasuk=masuk.reduce((a,x)=>a+x.kas,0);
+  const masukAuto=kasFromUnits();
+  const totalAuto=masukAuto.reduce((a,x)=>a+x.kas,0);
+  const manual=await fetchKasMasuk();
+  kasMasukTableExists=(manual!==null);
+  const manualArr=manual||[];
+  const totalManual=manualArr.reduce((a,x)=>a+(+x.nominal||0),0);
+  const totalMasuk=totalAuto+totalManual;
   const {data:keluarData}=await db.from('kas_keluar').select('*').order('tgl',{ascending:false});
   const keluar=keluarData||[];
   const totalKeluar=keluar.reduce((a,x)=>a+(+x.nominal||0),0);
   const saldo=totalMasuk-totalKeluar;
 
   document.getElementById('kasKPIGrid').innerHTML=[
-    ['Total Kas Masuk',fmtRpShort(totalMasuk),masuk.length+' unit terjual'],
+    ['Total Kas Masuk',fmtRpShort(totalMasuk),'otomatis '+fmtRpShort(totalAuto)+' + manual '+fmtRpShort(totalManual)],
     ['Total Pengeluaran',fmtRpShort(totalKeluar),keluar.length+' entri'],
     ['Saldo Kas Bisnis',fmtRpShort(saldo),saldo>=0?'tersedia':'defisit'],
   ].map(([l,v,s])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${s}</div></div>`).join('');
 
   const thead=`<thead><tr><th>Unit</th><th class="num">Tanggal Jual</th><th class="num">Profit Bersih</th><th class="num">Kas Bisnis</th></tr></thead>`;
-  const tbody=masuk.length
-    ?masuk.map(x=>`<tr><td>${x.unit}</td><td class="num">${x.tgl||'—'}</td><td class="num">${fmtRpShort(x.bersih)}</td><td class="num" style="font-weight:600;color:var(--blue)">${fmtRpShort(x.kas)}</td></tr>`).join('')
-    :`<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:16px">Belum ada unit terjual dengan 2 stakeholder.</td></tr>`;
+  const tbody=masukAuto.length
+    ?masukAuto.map(x=>`<tr><td>${x.unit}</td><td class="num">${x.tgl||'—'}</td><td class="num">${fmtRpShort(x.bersih)}</td><td class="num" style="font-weight:600;color:var(--blue)">${fmtRpShort(x.kas)}</td></tr>`).join('')
+    :`<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:16px">Belum ada kas otomatis dari penjualan.</td></tr>`;
   document.getElementById('kasTable').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
 
+  // Kas masuk manual
+  const mc=document.getElementById('kasMasukList');
+  if(manual===null){
+    mc.innerHTML=`<div style="font-size:13px;color:var(--amber,#C07A0E)">⚠️ Tabel kas masuk manual belum dibuat. Jalankan <b>supabase/schema_kas_manual.sql</b> di Supabase SQL Editor untuk mengaktifkan fitur ini.</div>`;
+  }else if(!manualArr.length){
+    mc.innerHTML=`<div style="font-size:13px;color:var(--text3)">Belum ada kas masuk manual.</div>`;
+  }else{
+    mc.innerHTML=manualArr.map(x=>kasRow(x,'masuk')).join('');
+  }
+
+  // Pengeluaran
   const c=document.getElementById('kasKeluarList');
-  if(!keluar.length){c.innerHTML=`<div style="font-size:13px;color:var(--text3)">Belum ada pengeluaran dicatat.</div>`;return;}
-  c.innerHTML=keluar.map(x=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px">
+  c.innerHTML=keluar.length?keluar.map(x=>kasRow(x,'keluar')).join(''):`<div style="font-size:13px;color:var(--text3)">Belum ada pengeluaran dicatat.</div>`;
+}
+function kasRow(x,tipe){
+  const col=tipe==='masuk'?'var(--green)':'var(--red)';
+  const sign=tipe==='masuk'?'+':'−';
+  return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px">
     <div><div style="font-weight:600;font-size:14px">${x.keterangan}</div><div style="font-size:12px;color:var(--text3)">${x.tgl||'—'}</div></div>
     <div style="display:flex;align-items:center;gap:10px">
-      <div style="font-weight:600;color:var(--red)">${fmtRpShort(+x.nominal)}</div>
-      <button class="btn-sm danger" onclick="hapusKasKeluar(${x.id})">✕</button>
+      <div style="font-weight:600;color:${col}">${sign}${fmtRpShort(+x.nominal)}</div>
+      <button class="btn-sm edit" onclick="editKas('${tipe}',${x.id},'${(x.keterangan||'').replace(/'/g,"\\'")}',${+x.nominal||0},'${x.tgl||''}')">Edit</button>
+      <button class="btn-sm danger" onclick="hapusKas('${tipe}',${x.id})">✕</button>
     </div>
-  </div>`).join('');
+  </div>`;
 }
-
-async function tambahKasKeluar(){
-  const ket=document.getElementById('kasKeluarKet').value.trim();
-  const nom=parseFloat(document.getElementById('kasKeluarNom').value)||0;
-  const tgl=document.getElementById('kasKeluarTgl').value;
+// Buka form (kosong=tambah baru)
+function bukaKasForm(tipe){
+  const pref=tipe==='masuk'?'kasMasuk':'kasKeluar';
+  document.getElementById(pref+'Id').value='';
+  document.getElementById(pref+'Ket').value='';
+  document.getElementById(pref+'Nom').value='';
+  document.getElementById(pref+'Tgl').value=new Date().toISOString().slice(0,10);
+  document.getElementById(pref+'SaveBtn').textContent='💾 Simpan';
+  document.getElementById(pref+'Form').style.display='block';
+}
+// Isi form untuk edit
+function editKas(tipe,id,ket,nom,tgl){
+  const pref=tipe==='masuk'?'kasMasuk':'kasKeluar';
+  document.getElementById(pref+'Id').value=id;
+  document.getElementById(pref+'Ket').value=ket;
+  document.getElementById(pref+'Nom').value=nom;
+  document.getElementById(pref+'Tgl').value=tgl||new Date().toISOString().slice(0,10);
+  document.getElementById(pref+'SaveBtn').textContent='💾 Update';
+  document.getElementById(pref+'Form').style.display='block';
+  document.getElementById(pref+'Ket').focus();
+}
+async function simpanKasMasuk(){ await simpanKas('masuk'); }
+async function simpanKasKeluar(){ await simpanKas('keluar'); }
+async function simpanKas(tipe){
+  const pref=tipe==='masuk'?'kasMasuk':'kasKeluar';
+  const table=tipe==='masuk'?'kas_masuk':'kas_keluar';
+  const id=document.getElementById(pref+'Id').value;
+  const ket=document.getElementById(pref+'Ket').value.trim();
+  const nom=parseFloat(document.getElementById(pref+'Nom').value)||0;
+  const tgl=document.getElementById(pref+'Tgl').value||new Date().toISOString().slice(0,10);
   if(!ket||!nom){showToast('⚠️ Keterangan dan nominal wajib diisi');return;}
-  const {error}=await db.from('kas_keluar').insert({keterangan:ket,nominal:nom,tgl:tgl||new Date().toISOString().slice(0,10)});
-  if(error){showToast('❌ Gagal menyimpan');return;}
-  logAudit('KAS','kas_keluar','',`${ket} — ${fmtRp(nom)}`);
-  document.getElementById('kasKeluarKet').value='';
-  document.getElementById('kasKeluarNom').value='';
-  closeCollapse('kasKeluarForm');
-  renderKas(); showToast('✅ Pengeluaran dicatat');
+  const payload={keterangan:ket,nominal:nom,tgl};
+  let error;
+  if(id){ ({error}=await db.from(table).update(payload).eq('id',id)); }
+  else { ({error}=await db.from(table).insert(payload)); }
+  if(error){showToast('❌ Gagal menyimpan'+(tipe==='masuk'&&!kasMasukTableExists?' — tabel belum dibuat':''));return;}
+  logAudit('KAS',table,id||'',`${id?'edit ':''}${ket} — ${fmtRp(nom)}`);
+  document.getElementById(pref+'Form').style.display='none';
+  renderKas(); showToast(id?'✅ Diperbarui':'✅ Tersimpan');
 }
-async function hapusKasKeluar(id){
-  if(!confirm('Hapus entri pengeluaran ini?'))return;
-  await db.from('kas_keluar').delete().eq('id',id);
+async function hapusKas(tipe,id){
+  if(!confirm('Hapus entri ini?'))return;
+  const table=tipe==='masuk'?'kas_masuk':'kas_keluar';
+  await db.from(table).delete().eq('id',id);
+  logAudit('KAS',table,id,'hapus');
   renderKas();
 }
 
@@ -3472,7 +3537,8 @@ async function renderCashflow(){
   const totalKasBisnis=sold.reduce((a,u)=>a+(+u.kasBisnis||0),0);
   const totalBagiHasil=sold.reduce((a,u)=>a+(+u.bagiPanji||0)+(+u.bagiPandu||0),0);
   const totalKeluar=keluar.reduce((a,x)=>a+(+x.nominal||0),0);
-  const saldoKas=totalKasBisnis-totalKeluar;
+  const _km=await fetchKasMasuk(); const totalKasMasukManual=(_km||[]).reduce((a,x)=>a+(+x.nominal||0),0);
+  const saldoKas=totalKasBisnis+totalKasMasukManual-totalKeluar;
   const netProfit=sold.reduce((a,u)=>a+(+u.keuntunganBersih||0),0);
 
   // KPI — inti kas (5 metrik terpenting)
