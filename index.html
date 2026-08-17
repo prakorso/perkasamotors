@@ -2938,10 +2938,11 @@ async function saveAdminConfig(){
 
 // ══════════ KAS BISNIS ══════════
 function kasFromUnits(){
-  return units.filter(u=>u.status==='terjual'&&+u.modalPanji>0&&+u.modalPandu>0).map(u=>{
+  // Semua unit terjual berkontribusi kas (konsisten dengan Cashflow & Laporan)
+  return units.filter(u=>u.status==='terjual').map(u=>{
     const bersih=(u.keuntunganBersih!==''&&u.keuntunganBersih!==undefined)?+u.keuntunganBersih:(+u.hargaJual-+u.totalModal)-(+u.totalFee||0);
-    const kas=+u.kasBisnis>0?+u.kasBisnis:bersih*0.10;
-    return {unit:u.nama, tgl:u.tglJual||u.tgl, kas, bersih};
+    const kas=(u.kasBisnis!==undefined&&u.kasBisnis!==null)?+u.kasBisnis:bersih*0.10;
+    return {id:u.id, unit:u.nama, tgl:u.tglJual||u.tgl, kas, bersih};
   });
 }
 
@@ -2959,14 +2960,17 @@ async function renderKas(){
     ['Saldo Kas Bisnis',fmtRpShort(saldo),saldo>=0?'tersedia':'defisit'],
   ].map(([l,v,s])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${s}</div></div>`).join('');
 
-  const thead=`<thead><tr><th>Unit</th><th class="num">Tanggal Jual</th><th class="num">Profit Bersih</th><th class="num">Kas Bisnis</th><th></th></tr></thead>`;
+  const thead=`<thead><tr><th>Unit</th><th class="num">Tanggal Jual</th><th class="num">Profit Bersih</th><th class="num">Kas Bisnis</th><th class="num">Aksi</th></tr></thead>`;
   const tbody=masukAuto.length
     ?masukAuto.map(x=>`<tr>
         <td>${x.unit}</td>
         <td class="num">${x.tgl||'—'}</td>
         <td class="num">${fmtRpShort(x.bersih)}</td>
         <td class="num" style="font-weight:600;color:var(--blue)">${fmtRp(x.kas)}</td>
-        <td class="num"><button class="btn-sm edit" onclick="editKasUnit(${x.id})">Edit</button></td>
+        <td class="num" style="white-space:nowrap">
+          <button class="btn-sm edit" onclick="editKasUnit(${x.id})">Edit</button>
+          <button class="btn-sm danger" style="margin-left:6px" onclick="hapusKasUnit(${x.id})">Hapus</button>
+        </td>
       </tr>`).join('')
     :`<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:16px">Belum ada kas dari penjualan.</td></tr>`;
   document.getElementById('kasTable').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
@@ -2995,6 +2999,16 @@ async function simpanKasEdit(){
   document.getElementById('kasEditForm').style.display='none';
   setSyncStatus('ok');
   await loadUnits(); renderKas(); showToast('✅ Kas diperbarui');
+}
+async function hapusKasUnit(unitId){
+  const u=units.find(x=>x.id===unitId); if(!u)return;
+  if(!confirm(`Nol-kan kas bisnis untuk "${u.nama}"? Nominal kas unit ini akan jadi Rp0 (bisa di-Edit lagi kapan saja).`))return;
+  setSyncStatus('syncing');
+  const {error}=await db.from('units').update({kas_bisnis:0,updated_at:new Date().toISOString()}).eq('id',unitId);
+  if(error){setSyncStatus('error');showToast('❌ Gagal');return;}
+  logAudit('KAS','unit',unitId,'kas di-nolkan');
+  setSyncStatus('ok');
+  await loadUnits(); renderKas(); showToast('✅ Kas di-nolkan');
 }
 // ── Pengeluaran kas: tambah / edit / hapus ──
 function kasKeluarRow(x){
