@@ -1357,13 +1357,15 @@ function transformUnit(r){
   const totalFee=feeTetap;
   const kotor=r.status==='terjual'?hargaJual-totalModal:0;
   const bersih=(r.keuntungan_bersih!==null&&r.keuntungan_bersih!==undefined)?+r.keuntungan_bersih:kotor-feeTetap;
-  const kasBisnis=(r.kas_bisnis!==null&&r.kas_bisnis!==undefined)?+r.kas_bisnis:(r.status==='terjual'?bersih*0.10:0);
+  // kas_bisnis negatif = penanda "dikecualikan dari daftar kas" (dihapus dari view, unit tetap ada)
+  const kasExcluded=(r.kas_bisnis!==null&&r.kas_bisnis!==undefined&&+r.kas_bisnis<0);
+  const kasBisnis=kasExcluded?0:((r.kas_bisnis!==null&&r.kas_bisnis!==undefined)?+r.kas_bisnis:(r.status==='terjual'?bersih*0.10:0));
   const bagiBersih=bersih*0.90;
   const bagiP=(r.bagi_panji!==null&&r.bagi_panji!==undefined)?+r.bagi_panji:bagiBersih*0.5;
   const bagiD=(r.bagi_pandu!==null&&r.bagi_pandu!==undefined)?+r.bagi_pandu:bagiBersih*0.5;
   return {
     id:r.id, nama:r.nama, plat:r.plat||'', tahun:r.tahun||'',
-    jenis:r.jenis||'Mobil', status:r.status||'aktif',
+    jenis:r.jenis||'Mobil', status:r.status||'aktif', kasExcluded,
     tgl:r.tgl, tglJual:r.tgl_jual||'',
     hargaJual, hargaBeli:r.harga_beli||0,
     targetJual:r.target_jual||0, targetProfit:r.target_profit||0,
@@ -2938,8 +2940,8 @@ async function saveAdminConfig(){
 
 // ══════════ KAS BISNIS ══════════
 function kasFromUnits(){
-  // Semua unit terjual berkontribusi kas (konsisten dengan Cashflow & Laporan)
-  return units.filter(u=>u.status==='terjual').map(u=>{
+  // Semua unit terjual yang TIDAK dikecualikan (dihapus dari daftar kas)
+  return units.filter(u=>u.status==='terjual'&&!u.kasExcluded).map(u=>{
     const bersih=(u.keuntunganBersih!==''&&u.keuntunganBersih!==undefined)?+u.keuntunganBersih:(+u.hargaJual-+u.totalModal)-(+u.totalFee||0);
     const kas=(u.kasBisnis!==undefined&&u.kasBisnis!==null)?+u.kasBisnis:bersih*0.10;
     return {id:u.id, unit:u.nama, tgl:u.tglJual||u.tgl, kas, bersih};
@@ -3002,13 +3004,13 @@ async function simpanKasEdit(){
 }
 async function hapusKasUnit(unitId){
   const u=units.find(x=>x.id===unitId); if(!u)return;
-  if(!confirm(`Nol-kan kas bisnis untuk "${u.nama}"? Nominal kas unit ini akan jadi Rp0 (bisa di-Edit lagi kapan saja).`))return;
+  if(!confirm(`Hapus "${u.nama}" dari daftar kas? Barisnya akan hilang dari sini dan kas-nya tidak dihitung. Unit tetap aman di Daftar Unit — muncul lagi di kas jika kas-nya diatur ulang dari Edit unit.`))return;
   setSyncStatus('syncing');
-  const {error}=await db.from('units').update({kas_bisnis:0,updated_at:new Date().toISOString()}).eq('id',unitId);
+  const {error}=await db.from('units').update({kas_bisnis:-1,updated_at:new Date().toISOString()}).eq('id',unitId);
   if(error){setSyncStatus('error');showToast('❌ Gagal');return;}
-  logAudit('KAS','unit',unitId,'kas di-nolkan');
+  logAudit('KAS','unit',unitId,'dihapus dari daftar kas');
   setSyncStatus('ok');
-  await loadUnits(); renderKas(); showToast('✅ Kas di-nolkan');
+  await loadUnits(); renderKas(); showToast('✅ Dihapus dari daftar kas');
 }
 // ── Pengeluaran kas: tambah / edit / hapus ──
 function kasKeluarRow(x){
