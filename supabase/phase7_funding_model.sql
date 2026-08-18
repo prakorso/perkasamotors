@@ -70,8 +70,9 @@ select F as funding, ops_label, round(T,2) as ops_ceiling_mo,
   round(actual_throughput_mo*12*PU)                     as annual_realized_profit,
   round(actual_throughput_mo*12*PU*RR)                  as annual_reserve_retention,
   round(actual_throughput_mo*12*PU*(1-RR))              as annual_investor_distributable,
-  round(actual_throughput_mo*12*PU / nullif(actual_throughput_mo*H/30*K,0)*100) as roi_on_deployed_pct,
-  round(actual_throughput_mo*12*PU / nullif(F,0)*100)   as roi_on_funding_pct
+  -- OPERATING metrics (company-level; denominators labelled). NOT investor ROI.
+  round(actual_throughput_mo*12*PU / nullif(actual_throughput_mo*H/30*K,0)*100) as operating_roi_on_deployed_pct,  -- business profit ÷ DEPLOYED operating capital
+  round(actual_throughput_mo*12*PU / nullif(F,0)*100)   as business_profit_to_funding_pct                          -- business profit ÷ FUNDING (context only, not a return to any single party)
 from x order by F, T;
 
 -- 3) CAPITAL UTILIZATION at 50 / 75 / 100% (how much funding is actually deployed)
@@ -114,22 +115,41 @@ select s.scenario,
         / nullif(b.T*s.tput_mult*(b.H*s.hold_mult)/30*b.K*s.cost_mult,0)*100) as roi_on_deployed_pct
 from b cross join scen s;
 
--- 5) INVESTOR FUNDING ECONOMICS per scenario (investor capital ≠ reserve)
+-- 5) INVESTOR FUNDING ECONOMICS per scenario — EXPLICIT denominators, verified.
+--    STAKEHOLDER ASSUMPTION (must be negotiated before real terms):
+--      investor_dist_share = fraction of DISTRIBUTABLE (post-10%-reserve) profit
+--      that accrues to the external investor's capital. 1.00 here = investor funds
+--      100% of the deployed units AND founders take NO management/sourcing share.
+--      ⚠ A founder management/sourcing share is NOT yet defined; if set to e.g. 40%,
+--      investor_dist_share becomes 0.60 and investor returns scale down ×0.60.
+--    Investor earns ONLY on DEPLOYED capital; IDLE capital earns nothing.
+--    Reserve is company-owned and is NEVER investor capital or investor profit.
 create or replace view v_investor_funding_economics as
-with param as (select 19200000::numeric K, 7.7::numeric H, 3380000::numeric PU, 0.10::numeric RR, 2.75::numeric T0),
+with param as (select 19200000::numeric K, 7.7::numeric H, 3380000::numeric PU, 0.10::numeric RR, 2.75::numeric T0,
+                      1.00::numeric investor_dist_share),
 funding as (select unnest(array[100000000,150000000,250000000,500000000]::numeric[]) F),
--- assume base ops = 2x historical (5.5/mo) as the realistic near-term ceiling
-x as (select f.F, pr.*, least((f.F/pr.K)*30/pr.H, pr.T0*2) as tput from funding f cross join param pr)
-select F as investor_capital,
-  round(tput*H/30*K)                          as capital_deployed,
-  round(F - tput*H/30*K)                       as potential_idle_capital,
-  round(tput*12)                               as units_per_year,
-  round(tput*12/nullif(tput*H/30,0),1)         as capital_cycles_per_year,
-  round(tput*12*PU*(1-RR))                     as investor_realized_profit_yr,     -- 90% after 10% reserve
-  round(tput*12*PU*(1-RR)/nullif(tput*H/30*K,0)*100) as investor_roi_on_deployed_pct,
-  round(1 + tput*12*PU*(1-RR)/nullif(tput*H/30*K,0),2) as investor_return_multiple_yr,
-  round(H,1)                                   as holding_days
-from x order by F;
+y as (
+  select f.F, pr.K,pr.H,pr.PU,pr.RR,pr.investor_dist_share,
+         least((f.F/pr.K)*30/pr.H, pr.T0*2) tput,
+         least(f.F, round(least((f.F/pr.K)*30/pr.H, pr.T0*2)*pr.H/30*pr.K)) inv_deployed
+  from funding f cross join param pr
+)
+select F as funding,
+  inv_deployed                                                        as deployed,
+  round(F - inv_deployed)                                             as idle_capital,
+  round(inv_deployed/nullif(F,0)*100)                                as utilization_pct,
+  round(tput*12*PU)                                                   as annual_business_profit,
+  round(tput*12*PU*RR)                                                as reserve_retention,
+  round(tput*12*PU*(1-RR))                                            as distributable_profit,
+  investor_dist_share                                                as investor_share_of_distributable,
+  round(tput*12*PU*(1-RR)*investor_dist_share)                        as investor_realized_profit,
+  -- ── ROI metrics with EXPLICIT denominators ──
+  round(tput*12*PU / nullif(inv_deployed,0)*100)                     as operating_roi_on_deployed_pct,     -- BUSINESS profit ÷ deployed  (company, not investor)
+  round(tput*12*PU*(1-RR)*investor_dist_share / nullif(F,0)*100)     as investor_roi_on_FUNDED_pct,        -- investor profit ÷ FUNDED capital
+  round(tput*12*PU*(1-RR)*investor_dist_share / nullif(inv_deployed,0)*100) as investor_roi_on_DEPLOYED_pct, -- investor profit ÷ DEPLOYED capital
+  round(1 + tput*12*PU*(1-RR)*investor_dist_share / nullif(F,0),2)   as investor_return_multiple_on_funded,
+  round(H,1)                                                          as holding_days
+from y order by F;
 
 -- 6) FUNDING RECOMMENDATION (data-driven range; assumptions explicit)
 create or replace view v_funding_recommendation as
