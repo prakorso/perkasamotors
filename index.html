@@ -460,10 +460,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <nav class="sb-nav">
       <button class="nav-btn active role-investor" data-nav="investor" onclick="showSection('investor')"><span class="ni">◆</span><span>Portofolio Saya</span></button>
       <button class="nav-btn role-investor" data-nav="investor-track" onclick="showSection('investor-track')"><span class="ni">★</span><span>Rekam Jejak</span></button>
-      <button class="nav-btn active role-internal" data-nav="home" onclick="showSection('home')"><span class="ni">⌂</span><span>Dashboard</span></button>
+      <button class="nav-btn active role-internal" data-nav="home" onclick="showSection('home')"><span class="ni">⌂</span><span>Ringkasan</span></button>
       <button class="nav-btn role-internal" data-nav="unit" onclick="showSection('unit')"><span class="ni">≡</span><span>Unit</span></button>
-      <button class="nav-btn role-internal" data-nav="funding" onclick="showSection('funding')"><span class="ni">◆</span><span>Funding</span></button>
-      <button class="nav-btn role-internal" data-nav="keuangan" onclick="showSection('keuangan')"><span class="ni">💰</span><span>Keuangan</span></button>
+      <button class="nav-btn role-internal" data-nav="keuangan" onclick="showSection('keuangan')"><span class="ni">💰</span><span>Uang</span></button>
+      <button class="nav-btn role-internal" data-nav="funding" onclick="showSection('funding')"><span class="ni">◆</span><span>Modal &amp; Investor</span></button>
       <button class="nav-btn role-internal" data-nav="analitik" onclick="showSection('analitik')"><span class="ni">📊</span><span>Analitik</span></button>
       <button class="nav-btn role-internal" data-nav="pengaturan" onclick="showSection('pengaturan')"><span class="ni">⚙</span><span>Pengaturan</span></button>
     </nav>
@@ -744,6 +744,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="stab" data-st="ftab-dataroom" onclick="showSubTab('funding','ftab-dataroom')">📋 Data Room</button>
   </div>
   <div id="ftab-ledger" class="stab-panel active">
+        <div id="capitalOverview"></div>
         <div class="section-hint">Funding Ledger menampilkan seluruh pendanaan partner/investor per unit, lengkap dengan status pembayaran dan estimasi return. Data ditarik dari Support Funding Partner pada tiap unit.</div>
         <div class="kpi-grid" id="fundingKpi"></div>
         <div class="filter-bar">
@@ -861,11 +862,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
 
         <div class="card">
-          <div class="card-hdr"><div class="card-title">Perbandingan Segmen</div></div>
-          <div id="segmentCards" class="segment-grid"></div>
-        </div>
-
-        <div class="card">
           <div class="card-hdr"><div class="card-title">Track Record per Unit</div>
             <div style="display:flex;gap:6px">
               <button class="chip active" data-ts="all" onclick="setTrackSegment('all')">Semua</button>
@@ -879,6 +875,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <p style="font-size:11px;color:var(--text3);margin-top:10px">ROI dihitung atas modal inti (Panji+Pandu), profit setelah fee partner. Holding = lama hari dari masuk sampai terjual.</p>
         </div>
 
+        <div class="no-print" style="text-align:center;margin:6px 0 14px">
+          <button class="btn-sm" id="anaMoreBtn" onclick="toggleAnaMore()">▾ Tampilkan analitik lengkap</button>
+        </div>
+        <div id="anaMore" style="display:none">
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Perbandingan Segmen</div></div>
+          <div id="segmentCards" class="segment-grid"></div>
+        </div>
         <div class="card">
           <div class="card-hdr"><div class="card-title">Win Rate Trend per Kuartal</div></div>
           <div class="chart-wrap"><canvas id="chartWinRate" role="img" aria-label="Win rate per kuartal"></canvas></div>
@@ -906,6 +910,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div id="momBreakdown" style="margin-top:16px"></div>
         </div>
         <div class="card"><div class="card-hdr"><div class="card-title">Profit per Tahun</div></div><div class="chart-wrap"><canvas id="chartYearly" role="img" aria-label="Grafik profit per tahun"></canvas></div></div>
+        </div><!-- /#anaMore -->
   </div>
   <div id="atab-inventori-partner" class="stab-panel">
         <div class="kpi-grid" id="invIntelKPI" style="margin-bottom:18px"></div>
@@ -1091,9 +1096,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <span id="laporanPeriodLabel" style="font-size:13px;color:var(--text3)"></span>
           <button onclick="printLaporan()" style="margin-left:auto;padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-size:13px;cursor:pointer">⬇ Export PDF</button>
         </div>
+        <div id="validatedPnlCard"></div>
         <div class="two-col">
           <div class="card">
-            <div class="card-hdr"><div class="card-title">Laporan Laba Rugi (P&amp;L)</div></div>
+            <div class="card-hdr"><div class="card-title">Laba Rugi Operasional (per periode)</div></div>
             <div id="plTable"></div>
           </div>
           <div class="card">
@@ -1441,6 +1447,45 @@ function setLoading(show,text='Memuat data...'){
   document.getElementById('loadingText').textContent=text;
 }
 
+// ═══════════ FINANCIAL VIEWS LAYER (Phase 3–8 as source of truth) ═══════════
+// Validated Supabase views feed the money screens. If a view is not deployed
+// yet, its slot stays null and the UI falls back to the legacy JS math —
+// nothing breaks. NO financial number is recomputed in the frontend when a
+// validated view provides it. Legacy data stays legacy (views enforce that).
+const FIN={loaded:false, ok:false, command:null, pnl:null, pnlClass:null,
+  reserve:null, capital:null, investors:null, fundingCap:null, fundingUtil:null,
+  fundingRec:null, assumptions:null};
+async function finGet(sel,single){
+  try{ const {data,error}=await db.from(sel).select('*'); if(error)throw error;
+    return single?((data&&data[0])||null):(data||[]); }
+  catch(e){ return null; }
+}
+async function loadFin(){
+  try{
+    const [cmd,pnl,pcl,res,cap,inv,fc,fu,fr,asm]=await Promise.all([
+      finGet('v_command_center',true), finGet('v_pnl',true), finGet('v_pnl_by_class'),
+      finGet('v_reserve_reconcile',true), finGet('v_capital_reconcile',true),
+      finGet('v_investor_summary_mapped'), finGet('v_funding_capacity',true),
+      finGet('v_funding_utilization'), finGet('v_funding_recommendation'),
+      finGet('funding_assumptions')
+    ]);
+    FIN.command=cmd; FIN.pnl=pnl; FIN.pnlClass=pcl; FIN.reserve=res; FIN.capital=cap;
+    FIN.investors=inv; FIN.fundingCap=fc; FIN.fundingUtil=fu; FIN.fundingRec=fr; FIN.assumptions=asm;
+    FIN.ok=!!(cmd||pnl); FIN.loaded=true;
+  }catch(e){ FIN.loaded=true; FIN.ok=false; }
+}
+// Open business items surfaced honestly (never hidden), from validated data.
+function finOpenItems(){
+  const c=FIN.command, out=[];
+  if(c){
+    if(Number(c.unresolved_variance)!==0) out.push(['amber',`Selisih settlement Unit belum tuntas: <b>${fmtRp(c.unresolved_variance)}</b> (Unit #37 — dipertahankan sesuai keputusan, bukan dihapus).`]);
+    if(Number(c.unmapped_accounts)>0) out.push(['amber',`<b>${c.unmapped_accounts}</b> akun modal belum dipetakan ke login (mis. akun "Modal").`]);
+    const v=c.opening_cash_verified; if(v==='false'||v===false||v==null) out.push(['amber',`Saldo kas awal masih <b>belum terverifikasi / sementara</b>.`]);
+    out.push(['amber',`Bagi hasil manajemen founder = <b>0%</b> (placeholder dapat diubah — <b>bukan</b> term final).`]);
+  }
+  return out;
+}
+
 async function loadUnits(){
   setLoading(true,'Memuat data dari Supabase...'); setSyncStatus('syncing');
   try{
@@ -1449,6 +1494,7 @@ async function loadUnits(){
     units=(data||[]).map(transformUnit);
     updateMetrics(); setSyncStatus('ok');
   }catch(e){ setSyncStatus('error'); showToast('❌ Gagal memuat data. Cek koneksi.'); }
+  await loadFin();
   setLoading(false);
   const sec=document.querySelector('.section.active');
   if(sec&&sec.id==='sec-home')renderHome();
@@ -1478,8 +1524,8 @@ function showSection(s,fromPop){
   if(isInvestor() && !['investor','investor-track'].includes(s)) s='investor';
   const internalOnly=['input','keuangan','analitik','unit','funding','home'];
   if(!isInternal() && !isInvestor() && internalOnly.includes(s)) s='home';
-  const titles={home:'Dashboard',input:editingId?'Edit Unit':'Input Unit Baru',unit:'Daftar Unit',
-    funding:'Funding',keuangan:'Keuangan',analitik:'Analitik',pengaturan:'Pengaturan',
+  const titles={home:'Ringkasan',input:editingId?'Edit Unit':'Input Unit Baru',unit:'Daftar Unit',
+    funding:'Modal & Investor',keuangan:'Uang',analitik:'Analitik',pengaturan:'Pengaturan',
     investor:'Portofolio Saya','investor-track':'Rekam Jejak & Simulasi'};
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav===s));
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.toggle('active',b.dataset.bn===s));
@@ -2676,29 +2722,50 @@ function renderHome(){
   document.getElementById('healthLabel').textContent=hs.label;
   document.getElementById('healthSub').textContent=hs.sub;
 
-  // Alerts
-  document.getElementById('alertStack').innerHTML=buildAlerts(h).map(([lvl,msg])=>{
+  // Alerts + open financial items (validated) merged in
+  const alerts=buildAlerts(h).concat(finOpenItems());
+  document.getElementById('alertStack').innerHTML=alerts.map(([lvl,msg])=>{
     const ic={red:'🔴',amber:'🟡',green:'🟢'}[lvl];
     return `<div class="alert ${lvl}"><span class="a-ic">${ic}</span><div>${msg}</div></div>`;
   }).join('');
 
-  // KPI cards — inti CEO (info detail lain ada di section Inventory/Investor di bawah)
+  // KPI cards — MONEY FIRST. Prefer validated views (FIN), fall back to JS math.
+  const c=FIN.command;
+  const profit   = c? Number(c.realized_profit)      : h.realized;
+  const revenue  = c? Number(c.revenue)              : null;
+  const reserve  = c? Number(c.reserve_balance)      : null;
+  const resAvail = c? Number(c.available_reserve)    : null;
+  const resTgt   = c? Number(c.reserve_target)       : 0;
+  const modalRun = c!=null&&c.capital_deployed!=null? Number(c.capital_deployed) : h.modalBerjalan;
+  const resPct   = resTgt? Math.min(100,Math.round((reserve||0)/resTgt*100)) : 0;
+  const src=c?'<span title="Sumber: view keuangan tervalidasi" style="opacity:.6"> ✓</span>':'';
   const kpis=[
-    ['Cash Available (est.)',fmtRpShort(h.cashProxy),'profit terealisasi','k-green'],
-    ['Modal Berjalan',fmtRpShort(h.modalBerjalan),h.active.length+' unit aktif','k-teal'],
-    ['Profit Tahun Ini',fmtRpShort(h.profitYear),thisYear(),'k-amber'],
-    ['ROI Tahun Berjalan',h.roiYear.toFixed(1)+'%','atas modal inti','k-blue'],
-    ['Total Asset',fmtRpShort(h.totalAsset),'kas + inventory','k-purple'],
-    ['Outstanding Payment',fmtRpShort(h.outstanding),'kewajiban belum dibayar','k-red'],
+    ['Profit Bersih'+src, fmtRpShort(profit), c?'laba terealisasi (tervalidasi)':'estimasi dari unit terjual','k-green'],
+    revenue!=null? ['Pendapatan'+src, fmtRpShort(revenue), (c.units_sold||h.sold.length)+' unit terjual','k-blue']
+                 : ['Profit Tahun Ini', fmtRpShort(h.profitYear), thisYear(),'k-blue'],
+    reserve!=null? ['Cadangan (10%)'+src, fmtRpShort(reserve), `target ${fmtRpShort(resTgt)} · ${resPct}%`,'k-amber']
+                 : ['ROI Tahun Berjalan', h.roiYear.toFixed(1)+'%','atas modal inti','k-amber'],
+    resAvail!=null? ['Kas Cadangan Tersedia'+src, fmtRpShort(resAvail), 'siap dipakai','k-teal']
+                  : ['Cash Available (est.)', fmtRpShort(h.cashProxy),'profit terealisasi','k-teal'],
+    ['Modal Berjalan', fmtRpShort(modalRun), h.active.length+' unit aktif','k-purple'],
+    ['Kewajiban Belum Dibayar', fmtRpShort(h.outstanding),'ke partner/investor','k-red'],
   ];
-  document.getElementById('kpiGrid').innerHTML=kpis.map(([l,v,s,c])=>
-    `<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
+  document.getElementById('kpiGrid').innerHTML=kpis.map(([l,v,s,cc])=>
+    `<div class="kpi ${cc}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
 
   renderProfitTrend();
   renderAgingDist(h);
   renderTopPerformance(h);
 }
 
+function toggleAnaMore(){
+  const el=document.getElementById('anaMore'), btn=document.getElementById('anaMoreBtn');
+  if(!el)return;
+  const show=el.style.display==='none';
+  el.style.display=show?'block':'none';
+  if(btn)btn.textContent=show?'▴ Sembunyikan analitik lengkap':'▾ Tampilkan analitik lengkap';
+  if(show){ try{ renderInsight(); renderEvaluasi(); }catch(e){} } // size charts now visible
+}
 function renderCashChart(h){
   const cashCanvas=document.getElementById('chartCash');
   if(!cashCanvas)return; // Cash Position dihapus dari homepage
@@ -2814,7 +2881,42 @@ function setFundingFilter(f){
   document.querySelectorAll('#ftab-ledger .chip[data-fs]').forEach(b=>b.classList.toggle('active',b.dataset.fs===f));
   renderFunding();
 }
+function renderCapitalOverview(){
+  const el=document.getElementById('capitalOverview'); if(!el)return;
+  if(!isInternal()){ el.innerHTML=''; return; }
+  const c=FIN.command, cap=FIN.fundingCap, util=(FIN.fundingUtil||[]), rec=(FIN.fundingRec||[]), inv=(FIN.investors||[]);
+  if(!c&&!cap){ el.innerHTML=''; return; }
+  const card=(l,v,s,cc)=>`<div class="kpi ${cc}"><div class="kpi-label">${l}</div><div class="kpi-value" style="font-size:18px">${v}</div><div class="kpi-sub">${s}</div></div>`;
+  let kpis='';
+  if(c){
+    kpis=[
+      card('Modal Terkumpul',fmtRpShort(c.capital_funded),'seluruh sumber','k-blue'),
+      card('Modal Berjalan',fmtRpShort(c.capital_deployed),'sedang di unit aktif','k-teal'),
+      card('Modal Tersedia',fmtRpShort(c.capital_available),'siap dikerahkan','k-green'),
+      card('Cadangan Perusahaan',fmtRpShort(c.reserve_balance),'ring-fenced 10%','k-amber'),
+    ].join('');
+  }
+  // Investor lifecycle table (mapped)
+  let invTbl='';
+  if(inv.length){
+    invTbl=`<div class="card"><div class="card-hdr"><div class="card-title">Siklus Modal per Investor ✓</div></div>
+      <div class="table-scroll"><table class="track-table"><thead><tr><th>Investor</th><th class="num">Funded</th><th class="num">Berjalan</th><th class="num">Tersedia</th><th class="num">Kembali</th><th class="num">Laba Realized</th></tr></thead><tbody>
+      ${inv.map(m=>`<tr><td>${m.investor_key}${m.is_mapped?'':' <span style="font-size:10px;color:var(--amber,#9A6300)">(unmapped)</span>'}</td><td class="num">${fmtRp(m.funded)}</td><td class="num">${fmtRp(m.deployed)}</td><td class="num">${fmtRp(m.available)}</td><td class="num">${fmtRp(m.capital_returned)}</td><td class="num">${fmtRp(m.realized_profit)}</td></tr>`).join('')}
+      </tbody></table></div><p style="font-size:11px;color:var(--text3);margin-top:8px">Tersedia = Funded − Berjalan (modal kembali masuk lagi). Cadangan bukan modal investor. Laba realized hanya pada modal yang telah berputar penuh.</p></div>`;
+  }
+  // Funding capacity summary (one-liner, not the full CFO model)
+  let capBox='';
+  if(cap){
+    const tput=Number(cap.throughput_per_month||0);
+    capBox=`<div class="card"><div class="card-hdr"><div class="card-title">Kapasitas Pendanaan ✓</div></div>
+      <div style="font-size:13px;line-height:1.6;color:var(--text2)">Throughput historis ± <b>${tput.toFixed(1)} unit/bulan</b>, rata² tahan <b>${cap.mean_holding} hari</b>, biaya rata² <b>${fmtRpShort(cap.avg_cost_per_unit)}/unit</b>.
+      Karena modal kerja berputar cepat, pendanaan besar mudah menganggur bila throughput tidak naik.
+      ${rec.length?`<div style="margin-top:8px">Rekomendasi pendanaan: ${rec.map(r=>`<b>${r.tier}</b> ${fmtRpShort(r.low)}–${fmtRpShort(r.high)}`).slice(0,3).join(' · ')}</div>`:''}</div></div>`;
+  }
+  el.innerHTML=(kpis?`<div class="kpi-grid" style="margin-bottom:14px">${kpis}</div>`:'')+invTbl+capBox;
+}
 function renderFunding(){
+  renderCapitalOverview();
   let rows=allFundings();
   if(!isInternal()){ const me=(currentUser||'').toLowerCase(); rows=rows.filter(f=>(f.investor||'').toLowerCase().includes(me)); }
   const totalFund=rows.reduce((a,f)=>a+f.funding,0);
@@ -3643,6 +3745,35 @@ async function renderLaporan(){
   else if(period==='this_year'){from=now.getFullYear()+'-01-01';to=now.getFullYear()+'-12-31';}
   const label=from?from+' s/d '+to:'Semua Waktu';
   document.getElementById('laporanPeriodLabel').textContent=label;
+
+  // ── Validated all-time P&L (source of truth: v_pnl + v_pnl_by_class) ──
+  const vp=FIN.pnl, vpc=FIN.pnlClass, vpCard=document.getElementById('validatedPnlCard');
+  if(vpCard){
+    if(vp){
+      const L=(lab,val,strong,ind)=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 14px 8px ${(ind||0)*18+14}px;${strong?'font-weight:700':''}">${lab}</td><td style="padding:8px 14px;text-align:right;font-weight:${strong?'700':'400'}">${fmtRp(val)}</td></tr>`;
+      let split='';
+      if(vpc&&vpc.length){
+        split=`<div class="card-hdr" style="margin-top:6px"><div class="card-title" style="font-size:13px">Legacy vs Current</div></div>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="color:var(--text3)">
+          <th style="text-align:left;padding:6px 10px">Kelas</th><th style="text-align:right;padding:6px 10px">Pendapatan</th><th style="text-align:right;padding:6px 10px">Laba Kotor</th><th style="text-align:right;padding:6px 10px">Laba Unit</th><th style="text-align:right;padding:6px 10px">Unit</th></tr></thead><tbody>
+          ${vpc.map(r=>`<tr style="border-top:1px solid var(--border)"><td style="padding:6px 10px">${r.model_class}</td><td style="padding:6px 10px;text-align:right">${fmtRp(r.revenue)}</td><td style="padding:6px 10px;text-align:right">${fmtRp(r.gross_profit)}</td><td style="padding:6px 10px;text-align:right">${fmtRp(r.realized_unit_profit)}</td><td style="padding:6px 10px;text-align:right">${r.units}</td></tr>`).join('')}
+        </tbody></table></div><p style="font-size:11px;color:var(--text3);margin:8px 0 0">Data legacy tetap historis — reserve 10% tidak diterapkan surut. Unit current mengikuti sistem baru.</p>`;
+      }
+      vpCard.innerHTML=`<div class="card"><div class="card-hdr"><div class="card-title">Laporan Laba Rugi — Tervalidasi (Seluruh Waktu) ✓</div></div>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><tbody>
+          ${L('Pendapatan',vp.revenue,true)}
+          ${L('Harga Pokok (COGS)',-Math.abs(vp.cogs),false,1)}
+          ${L('Laba Kotor',vp.gross_profit,true)}
+          ${L('Biaya pendanaan unit / fee partner',-Math.abs(vp.unit_financing_partner_fees||0),false,1)}
+          ${L('Laba Unit Terealisasi',vp.realized_unit_profit,true)}
+          ${L('Biaya operasional perusahaan',-Math.abs(vp.company_operating_expenses||0),false,1)}
+          ${L('Laba Operasi Bersih',vp.net_operating_profit,true)}
+          ${L('Retensi cadangan (10%, apropriasi)',-Math.abs(vp.reserve_retention_appropriation||0),false,1)}
+        </tbody></table></div>${split}</div>`;
+    } else {
+      vpCard.innerHTML=`<div class="card" style="border-color:var(--amber,#9A6300)"><div style="padding:6px 2px;font-size:12.5px;color:var(--text2)">ℹ Laporan tervalidasi (view <b>v_pnl</b>) belum aktif. Menampilkan perhitungan operasional lama. Jalankan SQL Phase 5–8 di Supabase untuk mengaktifkan angka sumber-tunggal.</div></div>`;
+    }
+  }
 
   const inRange=d=>!d?false:(!from||d>=from)&&(!to||d<=to);
   const soldInPeriod=units.filter(u=>u.status==='terjual'&&inRange(u.tglJual||u.tgl));
