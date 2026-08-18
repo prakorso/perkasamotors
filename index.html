@@ -1481,7 +1481,6 @@ function finOpenItems(){
     if(Number(c.unresolved_variance)!==0) out.push(['amber',`Selisih settlement Unit belum tuntas: <b>${fmtRp(c.unresolved_variance)}</b> (Unit #37 — dipertahankan sesuai keputusan, bukan dihapus).`]);
     if(Number(c.unmapped_accounts)>0) out.push(['amber',`<b>${c.unmapped_accounts}</b> akun modal belum dipetakan ke login (mis. akun "Modal").`]);
     const v=c.opening_cash_verified; if(v==='false'||v===false||v==null) out.push(['amber',`Saldo kas awal masih <b>belum terverifikasi / sementara</b>.`]);
-    out.push(['amber',`Bagi hasil manajemen founder = <b>0%</b> (placeholder dapat diubah — <b>bukan</b> term final).`]);
   }
   return out;
 }
@@ -2722,8 +2721,8 @@ function renderHome(){
   document.getElementById('healthLabel').textContent=hs.label;
   document.getElementById('healthSub').textContent=hs.sub;
 
-  // Alerts + open financial items (validated) merged in
-  const alerts=buildAlerts(h).concat(finOpenItems());
+  // Alerts — operasional saja. Catatan tata kelola dipindah ke halaman Uang (tidak nge-nag di depan).
+  const alerts=buildAlerts(h);
   document.getElementById('alertStack').innerHTML=alerts.map(([lvl,msg])=>{
     const ic={red:'🔴',amber:'🟡',green:'🟢'}[lvl];
     return `<div class="alert ${lvl}"><span class="a-ic">${ic}</span><div>${msg}</div></div>`;
@@ -3759,6 +3758,8 @@ async function renderLaporan(){
           ${vpc.map(r=>`<tr style="border-top:1px solid var(--border)"><td style="padding:6px 10px">${r.model_class}</td><td style="padding:6px 10px;text-align:right">${fmtRp(r.revenue)}</td><td style="padding:6px 10px;text-align:right">${fmtRp(r.gross_profit)}</td><td style="padding:6px 10px;text-align:right">${fmtRp(r.realized_unit_profit)}</td><td style="padding:6px 10px;text-align:right">${r.units}</td></tr>`).join('')}
         </tbody></table></div><p style="font-size:11px;color:var(--text3);margin:8px 0 0">Data legacy tetap historis — reserve 10% tidak diterapkan surut. Unit current mengikuti sistem baru.</p>`;
       }
+      const openItems=finOpenItems();
+      const govNote=openItems.length?`<div class="card" style="margin-top:14px"><div class="card-hdr"><div class="card-title" style="font-size:13px">Catatan tata kelola (${openItems.length} item terbuka)</div></div><ul style="margin:4px 0 0;padding-left:18px;font-size:12.5px;color:var(--text2);line-height:1.6">${openItems.map(([,m])=>`<li>${m}</li>`).join('')}</ul><p style="font-size:11px;color:var(--text3);margin:8px 0 0">Bukan error — hanya keputusan bisnis yang belum final. Hilang otomatis setelah diselesaikan di database.</p></div>`:'';
       vpCard.innerHTML=`<div class="card"><div class="card-hdr"><div class="card-title">Laporan Laba Rugi — Tervalidasi (Seluruh Waktu) ✓</div></div>
         <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><tbody>
           ${L('Pendapatan',vp.revenue,true)}
@@ -3769,7 +3770,7 @@ async function renderLaporan(){
           ${L('Biaya operasional perusahaan',-Math.abs(vp.company_operating_expenses||0),false,1)}
           ${L('Laba Operasi Bersih',vp.net_operating_profit,true)}
           ${L('Retensi cadangan (10%, apropriasi)',-Math.abs(vp.reserve_retention_appropriation||0),false,1)}
-        </tbody></table></div>${split}</div>`;
+        </tbody></table></div>${split}</div>${govNote}`;
     } else {
       vpCard.innerHTML=`<div class="card" style="border-color:var(--amber,#9A6300)"><div style="padding:6px 2px;font-size:12.5px;color:var(--text2)">ℹ Laporan tervalidasi (view <b>v_pnl</b>) belum aktif. Menampilkan perhitungan operasional lama. Jalankan SQL Phase 5–8 di Supabase untuk mengaktifkan angka sumber-tunggal.</div></div>`;
     }
