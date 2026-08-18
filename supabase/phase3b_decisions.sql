@@ -4,9 +4,22 @@
 -- Additive & non-destructive. Original recorded values are never rewritten.
 -- ══════════════════════════════════════════════════════════════
 
+-- Settlement status marks HOW a unit's reserve/distribution was determined, so the
+-- future engine can never retroactively recompute an already-recorded amount.
+--   legacy_recorded      = old model, settled historically (no reserve)      -> engine SKIPS
+--   transition_recorded  = current model, amount MANUALLY recorded (immutable) -> engine SKIPS
+--   engine_settled       = settled automatically by the 10% engine
+--   pending              = not yet settled (future sale)                      -> engine SETTLES
+alter table units add column if not exists settlement_status text;
+update units set settlement_status = case
+  when status='terjual' then 'legacy_recorded'   -- all sold history is recorded, never auto-touched
+  else 'pending' end
+where settlement_status is null;
+
 -- DECISION 2 — Reclassify #35/#37/#38 legacy → current (first units under the
 -- new Perkasa Reserve model). Recorded values on `units` stay exactly as-is.
-update units set model_class='current', reserve_rate=0.10
+-- They are CURRENT for reporting, but their kas is TRANSITION_RECORDED (immutable):
+update units set model_class='current', reserve_rate=0.10, settlement_status='transition_recorded'
 where id in (35,37,38);
 
 -- Represent their Kas/Reserve in the new architecture: post the ACTUAL recorded
