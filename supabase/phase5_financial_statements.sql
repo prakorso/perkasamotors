@@ -36,18 +36,21 @@ select u.id, u.nama, u.jenis, u.status, u.model_class, u.tgl::date acq_date, u.t
   case when u.status='terjual' then (u.tgl_jual::date-u.tgl::date) end holding_days
 from units u;
 
--- ── 1) P&L — reserve retention is BELOW net profit (appropriation) ──
+-- ── 1) P&L — explicit two-tier hierarchy. Reserve retention is BELOW net profit. ──
 create or replace view v_pnl as
-with s as (select * from v_unit_economics where status='terjual')
+with s as (select * from v_unit_economics where status='terjual'),
+o as (select coalesce(sum(nominal),0) opex from kas_keluar where coalesce(tipe,'opex') in ('opex','sourcing_failed'))
 select
-  (select sum(revenue) from s)                                              as revenue,
-  (select sum(unit_cost) from s)                                            as cogs_unit_cost,
-  (select sum(revenue-unit_cost) from s)                                    as gross_profit,
-  (select sum(fixed_fees) from s)                                           as financing_fixed_fees,
-  coalesce((select sum(nominal) from kas_keluar where coalesce(tipe,'opex') in ('opex','sourcing_failed')),0) as operating_expenses,
-  (select sum(revenue-unit_cost-fixed_fees) from s)
-    - coalesce((select sum(nominal) from kas_keluar where coalesce(tipe,'opex') in ('opex','sourcing_failed')),0) as net_profit,
-  -- BELOW THE LINE (appropriation, NOT expense):
+  -- ── UNIT ECONOMICS ──
+  (select sum(revenue) from s)                                as revenue,
+  (select sum(unit_cost) from s)                              as economic_unit_cost_cogs,
+  (select sum(revenue-unit_cost) from s)                      as gross_profit,
+  (select sum(fixed_fees) from s)                             as unit_financing_partner_fees,
+  (select sum(revenue-unit_cost-fixed_fees) from s)           as realized_unit_profit,     -- = Σ units.keuntungan_bersih (Rp131,80jt)
+  -- ── COMPANY P&L ──
+  (select opex from o)                                        as company_operating_expenses,
+  (select sum(revenue-unit_cost-fixed_fees) from s)-(select opex from o) as net_operating_profit,  -- (Rp131,10jt)
+  -- ── BELOW THE LINE (profit appropriation, NOT an expense) ──
   coalesce((select sum(nominal) from reserve_ledger where tipe='retained_profit'),0) as reserve_retention_appropriation,
   (select round(sum(revenue-unit_cost)/nullif(sum(revenue),0)*100,1) from s)         as gross_margin_pct;
 
