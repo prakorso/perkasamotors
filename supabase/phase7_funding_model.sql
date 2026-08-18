@@ -115,24 +115,46 @@ select s.scenario,
         / nullif(b.T*s.tput_mult*(b.H*s.hold_mult)/30*b.K*s.cost_mult,0)*100) as roi_on_deployed_pct
 from b cross join scen s;
 
--- 5) INVESTOR FUNDING ECONOMICS per scenario — EXPLICIT denominators, verified.
---    STAKEHOLDER ASSUMPTION (must be negotiated before real terms):
---      investor_dist_share = fraction of DISTRIBUTABLE (post-10%-reserve) profit
---      that accrues to the external investor's capital. 1.00 here = investor funds
---      100% of the deployed units AND founders take NO management/sourcing share.
---      ⚠ A founder management/sourcing share is NOT yet defined; if set to e.g. 40%,
---      investor_dist_share becomes 0.60 and investor returns scale down ×0.60.
---    Investor earns ONLY on DEPLOYED capital; IDLE capital earns nothing.
---    Reserve is company-owned and is NEVER investor capital or investor profit.
+-- ── Configurable funding/commercial assumptions (editable; NOT final terms) ──
+-- These EXPOSE the parameters instead of hardcoding them. Reserve rate is NOT
+-- duplicated here — it is read from financial_policy (single source, unchanged 10%).
+create table if not exists funding_assumptions (
+  key text primary key, value numeric not null, label text default '', updated_at timestamptz default now()
+);
+insert into funding_assumptions(key,value,label) values
+  ('founder_mgmt_share', 0.00,     'Founder management/sourcing share of DISTRIBUTABLE profit — NOT finalized (placeholder 0%)'),
+  ('ops_ceiling_mo',     5.50,     'Modeled sustainable throughput ceiling, units/month (≈2× historical)'),
+  ('avg_cost_per_unit',  19200000, 'Blended economic cost/unit (= COGS ÷ sold)'),
+  ('mean_holding_days',  7.70,     'Mean holding period, days'),
+  ('profit_per_unit',    3380000,  'Realized profit per unit')
+on conflict (key) do nothing;
+alter table funding_assumptions enable row level security;
+do $$ begin
+  execute 'create policy allow_all_fa on funding_assumptions for all to anon,authenticated using(true) with check(true)';
+exception when duplicate_object then null; end $$;
+
+-- 5) INVESTOR FUNDING ECONOMICS — EXPLICIT denominators, CONFIGURABLE sharing.
+--    investor_dist_share = 1 − founder_mgmt_share  (they split the 90% distributable).
+--    Defaults: founder_mgmt_share = 0 ⇒ investor 100% (ILLUSTRATIVE capital-only).
+--    Reserve rate read from financial_policy (company-owned; never investor profit).
+--    Investor earns ONLY on DEPLOYED capital; idle capital earns nothing.
 create or replace view v_investor_funding_economics as
-with param as (select 19200000::numeric K, 7.7::numeric H, 3380000::numeric PU, 0.10::numeric RR, 2.75::numeric T0,
-                      1.00::numeric investor_dist_share),
+with cfg as (
+  select
+    (select value from funding_assumptions where key='avg_cost_per_unit')  as K,
+    (select value from funding_assumptions where key='mean_holding_days')  as H,
+    (select value from funding_assumptions where key='profit_per_unit')    as PU,
+    (select rate from financial_policy where status='active' order by effective_date desc limit 1) as RR,
+    (select value from funding_assumptions where key='ops_ceiling_mo')     as T,
+    (select value from funding_assumptions where key='founder_mgmt_share') as founder_share,
+    1 - (select value from funding_assumptions where key='founder_mgmt_share') as investor_dist_share
+),
 funding as (select unnest(array[100000000,150000000,250000000,500000000]::numeric[]) F),
 y as (
-  select f.F, pr.K,pr.H,pr.PU,pr.RR,pr.investor_dist_share,
-         least((f.F/pr.K)*30/pr.H, pr.T0*2) tput,
-         least(f.F, round(least((f.F/pr.K)*30/pr.H, pr.T0*2)*pr.H/30*pr.K)) inv_deployed
-  from funding f cross join param pr
+  select f.F, c.K,c.H,c.PU,c.RR,c.T,c.founder_share,c.investor_dist_share,
+         least((f.F/c.K)*30/c.H, c.T)                                as tput,
+         least(f.F, round(least((f.F/c.K)*30/c.H, c.T)*c.H/30*c.K))  as inv_deployed
+  from funding f cross join cfg c
 )
 select F as funding,
   inv_deployed                                                        as deployed,
@@ -141,14 +163,20 @@ select F as funding,
   round(tput*12*PU)                                                   as annual_business_profit,
   round(tput*12*PU*RR)                                                as reserve_retention,
   round(tput*12*PU*(1-RR))                                            as distributable_profit,
-  investor_dist_share                                                as investor_share_of_distributable,
+  founder_share                                                       as founder_mgmt_share,
+  investor_dist_share                                                 as investor_share_of_distributable,
   round(tput*12*PU*(1-RR)*investor_dist_share)                        as investor_realized_profit,
+  round(tput*12*PU*(1-RR)*founder_share)                             as founder_mgmt_profit,
   -- ── ROI metrics with EXPLICIT denominators ──
-  round(tput*12*PU / nullif(inv_deployed,0)*100)                     as operating_roi_on_deployed_pct,     -- BUSINESS profit ÷ deployed  (company, not investor)
-  round(tput*12*PU*(1-RR)*investor_dist_share / nullif(F,0)*100)     as investor_roi_on_FUNDED_pct,        -- investor profit ÷ FUNDED capital
-  round(tput*12*PU*(1-RR)*investor_dist_share / nullif(inv_deployed,0)*100) as investor_roi_on_DEPLOYED_pct, -- investor profit ÷ DEPLOYED capital
+  round(tput*12*PU / nullif(inv_deployed,0)*100)                     as operating_roi_on_deployed_pct,     -- BUSINESS profit ÷ deployed (company)
+  round(tput*12*PU*(1-RR)*investor_dist_share / nullif(F,0)*100)     as investor_roi_on_funded_pct,        -- investor profit ÷ FUNDED
+  round(tput*12*PU*(1-RR)*investor_dist_share / nullif(inv_deployed,0)*100) as investor_roi_on_deployed_pct, -- investor profit ÷ DEPLOYED
   round(1 + tput*12*PU*(1-RR)*investor_dist_share / nullif(F,0),2)   as investor_return_multiple_on_funded,
-  round(H,1)                                                          as holding_days
+  round(H,1)                                                          as holding_days,
+  case when founder_share=0
+    then 'Illustrative capital-only scenario — commercial profit-sharing terms not finalized'
+    else 'Configured: investor '||round(investor_dist_share*100)||'% / founder mgmt '||round(founder_share*100)||'% of distributable'
+  end                                                                 as scenario_label
 from y order by F;
 
 -- 6) FUNDING RECOMMENDATION (data-driven range; assumptions explicit)
@@ -175,6 +203,14 @@ select
 grant select on v_funding_capacity, v_funding_scenarios, v_funding_utilization,
                 v_funding_stress_test, v_investor_funding_economics,
                 v_funding_recommendation, v_funding_cash_safety to anon,authenticated;
+grant select, insert, update on funding_assumptions to anon,authenticated;
+
+-- ── Reconfigure commercial terms WITHOUT touching the view or historical data ──
+--   Give founders a 40% management share (investor auto-becomes 60%):
+--     update funding_assumptions set value=0.40 where key='founder_mgmt_share';
+--   Change modeled throughput ceiling:
+--     update funding_assumptions set value=8.0 where key='ops_ceiling_mo';
+--   Reserve rate is NOT here — it stays in financial_policy (unchanged 10%).
 
 -- ══════════════════════════════════════════════════════════════
 -- RECONCILIATION ASSERTIONS (traceable to unit-level data)
