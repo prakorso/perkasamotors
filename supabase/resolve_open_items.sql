@@ -21,16 +21,11 @@ update settlement_variances
 update app_config set value = 'true' where key = 'opening_cash_verified';
 
 -- ── 3) Akun "Modal" belum dipetakan ─────────────────────────────────────────
--- Ini butuh IDENTITAS. Pilih SATU opsi, hapus komentar barisnya:
---
--- (a) "Modal" itu milik salah satu login yang sudah ada (mis. 'panji'):
--- update capital_accounts set account_username = 'panji' where lower(name) = 'modal';
---
--- (b) "Modal" itu pool/kas perusahaan, bukan investor perorangan —
---     jadikan login mandiri 'modal' agar tercatat rapi (bukan investor):
--- update capital_accounts set account_username = 'modal' where lower(name) = 'modal';
---
--- Sampai salah satu dipilih, item ini SENGAJA tetap terbuka (identitas belum pasti).
+-- KEPUTUSAN FOUNDER: akun "Modal" adalah milik Pandu → dipetakan ke login 'pandu'.
+update capital_accounts set account_username = 'pandu' where lower(name) = 'modal';
+-- (Alternatif lain, tidak dipakai:)
+--   pool/kas perusahaan:  set account_username='modal'  where lower(name)='modal';
+--   milik Panji:          set account_username='panji'  where lower(name)='modal';
 
 -- ── VERIFIKASI (harus 0 setelah blok yang relevan dijalankan) ───────────────
 select
