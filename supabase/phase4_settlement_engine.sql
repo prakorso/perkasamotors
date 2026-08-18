@@ -40,7 +40,7 @@ $$;
 create or replace function pm_settle_unit(p_unit_id bigint)
 returns json language plpgsql security definer as $$
 declare
-  u record; rate numeric; eff date;
+  u record; v_rate numeric; v_eff date;
   m_panji numeric; m_pandu numeric; m_partner numeric;
   adv_cost numeric; unit_cost numeric; profit numeric; reserve numeric;
   distributable numeric; fixed_fees numeric; dist_after_fixed numeric; part_cap numeric;
@@ -51,9 +51,10 @@ begin
   if u.status <> 'terjual'            then return json_build_object('ok',false,'error','unit belum terjual'); end if;
   if u.model_class <> 'current'       then return json_build_object('ok',false,'error','legacy unit — engine tidak menyentuh'); end if;
   if u.settlement_status <> 'pending' then return json_build_object('ok',false,'error','sudah final: '||coalesce(u.settlement_status,'-')); end if;
-  select rate, effective_date into rate, eff from financial_policy where status='active' order by effective_date desc limit 1;
-  if rate is null    then return json_build_object('ok',false,'error','no active financial policy'); end if;
-  if u.tgl < eff     then return json_build_object('ok',false,'error','acquired before effective date — legacy'); end if;
+  select fp.rate, fp.effective_date into v_rate, v_eff
+    from financial_policy as fp where fp.status='active' order by fp.effective_date desc limit 1;
+  if v_rate is null  then return json_build_object('ok',false,'error','no active financial policy'); end if;
+  if u.tgl < v_eff   then return json_build_object('ok',false,'error','acquired before effective date — legacy'); end if;
 
   -- Capital funding (also = capital-funded unit cost)
   select coalesce(sum((e->>'nominal')::numeric),0) into m_panji   from jsonb_array_elements(u.biaya_panji) e;
@@ -64,7 +65,7 @@ begin
 
   unit_cost     := m_panji + m_pandu + m_partner + adv_cost;
   profit        := (u.harga_jual::numeric) - unit_cost;          -- fee NOT deducted here
-  reserve       := round(profit * rate);
+  reserve       := round(profit * v_rate);
   distributable := profit - reserve;
 
   -- Fixed partner fees are a SETTLEMENT distribution to capital providers, from distributable
@@ -82,7 +83,7 @@ begin
   -- 1) Reserve retention IN
   insert into reserve_ledger(tgl,tipe,arah,nominal,unit_id,keterangan)
     values (coalesce(u.tgl_jual::date,current_date),'retained_profit','in',reserve,u.id,
-            'Auto reserve '||round(rate*100)||'% (engine)');
+            'Auto reserve '||round(v_rate*100)||'% (engine)');
 
   -- 2) Reimburse outstanding advances (CASH FLOW back to reserve — not an expense)
   if adv_cost > 0 then
