@@ -13,6 +13,12 @@ insert into app_config(key,value)
   select 'other_committed_cash','0'
   where not exists(select 1 from app_config where key='other_committed_cash');
 
+-- Configurable near-term horizon (days) for "Debt Due / Payroll Due" set-aside.
+-- Default 30; change the value to re-tune without editing this view.
+insert into app_config(key,value)
+  select 'obligation_horizon_days','30'
+  where not exists(select 1 from app_config where key='obligation_horizon_days');
+
 -- ── fee_payments: moves the partner-fee "paid" flag OUT of localStorage into DB ──
 create table if not exists fee_payments (
   id           bigserial primary key,
@@ -77,10 +83,13 @@ with base as (
     coalesce((select sum(principal) from debts where drawdown_date is not null),0)    as debt_drawdowns,
     coalesce((select sum(paid_amount) from debt_payments where status='paid'),0)      as debt_paid,
     coalesce((select sum(paid_amount) from payroll_payments),0)                       as payroll_paid,
+    coalesce((select value::int from app_config where key='obligation_horizon_days'),30) as horizon_days,
     coalesce((select sum(scheduled_amount) from debt_payments
-       where status<>'paid' and due_date <= current_date + 30),0)                     as debt_due,
+       where status<>'paid' and due_date <= current_date
+         + coalesce((select value::int from app_config where key='obligation_horizon_days'),30)),0) as debt_due,
     coalesce((select sum(computed_amount) from payroll_obligations
-       where status<>'paid' and due_date <= current_date + 30),0)                     as payroll_due
+       where status<>'paid' and due_date <= current_date
+         + coalesce((select value::int from app_config where key='obligation_horizon_days'),30)),0) as payroll_due
 )
 select *,
   (opening_cash + debt_drawdowns - debt_paid - payroll_paid)                          as actual_cash,
