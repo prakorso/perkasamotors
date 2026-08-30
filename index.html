@@ -1135,25 +1135,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
   </div>
   <div id="ktab-cashflow" class="stab-panel">
-        <div id="validatedCashflowCard"></div>
-        <div class="kpi-grid" id="cfKPIGrid" style="margin-bottom:20px"></div>
+        <div class="card-hdr" style="margin:2px 0 8px"><div class="card-title">Posisi Kas</div></div>
+        <div class="kpi-grid" id="cfPosition" style="margin-bottom:16px"></div>
         <div class="two-col">
           <div class="card">
-            <div class="card-hdr"><div class="card-title">Cashflow Statement</div></div>
-            <div class="table-wrap"><table id="cfTable" style="width:100%;border-collapse:collapse;font-size:13px"></table></div>
+            <div class="card-hdr"><div class="card-title">Arus Kas Masuk</div></div>
+            <div id="cfInflows"></div>
           </div>
           <div class="card">
-            <div class="card-hdr"><div class="card-title">Tren Cashflow Bulanan</div></div>
-            <div class="chart-wrap" style="height:260px"><canvas id="chartCashflow"></canvas></div>
+            <div class="card-hdr"><div class="card-title">Arus Kas Keluar</div></div>
+            <div id="cfOutflows"></div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-hdr">
-            <div class="card-title">Forecast — Potensi dari Unit Aktif</div>
-            <div style="font-size:12px;color:var(--text3)">Estimasi jika semua unit aktif terjual sesuai target</div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-hdr"><div class="card-title">Pergerakan Cadangan</div></div>
+            <div id="cfReserve"></div>
           </div>
-          <div class="kpi-grid" id="cfForecastKPI" style="margin-bottom:16px"></div>
-          <div class="table-wrap"><table id="cfForecastTable" style="width:100%;border-collapse:collapse;font-size:12px"></table></div>
+          <div class="card">
+            <div class="card-hdr"><div class="card-title">Kas Masuk vs Keluar</div></div>
+            <div class="chart-wrap" style="height:230px"><canvas id="chartCashflow"></canvas></div>
+          </div>
         </div>
   </div>
   <div id="ktab-laporan" class="stab-panel">
@@ -1534,11 +1536,31 @@ const FIN={loaded:false, ok:false, command:null, pnl:null, pnlClass:null,
   fundingRec:null, assumptions:null, cashflow:null, balance:null, reserveSum:null,
   debts:null, payroll:null, liabilities:null, obligations:null, cashPool:null};
 function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+const FIN_STATUS={};   // per-source: 'ok' | 'missing' (belum aktif) | 'apifail' (koneksi)
 async function finGet(sel,single){
-  try{ const {data,error}=await db.from(sel).select('*'); if(error)throw error;
-    return single?((data&&data[0])||null):(data||[]); }
-  catch(e){ return null; }
+  try{
+    const {data,error}=await db.from(sel).select('*');
+    if(error){
+      const m=((error.message||'')+' '+(error.code||'')).toLowerCase();
+      FIN_STATUS[sel]=/schema cache|does not exist|find the table|pgrst205|42p01|relation/.test(m)?'missing':'apifail';
+      return null;
+    }
+    FIN_STATUS[sel]='ok';
+    return single?((data&&data[0])||null):(data||[]);
+  }catch(e){ FIN_STATUS[sel]='apifail'; return null; }
 }
+// Production-safe messaging (never exposes SQL filenames / technical NULLs)
+function moduleMsg(sel,moduleName){
+  const st=FIN_STATUS[sel]||'apifail';
+  if(st==='missing') return `<div class="empty-state" style="padding:26px;text-align:center;color:var(--text3)">
+    <div style="font-size:15px;font-weight:600;color:var(--text2);margin-bottom:4px">Modul ${moduleName} belum aktif</div>
+    <div style="font-size:12.5px">Modul ini belum tersedia. Hubungi admin untuk mengaktifkannya.</div></div>`;
+  return `<div class="empty-state" style="padding:26px;text-align:center;color:var(--text3)">
+    <div style="font-size:15px;font-weight:600;color:var(--text2);margin-bottom:4px">Data belum dapat dimuat</div>
+    <div style="font-size:12.5px;margin-bottom:12px">Periksa koneksi Anda lalu coba lagi.</div>
+    <button class="btn-sm" onclick="retryFin()">↻ Coba Lagi</button></div>`;
+}
+async function retryFin(){ await loadFin(); const sec=document.querySelector('.section.active'); if(sec&&sec.id==='sec-home')renderHome(); else{ const p=document.querySelector('.stab-panel.active'); if(p&&p.id&&window.showSubTab){ const secEl=p.closest('.section'); if(secEl)showSubTab(secEl.id.replace('sec-',''),p.id); } } }
 async function loadFin(){
   try{
     const [cmd,pnl,pcl,res,cap,inv,fc,fu,fr,asm,cf,bs,rs]=await Promise.all([
@@ -2835,19 +2857,20 @@ function renderHome(){
   const pool=FIN.cashPool, liab=FIN.liabilities;
   const liabTotal = liab? Number(liab.total_liabilities) : h.outstanding;
   const safeCash  = pool? Number(pool.safe_cash) : null;
+  // Hierarki (brief §7): Safe Cash → Kas Aktual/Cadangan/Liabilities → Revenue/Profit/Inventory/Modal
   const kpis = c ? [
     safeCash!=null
-      ? ['Safe Cash'+src, fmtRpShort(safeCash), pool.is_provisional?'⚠ provisional (kas awal belum verified)':'kas aman dipakai','k-green']
-      : ['Profit Bersih'+src, fmtRpShort(c.realized_profit), `laba operasi ${fmtRpShort(c.net_operating_profit)}`,'k-green'],
-    safeCash!=null
-      ? ['Profit Bersih'+src, fmtRpShort(c.realized_profit), `laba operasi ${fmtRpShort(c.net_operating_profit)}`,'k-blue']
-      : ['Pendapatan'+src, fmtRpShort(c.revenue), `${c.units_sold} unit terjual`,'k-blue'],
+      ? ['Safe Cash'+src, fmtRpShort(safeCash), pool.is_provisional?'⚠ provisional':'kas aman dipakai','k-green']
+      : ['Profit Bersih'+src, fmtRpShort(c.realized_profit), 'laba terealisasi','k-green'],
+    pool
+      ? ['Kas Aktual'+src, fmtRpShort(pool.actual_cash), pool.is_provisional?'provisional':'kas aktual','k-teal']
+      : ['Modal Tersedia'+src, fmtRpShort(c.capital_available), `dari ${fmtRpShort(c.capital_funded)}`,'k-teal'],
     ['Cadangan (10%)'+src,  fmtRpShort(reserve),                  `target ${fmtRpShort(resTgt)} · ${resPct}%`,'k-amber'],
-    ['Modal Berjalan'+src,  fmtRpShort(c.capital_deployed),       `${h.active.length} unit aktif`,'k-purple'],
-    ['Modal Tersedia'+src,  fmtRpShort(c.capital_available),      `dari ${fmtRpShort(c.capital_funded)} terkumpul`,'k-teal'],
-    ['Inventory (biaya)'+src,fmtRpShort(c.inventory_at_cost),     'nilai stok aktif','k-blue'],
-    ['Kewajiban'+(liab?src:''), fmtRpShort(liabTotal),            liab?'utang + payroll + fee partner':'fee partner belum dibayar','k-red'],
-    ['Perlu Perhatian',     String(needAttention),                needAttention?'lihat Alert Center':'semua aman ✓','k-amber'],
+    ['Liabilities'+(liab?src:''), fmtRpShort(liabTotal),          liab?'utang + payroll + fee':'fee partner','k-red'],
+    ['Pendapatan'+src,      fmtRpShort(c.revenue),                `${c.units_sold} unit terjual`,'k-blue'],
+    ['Profit Bersih'+src,   fmtRpShort(c.realized_profit),        `laba operasi ${fmtRpShort(c.net_operating_profit)}`,'k-green'],
+    ['Inventory (biaya)'+src,fmtRpShort(c.inventory_at_cost),     'nilai stok aktif','k-purple'],
+    ['Modal Berjalan'+src,  fmtRpShort(c.capital_deployed),       `${h.active.length} unit aktif`,'k-blue'],
   ] : [
     ['Profit Bersih',       fmtRpShort(h.realized),               'estimasi dari unit terjual','k-green'],
     ['Profit Tahun Ini',    fmtRpShort(h.profitYear),             thisYear(),'k-blue'],
@@ -3776,14 +3799,13 @@ async function loadAuditLog(){
 let cCashflow=null;
 // ═══════════════════ PHASE B · DEBT + PAYROLL (DB-backed) ═══════════════════
 async function finRefresh(){ await loadFin(); }
-function _phaseBMissing(view){ return `<div class="card"><div class="empty-state" style="padding:26px;text-align:center;color:var(--text3)">⚠ View <b>${view}</b> belum ada.<br>Jalankan <b>phase9_debt.sql / phase10_payroll.sql / phase11_cash_pool.sql</b> di Supabase SQL Editor, lalu muat ulang.</div></div>`; }
 function kcard(l,v,s,c){return `<div class="kpi ${c||'k-blue'}"><div class="kpi-label">${l}</div><div class="kpi-value" style="font-size:18px">${v}</div><div class="kpi-sub">${s||''}</div></div>`;}
 
 // ── DEBT ──
 async function renderDebt(){
   const rows=FIN.debts;
   const kg=document.getElementById('debtKPIGrid'), tb=document.getElementById('debtTable');
-  if(rows==null){ kg.innerHTML=''; tb.innerHTML='<tr><td>'+_phaseBMissing('v_debt_summary')+'</td></tr>'; return; }
+  if(rows==null){ kg.innerHTML=''; tb.innerHTML='<tr><td colspan="9">'+moduleMsg('v_debt_summary','Utang')+'</td></tr>'; return; }
   const outT=rows.reduce((a,r)=>a+Number(r.outstanding_total||0),0);
   const prinT=rows.reduce((a,r)=>a+Number(r.outstanding_principal||0),0);
   const next=rows.filter(r=>r.next_due_date).sort((a,b)=>String(a.next_due_date).localeCompare(String(b.next_due_date)))[0];
@@ -3850,7 +3872,7 @@ function onPayMethod(){
 async function renderPayroll(){
   const rows=FIN.payroll;
   const kg=document.getElementById('payKPIGrid'), tb=document.getElementById('payTable');
-  if(rows==null){ kg.innerHTML=''; tb.innerHTML='<tr><td>'+_phaseBMissing('v_payroll_summary')+'</td></tr>'; return; }
+  if(rows==null){ kg.innerHTML=''; tb.innerHTML='<tr><td colspan="7">'+moduleMsg('v_payroll_summary','Payroll')+'</td></tr>'; return; }
   const oblT=rows.reduce((a,r)=>a+Number(r.obligation_total||0),0);
   const paidT=rows.reduce((a,r)=>a+Number(r.paid_total||0),0);
   const outT=rows.reduce((a,r)=>a+Number(r.outstanding_total||0),0);
@@ -3864,7 +3886,7 @@ async function renderPayroll(){
   const oblByPerson={}; (obls||[]).forEach(o=>{ if(!oblByPerson[o.person_id])oblByPerson[o.person_id]=o; });
   tb.innerHTML=`<thead><tr><th>Nama</th><th>Jabatan</th><th class="num">Kewajiban</th><th class="num">Dibayar</th><th class="num">Sisa</th><th>Status</th><th></th></tr></thead><tbody>`+
     (rows.map(r=>{ const o=oblByPerson[r.id];
-      return `<tr><td>${esc(r.name)}${r.needs_basis?' <span class="fund-status active" title="Basis % belum dikonfigurasi">basis?</span>':''}</td>
+      return `<tr><td>${esc(r.name)}${r.needs_basis?' <span class="fund-status active" title="Basis persentase belum dikonfigurasi">Basis %?</span>':''}</td>
       <td class="muted">${esc(r.role||'')}</td>
       <td class="num">${fmtRp(r.obligation_total)}</td><td class="num">${fmtRp(r.paid_total)}</td>
       <td class="num">${fmtRp(r.outstanding_total)}</td>
@@ -3902,123 +3924,61 @@ async function payPayroll(oblId){
   }catch(e){ showToast('❌ Gagal: '+(e.message||e)); }
 }
 
-function renderValidatedCashflow(){
-  const el=document.getElementById('validatedCashflowCard'); if(!el)return;
-  const cf=FIN.cashflow;
-  if(!cf||!cf.length){ el.innerHTML=''; return; }
-  const cols=Object.keys(cf[0]);
-  const num=k=>typeof cf[0][k]==='number';
-  const th=cols.map(k=>`<th style="${num(k)?'text-align:right;':''}">${esc(k.replace(/_/g,' '))}</th>`).join('');
-  const rows=cf.map(r=>`<tr>${cols.map(k=>`<td style="${num(k)?'text-align:right;font-family:monospace;':''}">${num(k)?fmtRp(r[k]):esc(r[k])}</td>`).join('')}</tr>`).join('');
-  el.innerHTML=`<div class="card"><div class="card-hdr"><div class="card-title">Arus Kas — Tervalidasi ✓</div></div>
-    <div class="table-scroll"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table></div>
-    <p style="font-size:11px;color:var(--text3);margin-top:8px">Sumber: view <b>v_cashflow</b>. Chart &amp; forecast di bawah bersifat operasional/estimasi.</p></div>`;
-}
 async function renderCashflow(){
-  renderValidatedCashflow();
-  // Fetch pengeluaran dari Supabase
-  const {data:keluarData}=await db.from('kas_keluar').select('*').order('tgl',{ascending:true});
-  const keluar=keluarData||[];
+  const cf = FIN.cashflow && FIN.cashflow[0];
+  const pos=document.getElementById('cfPosition');
+  const setEmpty=(html)=>{ pos.innerHTML=''; document.getElementById('cfInflows').innerHTML=html;
+    document.getElementById('cfOutflows').innerHTML=''; document.getElementById('cfReserve').innerHTML=''; };
+  if(!cf){ setEmpty(moduleMsg('v_cashflow','Cashflow')); return; }
 
-  const sold=units.filter(u=>u.status==='terjual');
-  const active=units.filter(u=>u.status!=='terjual');
+  const inflow  = Number(cf.inflow_vehicle_sales||0)+Number(cf.inflow_capital_received||0);
+  const outflow = Number(cf.outflow_vehicle_and_unit_costs||0)+Number(cf.outflow_operating_expenses||0)
+                 +Number(cf.outflow_capex||0)+Number(cf.outflow_capital_returns||0)+Number(cf.outflow_distributions||0);
+  const opening = Number(cf.opening_cash||0), net=inflow-outflow, ending=opening+net;
+  const verified=String(cf.opening_verified)==='true';
 
-  // Agregat kas masuk
-  const totalPenjualan=sold.reduce((a,u)=>a+(+u.hargaJual||0),0);
-  const totalHPP=sold.reduce((a,u)=>a+(+u.totalModal||0),0);
-  const totalFee=sold.reduce((a,u)=>a+(+u.totalFee||0),0);
-  const totalKasBisnis=sold.reduce((a,u)=>a+(+u.kasBisnis||0),0);
-  const totalBagiHasil=sold.reduce((a,u)=>a+(+u.bagiPanji||0)+(+u.bagiPandu||0),0);
-  const totalKeluar=keluar.reduce((a,x)=>a+(+x.nominal||0),0);
-  const saldoKas=totalKasBisnis-totalKeluar;
-  const netProfit=sold.reduce((a,u)=>a+(+u.keuntunganBersih||0),0);
+  pos.innerHTML=[
+    ['Kas Awal',fmtRpShort(opening),verified?'terverifikasi':'⚠ belum diverifikasi','k-'+(verified?'blue':'amber')],
+    ['Total Masuk',fmtRpShort(inflow),'inflow','k-green'],
+    ['Total Keluar',fmtRpShort(outflow),'outflow','k-red'],
+    ['Net Pergerakan',fmtRpShort(net),net>=0?'surplus':'defisit','k-'+(net>=0?'green':'red')],
+    ['Kas Akhir',fmtRpShort(ending),verified?'estimasi':'provisional','k-teal'],
+  ].map(([l,v,s,c])=>`<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value" style="font-size:18px">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
 
-  // KPI — inti kas (5 metrik terpenting)
-  document.getElementById('cfKPIGrid').innerHTML=[
-    ['Net Profit Terealisasi',fmtRpShort(netProfit),'setelah HPP & fee','k-green'],
-    ['Saldo Kas',fmtRpShort(saldoKas),saldoKas>=0?'tersedia':'defisit','k-'+(saldoKas>=0?'green':'red')],
-    ['Pengeluaran Ops',fmtRpShort(totalKeluar),keluar.length+' entri','k-amber'],
-    ['Modal di Inventory',fmtRpShort(active.reduce((a,u)=>a+(+u.totalModal||0),0)),active.length+' unit aktif','k-purple'],
-    ['Total Penjualan',fmtRpShort(totalPenjualan),sold.length+' unit terjual','k-blue'],
-  ].map(([l,v,s,c])=>`<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
+  const line=(l,val,neg)=>`<div style="display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px dashed var(--border)">
+    <span style="color:var(--text2)">${l}</span>
+    <span style="font-family:monospace;color:${neg?'var(--red)':'var(--text)'}">${neg?'− ':''}${fmtRp(Math.abs(Number(val||0)))}</span></div>`;
+  const total=(l,val)=>`<div style="display:flex;justify-content:space-between;padding:9px 2px;font-weight:700;border-top:1px solid var(--border);margin-top:2px">
+    <span>${l}</span><span style="font-family:monospace">${fmtRp(val)}</span></div>`;
 
-  // Cashflow Statement
-  const cf=[
-    ['ARUS KAS MASUK','','header'],
-    ['Penjualan Kendaraan',fmtRp(totalPenjualan),'in'],
-    ['Net Profit Terealisasi',fmtRp(netProfit),'in'],
-    ['ARUS KAS KELUAR','','header'],
-    ['HPP (Harga Pokok)',fmtRp(totalHPP),'out'],
-    ['Fee Partner/Investor',fmtRp(totalFee),'out'],
-    ['Pengeluaran Operasional',fmtRp(totalKeluar),'out'],
-    ['DISTRIBUSI','','header'],
-    ['Kas Bisnis',fmtRp(totalKasBisnis),'dist'],
-    ['Bagi Hasil Panji + Pandu',fmtRp(totalBagiHasil),'dist'],
-    ['SALDO KAS',fmtRp(saldoKas),'net'],
-  ];
-  document.getElementById('cfTable').innerHTML=`<thead><tr style="background:var(--surface2)"><th style="padding:10px 14px;text-align:left">Kategori</th><th style="padding:10px 14px;text-align:right">Nilai</th></tr></thead><tbody>`+
-  cf.map(([k,v,t])=>{
-    if(t==='header')return `<tr><td colspan="2" style="padding:8px 14px 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);background:var(--bg)">${k}</td></tr>`;
-    const col=t==='in'?'var(--green)':t==='out'?'var(--red)':t==='net'?'var(--accent)':'var(--text2)';
-    const fw=t==='net'?'700':'400';
-    const bg=t==='net'?'var(--surface2)':'';
-    return `<tr style="border-bottom:1px solid var(--border);background:${bg}"><td style="padding:9px 14px">${k}</td><td style="padding:9px 14px;text-align:right;color:${col};font-weight:${fw}">${v}</td></tr>`;
-  }).join('')+'</tbody>';
+  document.getElementById('cfInflows').innerHTML=
+    line('Penjualan Kendaraan',cf.inflow_vehicle_sales)+
+    line('Modal Diterima',cf.inflow_capital_received)+
+    total('Total Masuk',inflow);
+  document.getElementById('cfOutflows').innerHTML=
+    line('Biaya Unit / Kendaraan',cf.outflow_vehicle_and_unit_costs,true)+
+    line('Biaya Operasional',cf.outflow_operating_expenses,true)+
+    line('CAPEX (aset)',cf.outflow_capex,true)+
+    line('Pengembalian Modal',cf.outflow_capital_returns,true)+
+    line('Distribusi',cf.outflow_distributions,true)+
+    total('Total Keluar',outflow);
+  document.getElementById('cfReserve').innerHTML=
+    line('Retensi Cadangan (10%)',cf.reserve_retention)+
+    line('Advance Cadangan',cf.reserve_advances,true)+
+    line('Reimbursement',cf.reserve_reimbursements)+
+    `<p style="font-size:11px;color:var(--text3);margin-top:8px">Cadangan dipisah dari kas operasional; retensi <b>bukan</b> biaya. Sumber: v_cashflow / v_reserve_summary.</p>`;
 
-  // Tren bulanan
-  const byMonth={};
-  sold.forEach(u=>{
-    const mk=monthKey(saleDateOf(u)); if(!mk)return;
-    if(!byMonth[mk])byMonth[mk]={masuk:0,keluar:0};
-    byMonth[mk].masuk+=+u.keuntunganBersih||0;
-  });
-  keluar.forEach(x=>{
-    const mk=(x.tgl||'').slice(0,7); if(!mk)return;
-    if(!byMonth[mk])byMonth[mk]={masuk:0,keluar:0};
-    byMonth[mk].keluar+=+x.nominal||0;
-  });
-  const keys=Object.keys(byMonth).sort();
-  const fmtM=mk=>{const[y,m]=mk.split('-');return BULAN[parseInt(m)-1]+"'"+(y.slice(2));};
   if(cCashflow)cCashflow.destroy();
   cCashflow=new Chart(document.getElementById('chartCashflow').getContext('2d'),{
-    data:{labels:keys.length?keys.map(fmtM):['—'],datasets:[
-      {type:'bar',label:'Net Profit',data:keys.map(k=>byMonth[k].masuk),backgroundColor:'rgba(37,99,201,0.75)',borderRadius:4,order:2},
-      {type:'bar',label:'Pengeluaran',data:keys.map(k=>-byMonth[k].keluar),backgroundColor:'rgba(211,58,44,0.65)',borderRadius:4,order:2},
-      {type:'line',label:'Net Kumulatif',data:keys.reduce((acc,k,i)=>{acc.push((acc[i-1]||0)+(byMonth[k].masuk-byMonth[k].keluar));return acc;},[]),borderColor:'#178A5A',borderWidth:2,tension:0.3,pointRadius:3,fill:false,order:1}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12,font:{size:11}}},
-        tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtRp(Math.abs(c.parsed.y))}}},
-      scales:{x:{ticks:{font:{size:10}}},y:{ticks:{callback:v=>'Rp'+(v/1e6).toFixed(0)+'jt'}}}}
+    type:'bar',
+    data:{labels:['Kas Masuk','Kas Keluar'],datasets:[{data:[inflow,outflow],
+      backgroundColor:['rgba(23,138,90,0.82)','rgba(211,58,44,0.78)'],borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtRp(c.parsed.y)}}},
+      scales:{y:{ticks:{callback:v=>'Rp'+(v/1e6).toFixed(0)+'jt'}}}}
   });
-
-  // Forecast
-  const totalPotensi=active.reduce((a,u)=>a+(+u.targetProfit||0),0);
-  const totalTargetJual=active.reduce((a,u)=>a+(+u.targetJual||0),0);
-  const avgRoi=active.length?active.reduce((a,u)=>{const mi=(+u.totalModal||0)-(+u.modalPartner||0);return a+(mi>0?(+u.targetProfit||0)/mi*100:0);},0)/active.length:0;
-  document.getElementById('cfForecastKPI').innerHTML=[
-    ['Total Potensi Profit',fmtRpShort(totalPotensi),active.length+' unit aktif','k-green'],
-    ['Rata-rata ROI Target',avgRoi.toFixed(1)+'%','dari modal inti','k-teal'],
-  ].map(([l,v,s,c])=>`<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
-
-  const fcHead=`<thead><tr style="background:var(--surface2)"><th style="padding:8px 12px;text-align:left;font-size:11px">Unit</th><th style="padding:8px 12px;text-align:left;font-size:11px">Jenis</th><th style="padding:8px 12px;text-align:right;font-size:11px">Holding</th><th style="padding:8px 12px;text-align:right;font-size:11px">Modal</th><th style="padding:8px 12px;text-align:right;font-size:11px">Target Jual</th><th style="padding:8px 12px;text-align:right;font-size:11px">Potensi Profit</th><th style="padding:8px 12px;text-align:right;font-size:11px">ROI Target</th></tr></thead>`;
-  const fcBody=active.slice().sort((a,b)=>(+b.targetProfit||0)-(+a.targetProfit||0)).map(u=>{
-    const mi=(+u.totalModal||0)-(+u.modalPartner||0);
-    const roi=mi>0?((+u.targetProfit||0)/mi*100):0;
-    const hold=holdingDays(u);
-    const profitColor=(+u.targetProfit||0)>=0?'var(--green)':'var(--red)';
-    return `<tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:8px 12px;font-weight:500">${u.nama}</td>
-      <td style="padding:8px 12px;color:var(--text2)">${u.jenis}</td>
-      <td style="padding:8px 12px;text-align:right;color:var(--text3)">${hold!==null?hold+' hr':'—'}</td>
-      <td style="padding:8px 12px;text-align:right">${fmtRp(+u.totalModal||0)}</td>
-      <td style="padding:8px 12px;text-align:right">${+u.targetJual>0?fmtRp(+u.targetJual):'—'}</td>
-      <td style="padding:8px 12px;text-align:right;font-weight:600;color:${profitColor}">${+u.targetProfit>0?fmtRp(+u.targetProfit):'—'}</td>
-      <td style="padding:8px 12px;text-align:right"><span class="roi-badge">${roi>0?roi.toFixed(1)+'%':'—'}</span></td>
-    </tr>`;
-  }).join('')||`<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text3)">Tidak ada unit aktif.</td></tr>`;
-  document.getElementById('cfForecastTable').innerHTML=fcHead+'<tbody>'+fcBody+'</tbody>';
 }
+
 
 // ══════════════════════════════════════════════════════════
 // LAPORAN KEUANGAN — P&L + BALANCE SHEET
