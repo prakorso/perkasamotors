@@ -524,6 +524,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="card-hdr" style="margin:4px 0 12px"><div class="card-title">CEO KPI Overview</div></div>
         <div class="kpi-grid" id="kpiGrid"></div>
 
+        <div class="two-col">
+          <div class="card" id="waterfallCard" style="display:none">
+            <div class="card-hdr"><div class="card-title">Cash Waterfall → Safe Cash</div><span id="waterfallFlag" style="font-size:11px;color:var(--text3)"></span></div>
+            <div id="cashWaterfall"></div>
+          </div>
+          <div class="card" id="obligCard" style="display:none">
+            <div class="card-hdr"><div class="card-title">Kewajiban Terdekat</div></div>
+            <div id="upcomingOblig"></div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-hdr">
             <div class="card-title">Profit Trend</div>
@@ -971,8 +982,69 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="sub-tab-bar">
     <button class="stab active" data-st="ktab-kas" onclick="showSubTab('keuangan','ktab-kas')">🏦 Kas Bisnis</button>
     <button class="stab" data-st="ktab-inventori" onclick="showSubTab('keuangan','ktab-inventori')">📦 Inventori Aset</button>
+    <button class="stab" data-st="ktab-utang" onclick="showSubTab('keuangan','ktab-utang')">🏛️ Utang</button>
+    <button class="stab" data-st="ktab-payroll" onclick="showSubTab('keuangan','ktab-payroll')">👥 Payroll</button>
     <button class="stab" data-st="ktab-cashflow" onclick="showSubTab('keuangan','ktab-cashflow')">📈 Cashflow</button>
     <button class="stab" data-st="ktab-laporan" onclick="showSubTab('keuangan','ktab-laporan')">📄 Laporan</button>
+  </div>
+  <div id="ktab-utang" class="stab-panel">
+        <div class="ih-grid" id="debtKPIGrid" style="margin-bottom:16px"></div>
+        <div class="card no-print">
+          <div class="card-hdr"><div class="card-title">Tambah / Ubah Utang</div>
+            <button class="btn-sm" onclick="toggleCollapse('debtForm',this)">＋ Form Utang</button></div>
+          <div id="debtForm" style="display:none">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+              <div class="fg"><label>Nama Utang</label><input id="dbName" placeholder="Pinjaman Bank BCA"></div>
+              <div class="fg"><label>Pemberi Pinjaman</label><input id="dbLender" placeholder="Bank BCA"></div>
+              <div class="fg"><label>Jenis</label><select id="dbType"><option value="bank">Bank</option><option value="koperasi">Koperasi</option><option value="leasing">Leasing</option><option value="pribadi">Pribadi</option><option value="lainnya">Lainnya</option></select></div>
+              <div class="fg"><label>Pokok (Rp)</label><input id="dbPrincipal" type="number" placeholder="75000000"></div>
+              <div class="fg"><label>Total Kewajiban (Rp)</label><input id="dbTotal" type="number" placeholder="kosong = cicilan × tenor"></div>
+              <div class="fg"><label>Tenor (bulan)</label><input id="dbTenor" type="number" placeholder="6"></div>
+              <div class="fg"><label>Cicilan / bln (Rp)</label><input id="dbInstall" type="number" placeholder="15200000"></div>
+              <div class="fg"><label>Bunga % (opsional)</label><input id="dbRate" type="number" step="0.01"></div>
+              <div class="fg"><label>Tgl Mulai</label><input id="dbStart" type="date"></div>
+              <div class="fg"><label>Jatuh Tempo Pertama</label><input id="dbFirstDue" type="date"></div>
+              <div class="fg"><label>Tgl Pencairan (cash masuk)</label><input id="dbDrawdown" type="date"></div>
+              <div class="fg" style="grid-column:1/-1"><label>Catatan</label><input id="dbNotes"></div>
+            </div>
+            <p style="font-size:11px;color:var(--text3);margin:4px 0 10px">Pokok dikembalikan mengurangi liabilitas (bukan biaya). Hanya bunga menjadi biaya di P&amp;L. Semua angka configurable — tidak ada yang di-hardcode.</p>
+            <button class="confirm" onclick="saveDebt()">Simpan &amp; Buat Jadwal</button>
+            <input type="hidden" id="dbEditId">
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Daftar Utang</div></div>
+          <div class="table-scroll"><table class="track-table" id="debtTable"></table></div>
+        </div>
+        <div class="card" id="debtScheduleCard" style="display:none">
+          <div class="card-hdr"><div class="card-title" id="debtSchedTitle">Jadwal Pembayaran</div>
+            <button class="btn-sm" onclick="document.getElementById('debtScheduleCard').style.display='none'">✕ Tutup</button></div>
+          <div class="table-scroll"><table class="track-table" id="debtSchedTable"></table></div>
+        </div>
+  </div>
+  <div id="ktab-payroll" class="stab-panel">
+        <div class="ih-grid" id="payKPIGrid" style="margin-bottom:16px"></div>
+        <div class="card no-print">
+          <div class="card-hdr"><div class="card-title">Tambah Karyawan &amp; Aturan Gaji</div>
+            <button class="btn-sm" onclick="toggleCollapse('payForm',this)">＋ Form Karyawan</button></div>
+          <div id="payForm" style="display:none">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+              <div class="fg"><label>Nama</label><input id="pyName"></div>
+              <div class="fg"><label>Jabatan</label><input id="pyRole"></div>
+              <div class="fg"><label>Metode</label><select id="pyMethod" onchange="onPayMethod()"><option value="fixed">Fixed (Rp)</option><option value="percentage">Percentage (%)</option><option value="hybrid">Hybrid (Rp + %)</option></select></div>
+              <div class="fg" id="pyBaseWrap"><label>Gaji Pokok (Rp)</label><input id="pyBase" type="number" placeholder="5000000"></div>
+              <div class="fg" id="pyPctWrap" style="display:none"><label>Persentase (%)</label><input id="pyPct" type="number" step="0.01"></div>
+              <div class="fg" id="pyBasisWrap" style="display:none"><label>Basis %</label><input id="pyBasis" placeholder="Belum dikonfigurasi" disabled></div>
+            </div>
+            <p style="font-size:11px;color:var(--text3);margin:4px 0 10px">Basis persentase <b>belum dikonfigurasi</b> — bagian % tidak dihitung sampai aturan bisnis ditetapkan. Gaji dicatat hanya di sini (tidak dobel dengan Kas Keluar).</p>
+            <button class="confirm" onclick="savePerson()">Simpan Karyawan</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Karyawan &amp; Kewajiban Gaji</div>
+            <button class="btn-sm" onclick="runPayroll()">▶ Hitung Payroll Bulan Ini</button></div>
+          <div class="table-scroll"><table class="track-table" id="payTable"></table></div>
+        </div>
   </div>
   <div id="ktab-kas" class="stab-panel active">
         <div class="ih-grid" id="kasKPIGrid" style="margin-bottom:18px"></div>
@@ -1459,7 +1531,8 @@ function setLoading(show,text='Memuat data...'){
 // validated view provides it. Legacy data stays legacy (views enforce that).
 const FIN={loaded:false, ok:false, command:null, pnl:null, pnlClass:null,
   reserve:null, capital:null, investors:null, fundingCap:null, fundingUtil:null,
-  fundingRec:null, assumptions:null, cashflow:null, balance:null, reserveSum:null};
+  fundingRec:null, assumptions:null, cashflow:null, balance:null, reserveSum:null,
+  debts:null, payroll:null, liabilities:null, obligations:null, cashPool:null};
 function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 async function finGet(sel,single){
   try{ const {data,error}=await db.from(sel).select('*'); if(error)throw error;
@@ -1479,6 +1552,12 @@ async function loadFin(){
     FIN.command=cmd; FIN.pnl=pnl; FIN.pnlClass=pcl; FIN.reserve=res; FIN.capital=cap;
     FIN.investors=inv; FIN.fundingCap=fc; FIN.fundingUtil=fu; FIN.fundingRec=fr; FIN.assumptions=asm;
     FIN.cashflow=cf; FIN.balance=bs; FIN.reserveSum=rs;
+    // Phase B (Debt / Payroll / Cash Pool) — graceful null until SQL deployed
+    const [dbt,pay,liab,obl,pool]=await Promise.all([
+      finGet('v_debt_summary'), finGet('v_payroll_summary'), finGet('v_liabilities',true),
+      finGet('v_upcoming_obligations'), finGet('v_cash_pool',true)
+    ]);
+    FIN.debts=dbt; FIN.payroll=pay; FIN.liabilities=liab; FIN.obligations=obl; FIN.cashPool=pool;
     FIN.ok=!!(cmd||pnl); FIN.loaded=true;
   }catch(e){ FIN.loaded=true; FIN.ok=false; }
 }
@@ -1576,6 +1655,8 @@ function showSubTab(section,tabId){
     'ftab-dataroom':()=>renderDataRoom(),
     'ktab-kas':()=>renderKas(),
     'ktab-inventori':()=>renderInventori(),
+    'ktab-utang':()=>renderDebt(),
+    'ktab-payroll':()=>renderPayroll(),
     'ktab-cashflow':()=>renderCashflow(),
     'ktab-laporan':()=>renderLaporan(),
     'atab-kinerja':()=>{renderInsight();renderEvaluasi();},
@@ -2721,8 +2802,15 @@ function renderHome(){
 
   const h=computeHome();
 
-  // Alerts — operasional saja. Catatan tata kelola ada di halaman Uang.
-  const alerts=buildAlerts(h);
+  // Alerts — operasional + kewajiban keuangan (data-driven).
+  const alerts=buildAlerts(h).filter(a=>a[0]!=='green');
+  const today0=new Date().toISOString().slice(0,10);
+  (FIN.obligations||[]).filter(x=>x.due_date&&x.due_date<=today0).slice(0,4).forEach(x=>{
+    alerts.push([x.due_date<today0?'red':'amber',`${x.type==='debt'?'Cicilan utang':'Payroll'} <b>${esc(x.name)}</b> ${fmtRp(x.amount)} jatuh tempo ${esc(x.due_date)}.`]);
+  });
+  if(FIN.cashPool&&FIN.cashPool.is_provisional)
+    alerts.push(['amber','Kas awal belum diverifikasi — <b>Safe Cash bersifat sementara</b> (atur di Pengaturan).']);
+  if(!alerts.length)alerts.push(['green','Tidak ada masalah terdeteksi. Semua indikator dalam batas aman. ✓']);
   const needAttention=alerts.filter(a=>a[0]!=='green').length;
   document.getElementById('alertStack').innerHTML=alerts.map(([lvl,msg])=>{
     const ic={red:'🔴',amber:'🟡',green:'🟢'}[lvl];
@@ -2744,14 +2832,21 @@ function renderHome(){
   const resPct = resTgt? Math.min(100,Math.round(reserve/resTgt*100)):0;
   const V=(view,js)=> c? view : js;                    // pick validated when available
   const src=c?'<span title="Sumber: view keuangan tervalidasi" style="opacity:.55"> ✓</span>':'';
+  const pool=FIN.cashPool, liab=FIN.liabilities;
+  const liabTotal = liab? Number(liab.total_liabilities) : h.outstanding;
+  const safeCash  = pool? Number(pool.safe_cash) : null;
   const kpis = c ? [
-    ['Profit Bersih'+src,   fmtRpShort(c.realized_profit),        `laba operasi ${fmtRpShort(c.net_operating_profit)}`,'k-green'],
-    ['Pendapatan'+src,      fmtRpShort(c.revenue),                `${c.units_sold} unit terjual`,'k-blue'],
+    safeCash!=null
+      ? ['Safe Cash'+src, fmtRpShort(safeCash), pool.is_provisional?'⚠ provisional (kas awal belum verified)':'kas aman dipakai','k-green']
+      : ['Profit Bersih'+src, fmtRpShort(c.realized_profit), `laba operasi ${fmtRpShort(c.net_operating_profit)}`,'k-green'],
+    safeCash!=null
+      ? ['Profit Bersih'+src, fmtRpShort(c.realized_profit), `laba operasi ${fmtRpShort(c.net_operating_profit)}`,'k-blue']
+      : ['Pendapatan'+src, fmtRpShort(c.revenue), `${c.units_sold} unit terjual`,'k-blue'],
     ['Cadangan (10%)'+src,  fmtRpShort(reserve),                  `target ${fmtRpShort(resTgt)} · ${resPct}%`,'k-amber'],
     ['Modal Berjalan'+src,  fmtRpShort(c.capital_deployed),       `${h.active.length} unit aktif`,'k-purple'],
     ['Modal Tersedia'+src,  fmtRpShort(c.capital_available),      `dari ${fmtRpShort(c.capital_funded)} terkumpul`,'k-teal'],
     ['Inventory (biaya)'+src,fmtRpShort(c.inventory_at_cost),     'nilai stok aktif','k-blue'],
-    ['Kewajiban',           fmtRpShort(h.outstanding),            'fee partner belum dibayar','k-red'],
+    ['Kewajiban'+(liab?src:''), fmtRpShort(liabTotal),            liab?'utang + payroll + fee partner':'fee partner belum dibayar','k-red'],
     ['Perlu Perhatian',     String(needAttention),                needAttention?'lihat Alert Center':'semua aman ✓','k-amber'],
   ] : [
     ['Profit Bersih',       fmtRpShort(h.realized),               'estimasi dari unit terjual','k-green'],
@@ -2764,9 +2859,44 @@ function renderHome(){
     `<div class="kpi ${cc}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('')
     + (c?'':`<div class="kpi k-teal" style="opacity:.7"><div class="kpi-label">Kas &amp; Safe Cash</div><div class="kpi-value" style="font-size:15px">Phase B</div><div class="kpi-sub">butuh modul Utang &amp; Payroll</div></div>`);
 
+  renderCashWaterfall();
+  renderUpcomingObligations();
   renderProfitTrend();
   renderAgingDist(h);
   renderTopPerformance(h);
+}
+
+function renderCashWaterfall(){
+  const card=document.getElementById('waterfallCard'), el=document.getElementById('cashWaterfall');
+  const p=FIN.cashPool;
+  if(!p){ card.style.display='none'; return; }
+  card.style.display='';
+  document.getElementById('waterfallFlag').textContent=p.is_provisional?'provisional':'';
+  const step=(lab,val,neg,strong)=>`<div style="display:flex;justify-content:space-between;padding:7px 2px;${strong?'font-weight:700;border-top:1px solid var(--border);margin-top:4px':'border-bottom:1px dashed var(--border)'}">
+    <span style="color:${strong?'var(--text)':'var(--text2)'}">${lab}</span>
+    <span style="font-family:monospace;color:${neg?'var(--red)':strong?'var(--green)':'var(--text)'}">${neg?'− ':''}${fmtRp(Math.abs(val))}</span></div>`;
+  el.innerHTML=
+    step('Kas Aktual',p.actual_cash,false,false)+
+    step('Cadangan (ring-fenced)',p.reserve,true)+
+    step('Utang jatuh tempo (≤30 hr)',p.debt_due,true)+
+    step('Payroll jatuh tempo (≤30 hr)',p.payroll_due,true)+
+    step('Komitmen lain',p.other_committed,true)+
+    step('= Safe Cash',p.safe_cash,false,true)+
+    `<p style="font-size:11px;color:var(--text3);margin:8px 0 0">Inventory TIDAK dikurangkan lagi (kas sudah turun saat pembelian). Cadangan dari v_reserve_summary.${p.is_provisional?' <b>Kas awal belum diverifikasi</b> — Safe Cash bersifat sementara.':''}</p>`;
+}
+function renderUpcomingObligations(){
+  const card=document.getElementById('obligCard'), el=document.getElementById('upcomingOblig');
+  const o=FIN.obligations;
+  if(o==null){ card.style.display='none'; return; }
+  card.style.display='';
+  const rows=o.slice().filter(x=>x.due_date).sort((a,b)=>String(a.due_date).localeCompare(String(b.due_date))).slice(0,8);
+  if(!rows.length){ el.innerHTML='<div style="padding:16px;text-align:center;color:var(--text3)">Tidak ada kewajiban terjadwal.</div>'; return; }
+  const today=new Date().toISOString().slice(0,10);
+  el.innerHTML=rows.map(r=>{ const over=r.due_date<today;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 2px;border-bottom:1px dashed var(--border)">
+    <div><div style="font-size:13px">${r.type==='debt'?'🏛️':'👥'} ${esc(r.name)}</div>
+      <div style="font-size:11px;color:${over?'var(--red)':'var(--text3)'}">${esc(r.due_date)}${over?' · terlewat':''}</div></div>
+    <div style="font-family:monospace;font-weight:600">${fmtRp(r.amount)}</div></div>`;}).join('');
 }
 
 function toggleAkunDetail(){
@@ -3644,6 +3774,134 @@ async function loadAuditLog(){
 // CASHFLOW & FORECASTING
 // ══════════════════════════════════════════════════════════
 let cCashflow=null;
+// ═══════════════════ PHASE B · DEBT + PAYROLL (DB-backed) ═══════════════════
+async function finRefresh(){ await loadFin(); }
+function _phaseBMissing(view){ return `<div class="card"><div class="empty-state" style="padding:26px;text-align:center;color:var(--text3)">⚠ View <b>${view}</b> belum ada.<br>Jalankan <b>phase9_debt.sql / phase10_payroll.sql / phase11_cash_pool.sql</b> di Supabase SQL Editor, lalu muat ulang.</div></div>`; }
+function kcard(l,v,s,c){return `<div class="kpi ${c||'k-blue'}"><div class="kpi-label">${l}</div><div class="kpi-value" style="font-size:18px">${v}</div><div class="kpi-sub">${s||''}</div></div>`;}
+
+// ── DEBT ──
+async function renderDebt(){
+  const rows=FIN.debts;
+  const kg=document.getElementById('debtKPIGrid'), tb=document.getElementById('debtTable');
+  if(rows==null){ kg.innerHTML=''; tb.innerHTML='<tr><td>'+_phaseBMissing('v_debt_summary')+'</td></tr>'; return; }
+  const outT=rows.reduce((a,r)=>a+Number(r.outstanding_total||0),0);
+  const prinT=rows.reduce((a,r)=>a+Number(r.outstanding_principal||0),0);
+  const next=rows.filter(r=>r.next_due_date).sort((a,b)=>String(a.next_due_date).localeCompare(String(b.next_due_date)))[0];
+  kg.innerHTML=[
+    kcard('Sisa Kewajiban',fmtRpShort(outT),rows.length+' utang','k-red'),
+    kcard('Sisa Pokok',fmtRpShort(prinT),'principal outstanding','k-amber'),
+    kcard('Pembayaran Berikutnya',next?fmtRpShort(next.next_due_amount):'—',next?`${next.name} · ${next.next_due_date}`:'tidak ada','k-blue'),
+  ].join('');
+  tb.closest('.card').style.display='';
+  tb.innerHTML=`<thead><tr><th>Utang</th><th>Pemberi</th><th class="num">Pokok</th><th class="num">Total</th><th class="num">Dibayar</th><th class="num">Sisa</th><th>Jatuh Tempo</th><th>Status</th><th></th></tr></thead><tbody>`+
+    (rows.map(r=>`<tr>
+      <td>${esc(r.name)}</td><td class="muted">${esc(r.lender||'')}</td>
+      <td class="num">${fmtRp(r.principal)}</td><td class="num">${fmtRp(r.total_obligation)}</td>
+      <td class="num">${fmtRp(r.paid_total)}</td><td class="num">${fmtRp(r.outstanding_total)}</td>
+      <td>${r.next_due_date?esc(r.next_due_date)+' · '+fmtRpShort(r.next_due_amount):'lunas'}</td>
+      <td><span class="fund-status ${r.status==='paid_off'?'paid':'active'}">${esc(r.status)}</span></td>
+      <td><button class="btn-sm" onclick="showDebtSchedule(${r.id},'${esc(r.name).replace(/'/g,'')}')">Jadwal</button></td>
+    </tr>`).join('')||`<tr><td colspan="9" style="padding:18px;text-align:center;color:var(--text3)">Belum ada utang.</td></tr>`)+`</tbody>`;
+}
+async function saveDebt(){
+  const g=id=>document.getElementById(id).value;
+  const row={ name:g('dbName').trim(), lender:g('dbLender').trim(), debt_type:g('dbType'),
+    principal:+g('dbPrincipal')||0, total_obligation:+g('dbTotal')||0,
+    interest_rate:g('dbRate')?+g('dbRate'):null, tenor_months:+g('dbTenor')||1,
+    installment_amount:+g('dbInstall')||0, start_date:g('dbStart')||null,
+    first_due_date:g('dbFirstDue')||null, drawdown_date:g('dbDrawdown')||null, notes:g('dbNotes').trim() };
+  if(!row.name){ showToast('❌ Nama utang wajib diisi.'); return; }
+  try{
+    const {data,error}=await db.from('debts').insert(row).select().single();
+    if(error)throw error;
+    const {error:e2}=await db.rpc('pm_debt_build_schedule',{p_debt_id:data.id});
+    if(e2)throw e2;
+    showToast('✅ Utang tersimpan & jadwal dibuat.');
+    ['dbName','dbLender','dbPrincipal','dbTotal','dbTenor','dbInstall','dbRate','dbStart','dbFirstDue','dbDrawdown','dbNotes'].forEach(i=>document.getElementById(i).value='');
+    await finRefresh(); renderDebt();
+  }catch(e){ showToast('❌ Gagal: '+(e.message||e)); }
+}
+async function showDebtSchedule(debtId,name){
+  const card=document.getElementById('debtScheduleCard'), tb=document.getElementById('debtSchedTable');
+  document.getElementById('debtSchedTitle').textContent='Jadwal — '+name;
+  card.style.display=''; tb.innerHTML='<tr><td>Memuat…</td></tr>';
+  const {data}=await db.from('v_debt_schedule').select('*').eq('debt_id',debtId).order('payment_no');
+  tb.innerHTML=`<thead><tr><th>#</th><th>Jatuh Tempo</th><th class="num">Cicilan</th><th class="num">Pokok</th><th class="num">Bunga</th><th>Status</th><th></th></tr></thead><tbody>`+
+    (data||[]).map(p=>`<tr><td>${p.payment_no}</td><td>${esc(p.due_date)}</td>
+      <td class="num">${fmtRp(p.scheduled_amount)}</td><td class="num">${fmtRp(p.principal_component)}</td>
+      <td class="num">${fmtRp(p.interest_component)}</td>
+      <td><span class="fund-status ${p.status==='paid'?'paid':'active'}">${esc(p.status)}</span></td>
+      <td>${p.status!=='paid'?`<button class="btn-sm" onclick="payDebt(${p.id},${debtId},'${esc(name).replace(/'/g,'')}')">Bayar</button>`:'✓'}</td></tr>`).join('')+`</tbody>`;
+}
+async function payDebt(paymentId,debtId,name){
+  if(!confirm('Catat pembayaran cicilan ini?'))return;
+  try{ const {error}=await db.rpc('pm_debt_pay',{p_payment_id:paymentId,p_amount:null,p_date:null}); if(error)throw error;
+    showToast('✅ Pembayaran tercatat.'); await finRefresh(); renderDebt(); showDebtSchedule(debtId,name);
+  }catch(e){ showToast('❌ Gagal: '+(e.message||e)); }
+}
+
+// ── PAYROLL ──
+function onPayMethod(){
+  const m=document.getElementById('pyMethod').value;
+  document.getElementById('pyBaseWrap').style.display=(m==='percentage')?'none':'';
+  document.getElementById('pyPctWrap').style.display=(m==='fixed')?'none':'';
+  document.getElementById('pyBasisWrap').style.display=(m==='fixed')?'none':'';
+}
+async function renderPayroll(){
+  const rows=FIN.payroll;
+  const kg=document.getElementById('payKPIGrid'), tb=document.getElementById('payTable');
+  if(rows==null){ kg.innerHTML=''; tb.innerHTML='<tr><td>'+_phaseBMissing('v_payroll_summary')+'</td></tr>'; return; }
+  const oblT=rows.reduce((a,r)=>a+Number(r.obligation_total||0),0);
+  const paidT=rows.reduce((a,r)=>a+Number(r.paid_total||0),0);
+  const outT=rows.reduce((a,r)=>a+Number(r.outstanding_total||0),0);
+  kg.innerHTML=[
+    kcard('Total Kewajiban Gaji',fmtRpShort(oblT),rows.length+' karyawan','k-purple'),
+    kcard('Sudah Dibayar',fmtRpShort(paidT),'','k-green'),
+    kcard('Belum Dibayar',fmtRpShort(outT),'','k-red'),
+  ].join('');
+  // unpaid obligations for pay buttons
+  const {data:obls}=await db.from('v_payroll_obligations').select('*').neq('status','paid');
+  const oblByPerson={}; (obls||[]).forEach(o=>{ if(!oblByPerson[o.person_id])oblByPerson[o.person_id]=o; });
+  tb.innerHTML=`<thead><tr><th>Nama</th><th>Jabatan</th><th class="num">Kewajiban</th><th class="num">Dibayar</th><th class="num">Sisa</th><th>Status</th><th></th></tr></thead><tbody>`+
+    (rows.map(r=>{ const o=oblByPerson[r.id];
+      return `<tr><td>${esc(r.name)}${r.needs_basis?' <span class="fund-status active" title="Basis % belum dikonfigurasi">basis?</span>':''}</td>
+      <td class="muted">${esc(r.role||'')}</td>
+      <td class="num">${fmtRp(r.obligation_total)}</td><td class="num">${fmtRp(r.paid_total)}</td>
+      <td class="num">${fmtRp(r.outstanding_total)}</td>
+      <td>${r.next_due_date?esc(r.next_due_date):(r.active?'aktif':'nonaktif')}</td>
+      <td>${o?`<button class="btn-sm" onclick="payPayroll(${o.id})">Bayar ${fmtRpShort(o.outstanding)}</button>`:'—'}</td></tr>`;
+    }).join('')||`<tr><td colspan="7" style="padding:18px;text-align:center;color:var(--text3)">Belum ada karyawan. Tambahkan lalu klik “Hitung Payroll”.</td></tr>`)+`</tbody>`;
+}
+async function savePerson(){
+  const name=document.getElementById('pyName').value.trim();
+  if(!name){ showToast('❌ Nama wajib diisi.'); return; }
+  const method=document.getElementById('pyMethod').value;
+  try{
+    const {data,error}=await db.from('payroll_people').insert({name,role:document.getElementById('pyRole').value.trim()}).select().single();
+    if(error)throw error;
+    const rule={ person_id:data.id, method,
+      base_amount:(method==='percentage')?0:(+document.getElementById('pyBase').value||0),
+      percent_value:(method==='fixed')?0:(+document.getElementById('pyPct').value||0),
+      percent_basis:null };   // basis DELIBERATELY unset — "Belum dikonfigurasi"
+    const {error:e2}=await db.from('payroll_rules').insert(rule); if(e2)throw e2;
+    showToast('✅ Karyawan tersimpan.');
+    ['pyName','pyRole','pyBase','pyPct'].forEach(i=>document.getElementById(i).value='');
+    await finRefresh(); renderPayroll();
+  }catch(e){ showToast('❌ Gagal: '+(e.message||e)); }
+}
+async function runPayroll(){
+  const period=new Date().toISOString().slice(0,7);
+  try{ const {error}=await db.rpc('pm_payroll_run',{p_period_ym:period}); if(error)throw error;
+    showToast('✅ Payroll '+period+' dihitung.'); await finRefresh(); renderPayroll();
+  }catch(e){ showToast('❌ Gagal: '+(e.message||e)); }
+}
+async function payPayroll(oblId){
+  if(!confirm('Catat pembayaran gaji ini?'))return;
+  try{ const {error}=await db.rpc('pm_payroll_pay',{p_obligation_id:oblId,p_amount:null,p_date:null}); if(error)throw error;
+    showToast('✅ Gaji dibayar.'); await finRefresh(); renderPayroll();
+  }catch(e){ showToast('❌ Gagal: '+(e.message||e)); }
+}
+
 function renderValidatedCashflow(){
   const el=document.getElementById('validatedCashflowCard'); if(!el)return;
   const cf=FIN.cashflow;
