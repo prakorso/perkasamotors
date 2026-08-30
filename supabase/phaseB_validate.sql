@@ -19,10 +19,11 @@ from v_payroll_summary;
 -- 3) CASH POOL / SAFE CASH — inspect each waterfall step.
 --    safe_cash must equal actual_cash − reserve − debt_due − payroll_due − other_committed.
 --    is_provisional stays true until opening cash is verified.
-select opening_cash, debt_drawdowns, debt_paid, payroll_paid, actual_cash,
+select baseline_date, horizon_days,
+       opening_cash, debt_drawdowns, debt_paid, payroll_paid, actual_cash,
        reserve, debt_due, payroll_due, other_committed, safe_cash, is_provisional,
        actual_cash - reserve - debt_due - payroll_due - other_committed as recompute_safe
-from v_cash_pool;   -- safe_cash must equal recompute_safe
+from v_cash_pool;   -- safe_cash must equal recompute_safe; movements only counted after baseline_date
 
 -- 4) CONSOLIDATED LIABILITIES — components must sum to total.
 select debt_outstanding, payroll_outstanding, partner_fee_payable,

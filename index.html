@@ -2882,7 +2882,7 @@ function renderCashWaterfall(){
     step('Payroll jatuh tempo (≤30 hr)',p.payroll_due,true)+
     step('Komitmen lain',p.other_committed,true)+
     step('= Safe Cash',p.safe_cash,false,true)+
-    `<p style="font-size:11px;color:var(--text3);margin:8px 0 0">Inventory TIDAK dikurangkan lagi (kas sudah turun saat pembelian). Cadangan dari v_reserve_summary.${p.is_provisional?' <b>Kas awal belum diverifikasi</b> — Safe Cash bersifat sementara.':''}</p>`;
+    `<p style="font-size:11px;color:var(--text3);margin:8px 0 0">Inventory TIDAK dikurangkan lagi (kas sudah turun saat pembelian). Cadangan dari v_reserve_summary. Pergerakan kas dihitung hanya setelah tanggal baseline (anti dobel-hitung).${p.is_provisional?' <b>Kas awal belum diverifikasi</b> — Safe Cash bersifat PROVISIONAL (bukan ledger kas lengkap).':''}</p>`;
 }
 function renderUpcomingObligations(){
   const card=document.getElementById('obligCard'), el=document.getElementById('upcomingOblig');

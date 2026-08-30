@@ -19,6 +19,15 @@ insert into app_config(key,value)
   select 'obligation_horizon_days','30'
   where not exists(select 1 from app_config where key='obligation_horizon_days');
 
+-- BASELINE ANCHOR for Safe Cash. Cash movements (debt drawdowns / debt payments /
+-- payroll payments) dated ON OR BEFORE this date are assumed already reflected in
+-- opening_cash and are NOT re-counted — the guard against data-entry double-count.
+-- Empty = unset ⇒ anchor at 1900-01-01 (count all movements, conservative).
+-- Set this to the date the opening_cash balance was measured, then verify.
+insert into app_config(key,value)
+  select 'opening_cash_date',''
+  where not exists(select 1 from app_config where key='opening_cash_date');
+
 -- ── fee_payments: moves the partner-fee "paid" flag OUT of localStorage into DB ──
 create table if not exists fee_payments (
   id           bigserial primary key,
@@ -74,15 +83,25 @@ union all
 -- ── CASH POOL / WATERFALL (single row) ──
 -- Horizon for "Due" = overdue OR due within 30 days (near-term set-aside).
 create or replace view v_cash_pool as
-with base as (
+with anchor as (
+  -- baseline date; empty/unset ⇒ 1900-01-01 (count all movements)
+  select coalesce(nullif((select value from app_config where key='opening_cash_date'),'')::date,
+                  '1900-01-01'::date) as baseline_date
+),
+base as (
   select
+    (select baseline_date from anchor)                                               as baseline_date,
     coalesce((select total_cash_baseline from v_balance_sheet),0)                    as opening_cash,
     coalesce((select reserve_balance from v_reserve_summary),0)                       as reserve,
     coalesce((select value from app_config where key='opening_cash_verified'),'false') as opening_verified,
     coalesce((select value::numeric from app_config where key='other_committed_cash'),0) as other_committed,
-    coalesce((select sum(principal) from debts where drawdown_date is not null),0)    as debt_drawdowns,
-    coalesce((select sum(paid_amount) from debt_payments where status='paid'),0)      as debt_paid,
-    coalesce((select sum(paid_amount) from payroll_payments),0)                       as payroll_paid,
+    -- movements are counted ONLY if dated AFTER the baseline (anti double-count)
+    coalesce((select sum(principal) from debts
+       where drawdown_date is not null and drawdown_date > (select baseline_date from anchor)),0) as debt_drawdowns,
+    coalesce((select sum(paid_amount) from debt_payments
+       where status='paid' and paid_date > (select baseline_date from anchor)),0)    as debt_paid,
+    coalesce((select sum(paid_amount) from payroll_payments
+       where paid_date > (select baseline_date from anchor)),0)                       as payroll_paid,
     coalesce((select value::int from app_config where key='obligation_horizon_days'),30) as horizon_days,
     coalesce((select sum(scheduled_amount) from debt_payments
        where status<>'paid' and due_date <= current_date
