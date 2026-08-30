@@ -464,7 +464,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <button class="nav-btn role-internal" data-nav="unit" onclick="showSection('unit')"><span class="ni">≡</span><span>Unit</span></button>
       <button class="nav-btn role-internal" data-nav="keuangan" onclick="showSection('keuangan')"><span class="ni">💰</span><span>Uang</span></button>
       <button class="nav-btn role-internal" data-nav="funding" onclick="showSection('funding')"><span class="ni">◆</span><span>Modal &amp; Investor</span></button>
-      <button class="nav-btn role-internal" data-nav="analitik" onclick="showSection('analitik')"><span class="ni">📊</span><span>Analitik</span></button>
+      <button class="nav-btn role-internal" data-nav="analitik" onclick="showSection('analitik')"><span class="ni">📊</span><span>Reports</span></button>
       <button class="nav-btn role-internal" data-nav="pengaturan" onclick="showSection('pengaturan')"><span class="ni">⚙</span><span>Pengaturan</span></button>
     </nav>
     <div class="sb-foot">
@@ -824,8 +824,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <!-- ═══════════ ANALITIK ═══════════ -->
       <div id="sec-analitik" class="section role-internal">
   <div class="sub-tab-bar">
-    <button class="stab active" data-st="atab-kinerja" onclick="showSubTab('analitik','atab-kinerja')">📊 Kinerja Bisnis</button>
-    <button class="stab" data-st="atab-inventori-partner" onclick="showSubTab('analitik','atab-inventori-partner')">📦 Inventori &amp; Partner</button>
+    <button class="stab active" data-st="atab-kinerja" onclick="showSubTab('analitik','atab-kinerja')">📊 Kinerja</button>
+    <button class="stab" data-st="atab-inventori-partner" onclick="showSubTab('analitik','atab-inventori-partner')">📦 Detail (Inventori &amp; Partner)</button>
   </div>
   <div id="atab-kinerja" class="stab-panel active">
         <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
@@ -851,11 +851,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="ih-grid" id="ihScorecards"></div>
         </div>
 
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">Pertumbuhan Profit Kumulatif</div></div>
-          <div class="chart-wrap" style="height:300px"><canvas id="chartGrowthCum" role="img" aria-label="Grafik pertumbuhan profit kumulatif"></canvas></div>
-        </div>
-
         <div class="two-col">
           <div class="card"><div class="card-hdr"><div class="card-title">Volume Unit Terjual / Bulan</div></div><div class="chart-wrap"><canvas id="chartVolume" role="img" aria-label="Grafik volume unit terjual per bulan"></canvas></div></div>
           <div class="card"><div class="card-hdr"><div class="card-title">Profit per Segmen</div></div><div class="chart-wrap"><canvas id="chartSegment" role="img" aria-label="Grafik profit per segmen"></canvas></div></div>
@@ -876,9 +871,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
 
         <div class="no-print" style="text-align:center;margin:6px 0 14px">
-          <button class="btn-sm" id="anaMoreBtn" onclick="toggleAnaMore()">▾ Tampilkan analitik lengkap</button>
+          <button class="btn-sm" id="anaMoreBtn" onclick="toggleAnaMore()">▾ Tampilkan chart tambahan</button>
         </div>
         <div id="anaMore" style="display:none">
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Pertumbuhan Profit Kumulatif</div></div>
+          <div class="chart-wrap" style="height:300px"><canvas id="chartGrowthCum" role="img" aria-label="Grafik pertumbuhan profit kumulatif"></canvas></div>
+        </div>
         <div class="card">
           <div class="card-hdr"><div class="card-title">Perbandingan Segmen</div></div>
           <div id="segmentCards" class="segment-grid"></div>
@@ -1064,6 +1063,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
   </div>
   <div id="ktab-cashflow" class="stab-panel">
+        <div id="validatedCashflowCard"></div>
         <div class="kpi-grid" id="cfKPIGrid" style="margin-bottom:20px"></div>
         <div class="two-col">
           <div class="card">
@@ -1097,6 +1097,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <button onclick="printLaporan()" style="margin-left:auto;padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-size:13px;cursor:pointer">⬇ Export PDF</button>
         </div>
         <div id="validatedPnlCard"></div>
+        <div class="no-print" style="margin:6px 0 4px">
+          <button class="btn-sm" id="akunDetailBtn" onclick="toggleAkunDetail()">▾ Detail akuntansi (P&amp;L per periode &amp; Neraca)</button>
+        </div>
+        <div id="akunDetail" style="display:none">
         <div class="two-col">
           <div class="card">
             <div class="card-hdr"><div class="card-title">Laba Rugi Operasional (per periode)</div></div>
@@ -1111,6 +1115,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="card-hdr"><div class="card-title">Distribusi Profit</div></div>
           <div class="kpi-grid" id="distribusiGrid" style="margin-bottom:0"></div>
         </div>
+        </div><!-- /#akunDetail -->
   </div>
       </div>
 
@@ -1454,7 +1459,8 @@ function setLoading(show,text='Memuat data...'){
 // validated view provides it. Legacy data stays legacy (views enforce that).
 const FIN={loaded:false, ok:false, command:null, pnl:null, pnlClass:null,
   reserve:null, capital:null, investors:null, fundingCap:null, fundingUtil:null,
-  fundingRec:null, assumptions:null};
+  fundingRec:null, assumptions:null, cashflow:null, balance:null, reserveSum:null};
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 async function finGet(sel,single){
   try{ const {data,error}=await db.from(sel).select('*'); if(error)throw error;
     return single?((data&&data[0])||null):(data||[]); }
@@ -1462,15 +1468,17 @@ async function finGet(sel,single){
 }
 async function loadFin(){
   try{
-    const [cmd,pnl,pcl,res,cap,inv,fc,fu,fr,asm]=await Promise.all([
+    const [cmd,pnl,pcl,res,cap,inv,fc,fu,fr,asm,cf,bs,rs]=await Promise.all([
       finGet('v_command_center',true), finGet('v_pnl',true), finGet('v_pnl_by_class'),
       finGet('v_reserve_reconcile',true), finGet('v_capital_reconcile',true),
       finGet('v_investor_summary_mapped'), finGet('v_funding_capacity',true),
       finGet('v_funding_utilization'), finGet('v_funding_recommendation'),
-      finGet('funding_assumptions')
+      finGet('funding_assumptions'), finGet('v_cashflow'), finGet('v_balance_sheet',true),
+      finGet('v_reserve_summary',true)
     ]);
     FIN.command=cmd; FIN.pnl=pnl; FIN.pnlClass=pcl; FIN.reserve=res; FIN.capital=cap;
     FIN.investors=inv; FIN.fundingCap=fc; FIN.fundingUtil=fu; FIN.fundingRec=fr; FIN.assumptions=asm;
+    FIN.cashflow=cf; FIN.balance=bs; FIN.reserveSum=rs;
     FIN.ok=!!(cmd||pnl); FIN.loaded=true;
   }catch(e){ FIN.loaded=true; FIN.ok=false; }
 }
@@ -1524,7 +1532,7 @@ function showSection(s,fromPop){
   const internalOnly=['input','keuangan','analitik','unit','funding','home'];
   if(!isInternal() && !isInvestor() && internalOnly.includes(s)) s='home';
   const titles={home:'Ringkasan',input:editingId?'Edit Unit':'Input Unit Baru',unit:'Daftar Unit',
-    funding:'Modal & Investor',keuangan:'Uang',analitik:'Analitik',pengaturan:'Pengaturan',
+    funding:'Modal & Investor',keuangan:'Uang',analitik:'Reports',pengaturan:'Pengaturan',
     investor:'Portofolio Saya','investor-track':'Rekam Jejak & Simulasi'};
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav===s));
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.toggle('active',b.dataset.bn===s));
@@ -2712,57 +2720,67 @@ function renderHome(){
   if(!ig){ renderInvestorHome(); return; }
 
   const h=computeHome();
-  // Health score
-  const hs=computeHealth(h);
-  const circ=2*Math.PI*36;
-  const arc=document.getElementById('healthArc');
-  arc.style.strokeDasharray=circ; arc.style.strokeDashoffset=circ*(1-hs.score/100); arc.style.stroke=hs.color;
-  document.getElementById('healthNum').textContent=hs.score;
-  document.getElementById('healthLabel').textContent=hs.label;
-  document.getElementById('healthSub').textContent=hs.sub;
 
-  // Alerts — operasional saja. Catatan tata kelola dipindah ke halaman Uang (tidak nge-nag di depan).
+  // Alerts — operasional saja. Catatan tata kelola ada di halaman Uang.
   const alerts=buildAlerts(h);
+  const needAttention=alerts.filter(a=>a[0]!=='green').length;
   document.getElementById('alertStack').innerHTML=alerts.map(([lvl,msg])=>{
     const ic={red:'🔴',amber:'🟡',green:'🟢'}[lvl];
     return `<div class="alert ${lvl}"><span class="a-ic">${ic}</span><div>${msg}</div></div>`;
   }).join('');
 
-  // KPI cards — MONEY FIRST. Prefer validated views (FIN), fall back to JS math.
+  // Status line (replaces opaque health-score ring)
+  const hs=computeHealth(h);
+  const ring=document.querySelector('.health-ring'); if(ring)ring.style.display='none';
+  const hl=document.getElementById('healthLabel'), hsub=document.getElementById('healthSub');
+  if(hl){ hl.textContent=needAttention?`${needAttention} hal perlu perhatian`:'Semua indikator aman'; hl.style.color=hs.color; }
+  if(hsub)hsub.textContent=hs.label+' · '+hs.sub;
+
+  // ═══ KPI cards — MONEY FIRST, sumber tunggal = validated views (v_command_center) ═══
+  // Fallback ke JS hanya bila view belum termuat. Kas & Safe Cash menyusul di Phase B.
   const c=FIN.command;
-  const profit   = c? Number(c.realized_profit)      : h.realized;
-  const revenue  = c? Number(c.revenue)              : null;
-  const reserve  = c? Number(c.reserve_balance)      : null;
-  const resAvail = c? Number(c.available_reserve)    : null;
-  const resTgt   = c? Number(c.reserve_target)       : 0;
-  const modalRun = c!=null&&c.capital_deployed!=null? Number(c.capital_deployed) : h.modalBerjalan;
-  const resPct   = resTgt? Math.min(100,Math.round((reserve||0)/resTgt*100)) : 0;
-  const src=c?'<span title="Sumber: view keuangan tervalidasi" style="opacity:.6"> ✓</span>':'';
-  const kpis=[
-    ['Profit Bersih'+src, fmtRpShort(profit), c?'laba terealisasi (tervalidasi)':'estimasi dari unit terjual','k-green'],
-    revenue!=null? ['Pendapatan'+src, fmtRpShort(revenue), (c.units_sold||h.sold.length)+' unit terjual','k-blue']
-                 : ['Profit Tahun Ini', fmtRpShort(h.profitYear), thisYear(),'k-blue'],
-    reserve!=null? ['Cadangan (10%)'+src, fmtRpShort(reserve), `target ${fmtRpShort(resTgt)} · ${resPct}%`,'k-amber']
-                 : ['ROI Tahun Berjalan', h.roiYear.toFixed(1)+'%','atas modal inti','k-amber'],
-    resAvail!=null? ['Kas Cadangan Tersedia'+src, fmtRpShort(resAvail), 'siap dipakai','k-teal']
-                  : ['Cash Available (est.)', fmtRpShort(h.cashProxy),'profit terealisasi','k-teal'],
-    ['Modal Berjalan', fmtRpShort(modalRun), h.active.length+' unit aktif','k-purple'],
-    ['Kewajiban Belum Dibayar', fmtRpShort(h.outstanding),'ke partner/investor','k-red'],
+  const resTgt = c? Number(c.reserve_target||0):0;
+  const reserve= c? Number(c.reserve_balance||0):0;
+  const resPct = resTgt? Math.min(100,Math.round(reserve/resTgt*100)):0;
+  const V=(view,js)=> c? view : js;                    // pick validated when available
+  const src=c?'<span title="Sumber: view keuangan tervalidasi" style="opacity:.55"> ✓</span>':'';
+  const kpis = c ? [
+    ['Profit Bersih'+src,   fmtRpShort(c.realized_profit),        `laba operasi ${fmtRpShort(c.net_operating_profit)}`,'k-green'],
+    ['Pendapatan'+src,      fmtRpShort(c.revenue),                `${c.units_sold} unit terjual`,'k-blue'],
+    ['Cadangan (10%)'+src,  fmtRpShort(reserve),                  `target ${fmtRpShort(resTgt)} · ${resPct}%`,'k-amber'],
+    ['Modal Berjalan'+src,  fmtRpShort(c.capital_deployed),       `${h.active.length} unit aktif`,'k-purple'],
+    ['Modal Tersedia'+src,  fmtRpShort(c.capital_available),      `dari ${fmtRpShort(c.capital_funded)} terkumpul`,'k-teal'],
+    ['Inventory (biaya)'+src,fmtRpShort(c.inventory_at_cost),     'nilai stok aktif','k-blue'],
+    ['Kewajiban',           fmtRpShort(h.outstanding),            'fee partner belum dibayar','k-red'],
+    ['Perlu Perhatian',     String(needAttention),                needAttention?'lihat Alert Center':'semua aman ✓','k-amber'],
+  ] : [
+    ['Profit Bersih',       fmtRpShort(h.realized),               'estimasi dari unit terjual','k-green'],
+    ['Profit Tahun Ini',    fmtRpShort(h.profitYear),             thisYear(),'k-blue'],
+    ['Modal Berjalan',      fmtRpShort(h.modalBerjalan),          h.active.length+' unit aktif','k-purple'],
+    ['Kewajiban',           fmtRpShort(h.outstanding),            'fee partner belum dibayar','k-red'],
+    ['Perlu Perhatian',     String(needAttention),                needAttention?'lihat Alert Center':'semua aman ✓','k-amber'],
   ];
   document.getElementById('kpiGrid').innerHTML=kpis.map(([l,v,s,cc])=>
-    `<div class="kpi ${cc}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
+    `<div class="kpi ${cc}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('')
+    + (c?'':`<div class="kpi k-teal" style="opacity:.7"><div class="kpi-label">Kas &amp; Safe Cash</div><div class="kpi-value" style="font-size:15px">Phase B</div><div class="kpi-sub">butuh modul Utang &amp; Payroll</div></div>`);
 
   renderProfitTrend();
   renderAgingDist(h);
   renderTopPerformance(h);
 }
 
+function toggleAkunDetail(){
+  const el=document.getElementById('akunDetail'), btn=document.getElementById('akunDetailBtn');
+  if(!el)return; const show=el.style.display==='none';
+  el.style.display=show?'block':'none';
+  if(btn)btn.textContent=show?'▴ Sembunyikan detail akuntansi':'▾ Detail akuntansi (P&L per periode & Neraca)';
+}
 function toggleAnaMore(){
   const el=document.getElementById('anaMore'), btn=document.getElementById('anaMoreBtn');
   if(!el)return;
   const show=el.style.display==='none';
   el.style.display=show?'block':'none';
-  if(btn)btn.textContent=show?'▴ Sembunyikan analitik lengkap':'▾ Tampilkan analitik lengkap';
+  if(btn)btn.textContent=show?'▴ Sembunyikan chart tambahan':'▾ Tampilkan chart tambahan';
   if(show){ try{ renderInsight(); renderEvaluasi(); }catch(e){} } // size charts now visible
 }
 function renderCashChart(h){
@@ -3626,7 +3644,20 @@ async function loadAuditLog(){
 // CASHFLOW & FORECASTING
 // ══════════════════════════════════════════════════════════
 let cCashflow=null;
+function renderValidatedCashflow(){
+  const el=document.getElementById('validatedCashflowCard'); if(!el)return;
+  const cf=FIN.cashflow;
+  if(!cf||!cf.length){ el.innerHTML=''; return; }
+  const cols=Object.keys(cf[0]);
+  const num=k=>typeof cf[0][k]==='number';
+  const th=cols.map(k=>`<th style="${num(k)?'text-align:right;':''}">${esc(k.replace(/_/g,' '))}</th>`).join('');
+  const rows=cf.map(r=>`<tr>${cols.map(k=>`<td style="${num(k)?'text-align:right;font-family:monospace;':''}">${num(k)?fmtRp(r[k]):esc(r[k])}</td>`).join('')}</tr>`).join('');
+  el.innerHTML=`<div class="card"><div class="card-hdr"><div class="card-title">Arus Kas — Tervalidasi ✓</div></div>
+    <div class="table-scroll"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table></div>
+    <p style="font-size:11px;color:var(--text3);margin-top:8px">Sumber: view <b>v_cashflow</b>. Chart &amp; forecast di bawah bersifat operasional/estimasi.</p></div>`;
+}
 async function renderCashflow(){
+  renderValidatedCashflow();
   // Fetch pengeluaran dari Supabase
   const {data:keluarData}=await db.from('kas_keluar').select('*').order('tgl',{ascending:true});
   const keluar=keluarData||[];
