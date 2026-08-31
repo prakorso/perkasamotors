@@ -726,7 +726,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
 
       <div id="sec-unit" class="section">
-        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
+          <button class="btn-sm role-internal" onclick="openCostLedger()" style="padding:10px 16px;font-size:14px;font-weight:600">🧾 Cost Ledger</button>
           <button class="btn-sm role-internal" onclick="bukaInputBaru()" style="padding:10px 18px;font-size:14px;font-weight:600">+ Input Unit Baru</button>
         </div>
         <div class="filter-bar">
@@ -4310,6 +4311,81 @@ function openPartnerView(){
   </div>`;
   ov.addEventListener('click',e=>{ if(e.target===ov)ov.remove(); });
   document.body.appendChild(ov);
+}
+
+// ═══════════════════ D3 · UNIT COST LEDGER ═══════════════════
+// Base Unit Cost is DB-derived (v_unit_cost). Frontend never recomputes the
+// authoritative figure. Direct unit costs only — no payroll/office/overhead.
+const UCE_CATS=['Purchase','Service','Repair','Sparepart','Transport','Document/Tax','Direct Marketing','Other'];
+let UCE_UNIT=null;
+function openCostLedger(unitId){
+  const ov=document.createElement('div'); ov.id='uceOverlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,20,30,.55);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow:auto';
+  const opts=(units||[]).slice().sort((a,b)=>String(a.nama||'').localeCompare(String(b.nama||''))).map(u=>`<option value="${u.id}"${String(u.id)===String(unitId)?' selected':''}>${esc(u.nama)}${u.status==='terjual'?' (terjual)':''}</option>`).join('');
+  ov.innerHTML=`<div style="background:var(--surface);border-radius:16px;max-width:640px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Unit Cost Ledger</div>
+      <button class="btn-sm" onclick="document.getElementById('uceOverlay').remove()">✕</button></div>
+    <div class="fg" style="margin:6px 0 14px"><label>Unit</label>
+      <select id="uceUnit" onchange="loadCostEntries()">${opts||'<option>(tidak ada unit)</option>'}</select></div>
+    <div class="ih-grid" id="uceKPI" style="margin-bottom:14px"></div>
+    <div style="display:grid;grid-template-columns:1.1fr 1.4fr .9fr .9fr;gap:8px;align-items:end">
+      <div class="fg" style="margin:0"><label>Kategori</label><select id="uceCat">${UCE_CATS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="fg" style="margin:0"><label>Deskripsi</label><input id="uceDesc" placeholder="mis. ganti kampas rem"></div>
+      <div class="fg" style="margin:0"><label>Nominal (Rp)</label><input id="uceAmt" type="number" placeholder="0"></div>
+      <div class="fg" style="margin:0"><label>Tanggal</label><input id="uceDate" type="date"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px"><input id="uceNote" class="fg" style="flex:1;margin:0;padding:9px 11px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text)" placeholder="Catatan (opsional)">
+      <button class="confirm" onclick="addCostEntry()">+ Tambah Biaya</button></div>
+    <p style="font-size:11px;color:var(--text3);margin:8px 0 4px">Hanya biaya langsung unit. <b>Jangan</b> masukkan payroll, kantor, software, atau overhead perusahaan.</p>
+    <div class="table-scroll" style="margin-top:6px"><table class="track-table" id="uceTable"></table></div>
+  </div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov)ov.remove(); });
+  document.body.appendChild(ov);
+  document.getElementById('uceDate').value=new Date().toISOString().slice(0,10);
+  loadCostEntries();
+}
+async function loadCostEntries(){
+  const sel=document.getElementById('uceUnit'); if(!sel)return;
+  UCE_UNIT=sel.value; const kpi=document.getElementById('uceKPI'), tb=document.getElementById('uceTable');
+  let entries=null, baseCost=null;
+  try{
+    const r=await db.from('unit_cost_entries').select('*').eq('unit_id',UCE_UNIT).order('entry_date',{ascending:true});
+    if(r.error)throw r.error; entries=r.data||[];
+    // Base Unit Cost is DB-DERIVED from v_unit_cost (not summed in JS)
+    const v=await db.from('v_unit_cost').select('base_unit_cost,cost_entries').eq('unit_id',UCE_UNIT).single();
+    baseCost=v.data?Number(v.data.base_unit_cost):null;
+  }catch(e){ FIN_STATUS['unit_cost_entries']=/schema cache|does not exist|find the table|pgrst205|42p01|relation/.test(((e.message||'')+' '+(e.code||'')).toLowerCase())?'missing':'apifail';
+    kpi.innerHTML=''; tb.innerHTML='<tr><td>'+moduleMsg('unit_cost_entries','Cost Ledger')+'</td></tr>'; return; }
+  kpi.innerHTML=[
+    kcard('Base Unit Cost',baseCost==null?'—':fmtRp(baseCost),'DB-derived (v_unit_cost) ✓','k-green'),
+    kcard('Jumlah Entri',String(entries.length),'biaya langsung','k-blue'),
+  ].join('');
+  tb.innerHTML=`<thead><tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th class="num">Nominal</th><th></th></tr></thead><tbody>`+
+    (entries.map(e=>`<tr><td>${esc(e.entry_date)}</td><td>${esc(e.category)}</td><td>${esc(e.description||'')}${e.note?`<br><span style="color:var(--text3);font-size:11px">${esc(e.note)}</span>`:''}</td>
+      <td class="num">${fmtRp(e.amount)}</td>
+      <td><button class="btn-sm" onclick="delCostEntry(${e.id})">🗑</button></td></tr>`).join('')
+      ||`<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text3)">Belum ada biaya. Tambahkan di atas.</td></tr>`)+'</tbody>';
+}
+async function addCostEntry(){
+  if(!UCE_UNIT){ showToast('❌ Pilih unit dulu.'); return; }
+  const amt=Number(document.getElementById('uceAmt').value)||0;
+  if(amt<0){ showToast('❌ Nominal tidak boleh negatif.'); return; }
+  const row={ unit_id:Number(UCE_UNIT), category:document.getElementById('uceCat').value,
+    description:document.getElementById('uceDesc').value.trim(), amount:amt,
+    entry_date:document.getElementById('uceDate').value||new Date().toISOString().slice(0,10),
+    note:document.getElementById('uceNote').value.trim() };
+  try{ const {error}=await db.from('unit_cost_entries').insert(row); if(error)throw error;
+    showToast('✅ Biaya ditambahkan.');
+    document.getElementById('uceDesc').value=''; document.getElementById('uceAmt').value=''; document.getElementById('uceNote').value='';
+    loadCostEntries();
+  }catch(e){ showToast('⚠ Cost Ledger belum aktif di database.'); }
+}
+async function delCostEntry(id){
+  if(!confirm('Hapus biaya ini?'))return;
+  try{ const {error}=await db.from('unit_cost_entries').delete().eq('id',id); if(error)throw error;
+    showToast('🗑 Biaya dihapus.'); loadCostEntries();
+  }catch(e){ showToast('❌ Gagal menghapus.'); }
 }
 
 async function renderCashflow(){
