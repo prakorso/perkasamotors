@@ -464,6 +464,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <button class="nav-btn role-internal" data-nav="unit" onclick="showSection('unit')"><span class="ni">≡</span><span>Unit</span></button>
       <button class="nav-btn role-internal" data-nav="keuangan" onclick="showSection('keuangan')"><span class="ni">💰</span><span>Uang</span></button>
       <button class="nav-btn role-internal" data-nav="funding" onclick="showSection('funding')"><span class="ni">◆</span><span>Modal &amp; Investor</span></button>
+      <button class="nav-btn role-internal" data-nav="partner" onclick="showSection('partner')"><span class="ni">🤝</span><span>Partner Collaboration</span></button>
       <button class="nav-btn role-internal" data-nav="analitik" onclick="showSection('analitik')"><span class="ni">📊</span><span>Reports</span></button>
       <button class="nav-btn role-internal" data-nav="pengaturan" onclick="showSection('pengaturan')"><span class="ni">⚙</span><span>Pengaturan</span></button>
     </nav>
@@ -1196,6 +1197,79 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <!-- ═══════════ INVENTORI ASET ═══════════ -->
 
 
+      <!-- ═══════════ PARTNER COLLABORATION ═══════════ -->
+      <div id="sec-partner" class="section role-internal">
+        <div class="sub-tab-bar">
+          <button class="stab" data-st="prtab-policy" onclick="showSubTab('partner','prtab-policy')">📋 Policy</button>
+          <button class="stab active" data-st="prtab-simulator" onclick="showSubTab('partner','prtab-simulator')">🧮 Deal Simulator</button>
+          <button class="stab" data-st="prtab-deals" onclick="showSubTab('partner','prtab-deals')">📑 Active Deals</button>
+        </div>
+
+        <!-- POLICY -->
+        <div id="prtab-policy" class="stab-panel">
+          <div class="section-hint">Partner Profit Share adalah <b>persentase dari Net Profit</b> (setelah modal dikembalikan &amp; biaya langsung dipotong) — <b>bukan</b> bunga, bukan return atas modal partner. Tarif dapat dikonfigurasi.</div>
+          <div class="card"><div class="card-hdr"><div class="card-title">Kebijakan Bagi Hasil — Mobil</div>
+            <button class="btn-sm" id="polEditBtn" onclick="togglePolicyEdit()">✎ Edit Tarif</button></div>
+            <div class="table-scroll"><table class="track-table" id="polTableMobil"></table></div></div>
+          <div class="card"><div class="card-hdr"><div class="card-title">Kebijakan Bagi Hasil — Motor</div></div>
+            <div class="table-scroll"><table class="track-table" id="polTableMotor"></table></div></div>
+          <p style="font-size:11.5px;color:var(--text3);margin-top:2px">Partner Profit Share dihitung dari Net Profit setelah pengembalian modal dan biaya transaksi. Ini bukan return atas modal. Sel <b>Custom</b> memerlukan kesepakatan khusus.</p>
+          <div id="polSaveBar" style="display:none;margin-top:10px"><button class="confirm" onclick="savePartnerPolicy()">💾 Simpan Tarif</button> <button class="btn-sm" onclick="togglePolicyEdit()">Batal</button></div>
+        </div>
+
+        <!-- SIMULATOR -->
+        <div id="prtab-simulator" class="stab-panel active">
+          <div class="two-col" style="align-items:start">
+            <div class="card">
+              <div class="card-hdr"><div class="card-title">Deal Inputs</div></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="fg" style="grid-column:1/-1"><label>Vehicle Type</label>
+                  <select id="pcType" onchange="calcPartnerDeal()"><option value="Motor">Motor</option><option value="Mobil">Mobil</option></select></div>
+                <div class="fg" style="grid-column:1/-1"><label>Unit Name / Stock ID</label><input id="pcUnit" placeholder="mis. Beat 2020 / STK-001" oninput="calcPartnerDeal()"></div>
+                <div class="fg"><label>Base Acquisition Price</label><input id="pcBase" type="number" value="10000000" oninput="calcPartnerDeal()"></div>
+                <div class="fg"><label>Estimated Selling Price</label><input id="pcSell" type="number" value="12500000" oninput="calcPartnerDeal()"></div>
+                <div class="fg"><label>Partner Capital</label><input id="pcPartner" type="number" value="5000000" oninput="calcPartnerDeal()"></div>
+                <div class="fg"><label>Perkasa Capital</label><input id="pcPerkasa" type="number" value="5000000" oninput="calcPartnerDeal()"></div>
+                <div class="fg"><label>Repair / Recond</label><input id="pcRepair" type="number" value="0" oninput="calcPartnerDeal()"></div>
+                <div class="fg"><label>Transport</label><input id="pcTransport" type="number" value="0" oninput="calcPartnerDeal()"></div>
+                <div class="fg"><label>Dokumen / Pajak</label><input id="pcDoc" type="number" value="0" oninput="calcPartnerDeal()"></div>
+                <div class="fg"><label>Marketing / Lain</label><input id="pcMkt" type="number" value="0" oninput="calcPartnerDeal()"></div>
+                <div class="fg"><label>Holding Period (hari)</label><input id="pcHold" type="number" value="20" oninput="calcPartnerDeal()"></div>
+                <div class="fg"><label>Status</label><select id="pcStatus">
+                  <option>Simulation</option><option>Funded</option><option>In Inventory</option><option>Sold</option><option>Settlement Pending</option><option>Settled</option><option>Loss</option></select></div>
+              </div>
+              <div id="pcWarn" style="margin-top:6px"></div>
+              <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+                <button class="confirm" onclick="savePartnerDeal()">💾 Simpan Deal</button>
+                <button class="btn-sm" onclick="resetPartnerDeal()">↺ Reset Contoh</button>
+                <button class="btn-sm" onclick="openPartnerView()">👁 Partner View</button>
+                <input type="hidden" id="pcEditId">
+              </div>
+            </div>
+            <div>
+              <div class="ih-grid" id="pcSummary" style="margin-bottom:14px"></div>
+              <div class="card">
+                <div class="card-hdr"><div class="card-title">Net Profit Distribution</div></div>
+                <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+                  <div class="chart-wrap" style="height:180px;width:180px;flex:0 0 auto"><canvas id="pcDonut"></canvas></div>
+                  <div id="pcDistLegend" style="flex:1;min-width:160px"></div>
+                </div>
+                <p style="font-size:11px;color:var(--text3);margin-top:8px">Grafik ini <b>hanya</b> distribusi Net Profit — bukan kepemilikan modal/ekuitas.</p>
+              </div>
+              <div class="card"><div class="card-hdr"><div class="card-title">Alur Akuntansi Deal</div></div>
+                <div id="pcFlow" style="font-size:12.5px;line-height:1.7;color:var(--text2)"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVE DEALS -->
+        <div id="prtab-deals" class="stab-panel">
+          <div class="ih-grid" id="pcDealsKPI" style="margin-bottom:14px"></div>
+          <div class="card"><div class="card-hdr"><div class="card-title">Active Deals</div></div>
+            <div class="table-scroll"><table class="track-table" id="pcDealsTable"></table></div></div>
+        </div>
+      </div>
+
       <!-- ═══════════ PENGATURAN ═══════════ -->
       <div id="sec-pengaturan" class="section">
   <div class="sub-tab-bar">
@@ -1633,7 +1707,7 @@ function showSection(s,fromPop){
   const internalOnly=['input','keuangan','analitik','unit','funding','home'];
   if(!isInternal() && !isInvestor() && internalOnly.includes(s)) s='home';
   const titles={home:'Ringkasan',input:editingId?'Edit Unit':'Input Unit Baru',unit:'Daftar Unit',
-    funding:'Modal & Investor',keuangan:'Uang',analitik:'Reports',pengaturan:'Pengaturan',
+    funding:'Modal & Investor',keuangan:'Uang',analitik:'Reports',pengaturan:'Pengaturan',partner:'Partner Collaboration',
     investor:'Portofolio Saya','investor-track':'Rekam Jejak & Simulasi'};
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav===s));
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.toggle('active',b.dataset.bn===s));
@@ -1652,6 +1726,7 @@ function showSection(s,fromPop){
   if(s==='keuangan'){showSubTab('keuangan','ktab-kas');}
   if(s==='analitik'){showSubTab('analitik','atab-kinerja');}
   if(s==='pengaturan'){showSubTab('pengaturan','ptab-settings');}
+  if(s==='partner'){showSubTab('partner','prtab-simulator');}
   if(s==='investor')renderInvestorPortfolio();
   if(s==='investor-track')renderInvestorTrack();
   // sub-section aliases
@@ -1685,6 +1760,9 @@ function showSubTab(section,tabId){
     'atab-inventori-partner':()=>{renderInventoryIntel();renderInvestDash();},
     'ptab-settings':()=>loadSettingsForm(),
     'ptab-audit':()=>loadAuditLog(),
+    'prtab-policy':()=>renderPartnerPolicy(),
+    'prtab-simulator':()=>renderPartnerSimulator(),
+    'prtab-deals':()=>renderPartnerDeals(),
   };
   if(renders[tabId])renders[tabId]();
 }
@@ -3922,6 +4000,275 @@ async function payPayroll(oblId){
   try{ const {error}=await db.rpc('pm_payroll_pay',{p_obligation_id:oblId,p_amount:null,p_date:null}); if(error)throw error;
     showToast('✅ Gaji dibayar.'); await finRefresh(); renderPayroll();
   }catch(e){ showToast('❌ Gagal: '+(e.message||e)); }
+}
+
+// ═══════════════════ PARTNER COLLABORATION (Phase 1) ═══════════════════
+// Partner Profit Share % = % of NET PROFIT allocated to partner (NOT interest,
+// NOT return on capital). Capital is returned separately BEFORE profit split.
+const PC_BRACKETS=['<10%','10-20%','20-30%','30-40%','40-50%','>50%'];
+const PC_HOLD=['<30','31-60','61-90','91-120','121-180'];
+// null = Custom (needs bespoke agreement). Rows=brackets, cols=holding tiers.
+const PC_POLICY_DEFAULT={
+  Mobil:[[6,7,8,9,10],[9,10,11,12,13],[11,12,14,15,17],[14,15,17,18,20],[17,18,20,22,24],[20,20,null,null,null]],
+  Motor:[[5,5,6,7,8],[8,9,10,11,12],[9,10,11,12,14],[11,12,14,15,17],[14,15,17,18,20],[20,null,null,null,null]]
+};
+let PC_POLICY=null, pcDonutChart=null, pcPolicyLoaded=false, pcPolicyEditing=false;
+
+async function ensurePartnerPolicy(){
+  if(pcPolicyLoaded) return;
+  // 1) DB (configurable, no code change); 2) localStorage; 3) built-in default
+  try{
+    const {data,error}=await db.from('partner_profit_policy').select('*');
+    if(!error && data && data.length){
+      const m=JSON.parse(JSON.stringify(PC_POLICY_DEFAULT));
+      data.forEach(r=>{ const bi=PC_BRACKETS.indexOf(r.bracket_label), hi=PC_HOLD.indexOf(r.holding_label);
+        if(bi>=0&&hi>=0&&m[r.vehicle_type]) m[r.vehicle_type][bi][hi]=(r.share_pct==null?null:Number(r.share_pct)); });
+      PC_POLICY=m; pcPolicyLoaded=true; return;
+    }
+  }catch(e){}
+  try{ const ls=JSON.parse(localStorage.getItem('pm_partner_policy')||'null'); if(ls){ PC_POLICY=ls; pcPolicyLoaded=true; return; } }catch(e){}
+  PC_POLICY=JSON.parse(JSON.stringify(PC_POLICY_DEFAULT)); pcPolicyLoaded=true;
+}
+function pcBracketIdx(pct){ return pct<10?0 : pct<=20?1 : pct<=30?2 : pct<=40?3 : pct<=50?4 : 5; }
+function pcHoldIdx(days){ return days<0?null : days<=30?0 : days<=60?1 : days<=90?2 : days<=120?3 : days<=180?4 : -1; }
+function pcLookupShare(type,pct,days){
+  const hi=pcHoldIdx(days);
+  if(hi===-1) return {custom:true, reason:'Holding >180 hari — Custom Review Required'};
+  if(hi===null) return {custom:true, reason:'Holding tidak valid'};
+  const bi=pcBracketIdx(pct);
+  const v=(PC_POLICY[type]||PC_POLICY_DEFAULT[type])[bi][hi];
+  if(v==null) return {custom:true, reason:'Kombinasi ini butuh Custom Deal', bracket:PC_BRACKETS[bi], holding:PC_HOLD[hi]};
+  return {pct:v, bracket:PC_BRACKETS[bi], holding:PC_HOLD[hi]};
+}
+
+// ── POLICY tables ──
+async function renderPartnerPolicy(){
+  await ensurePartnerPolicy();
+  ['Mobil','Motor'].forEach(type=>{
+    const el=document.getElementById(type==='Mobil'?'polTableMobil':'polTableMotor');
+    const head=`<thead><tr><th>Porsi Modal Partner</th>${PC_HOLD.map(h=>`<th class="num">${h} hari</th>`).join('')}</tr></thead>`;
+    const body=PC_BRACKETS.map((b,bi)=>`<tr><td>${b}</td>${PC_HOLD.map((h,hi)=>{
+      const v=PC_POLICY[type][bi][hi];
+      const cell=v==null?'<span style="color:var(--text3)">Custom</span>':v+'%';
+      return `<td class="num">${pcPolicyEditing?`<input data-t="${type}" data-b="${bi}" data-h="${hi}" value="${v==null?'':v}" placeholder="Custom" style="width:60px;padding:3px 5px;border:1px solid var(--border2);border-radius:5px;background:var(--surface);color:var(--text);text-align:right">`:cell}</td>`;
+    }).join('')}</tr>`).join('');
+    el.innerHTML=head+'<tbody>'+body+'</tbody>';
+  });
+}
+function togglePolicyEdit(){
+  pcPolicyEditing=!pcPolicyEditing;
+  document.getElementById('polSaveBar').style.display=pcPolicyEditing?'block':'none';
+  document.getElementById('polEditBtn').style.display=pcPolicyEditing?'none':'inline-block';
+  renderPartnerPolicy();
+}
+async function savePartnerPolicy(){
+  document.querySelectorAll('#prtab-policy input[data-t]').forEach(inp=>{
+    const t=inp.dataset.t, b=+inp.dataset.b, h=+inp.dataset.h;
+    const val=inp.value.trim()===''?null:Number(inp.value);
+    PC_POLICY[t][b][h]=(val==null||isNaN(val))?null:val;
+  });
+  // persist: DB if available, else device-local
+  let dbOk=false;
+  try{
+    const rows=[]; ['Mobil','Motor'].forEach(t=>PC_BRACKETS.forEach((bl,bi)=>PC_HOLD.forEach((hl,hi)=>
+      rows.push({vehicle_type:t,bracket_label:bl,holding_label:hl,share_pct:PC_POLICY[t][bi][hi]}))));
+    const {error}=await db.from('partner_profit_policy').upsert(rows,{onConflict:'vehicle_type,bracket_label,holding_label'});
+    if(!error)dbOk=true;
+  }catch(e){}
+  if(!dbOk) localStorage.setItem('pm_partner_policy',JSON.stringify(PC_POLICY));
+  showToast(dbOk?'✅ Tarif tersimpan.':'✅ Tarif tersimpan di perangkat ini.');
+  pcPolicyEditing=false; document.getElementById('polSaveBar').style.display='none';
+  document.getElementById('polEditBtn').style.display='inline-block';
+  renderPartnerPolicy(); if(document.getElementById('prtab-simulator').classList.contains('active'))calcPartnerDeal();
+}
+
+// ── SIMULATOR ──
+function pcInputs(){
+  const n=id=>Number(document.getElementById(id).value)||0;
+  return { type:document.getElementById('pcType').value, unit:document.getElementById('pcUnit').value.trim(),
+    base:n('pcBase'), sell:n('pcSell'), partner:n('pcPartner'), perkasa:n('pcPerkasa'),
+    repair:n('pcRepair'), transport:n('pcTransport'), doc:n('pcDoc'), mkt:n('pcMkt'),
+    hold:n('pcHold'), status:document.getElementById('pcStatus').value };
+}
+function pcCompute(i){
+  const totalCapital=i.partner+i.perkasa;
+  const partnerPct=i.base>0?i.partner/i.base*100:0;
+  const perkasaPct=i.base>0?i.perkasa/i.base*100:0;
+  const directCosts=i.repair+i.transport+i.doc+i.mkt;
+  const totalCostBasis=i.base+directCosts;
+  const netProfit=i.sell-totalCostBasis;
+  const share=pcLookupShare(i.type,partnerPct,i.hold);
+  let partnerProfit=0, perkasaProfit=netProfit, loss=false, custom=false;
+  if(netProfit<=0){ loss=true; partnerProfit=0; perkasaProfit=netProfit; }
+  else if(share.custom){ custom=true; partnerProfit=null; perkasaProfit=null; }
+  else { partnerProfit=Math.round(netProfit*share.pct/100); perkasaProfit=netProfit-partnerProfit; }
+  const partnerSettlement = i.partner + (partnerProfit||0);
+  const perkasaRealization = i.perkasa + (perkasaProfit==null?0:perkasaProfit);
+  return {...i,totalCapital,partnerPct,perkasaPct,directCosts,totalCostBasis,netProfit,share,
+    partnerProfit,perkasaProfit,loss,custom,partnerSettlement,perkasaRealization};
+}
+function pcValidate(i){
+  const w=[];
+  if(i.base<=0) w.push(['err','Base Acquisition Price harus lebih dari 0.']);
+  if(i.partner<0||i.perkasa<0||i.sell<0||i.hold<0) w.push(['err','Nilai modal/harga/holding tidak boleh negatif.']);
+  if(i.base>0 && Math.abs((i.partner+i.perkasa)-i.base)>1) w.push(['warn',`Partner + Perkasa (${fmtRp(i.partner+i.perkasa)}) ≠ Base Price (${fmtRp(i.base)}). Periksa kembali.`]);
+  if(i.hold>180) w.push(['warn','Holding >180 hari → Custom Review Required.']);
+  return w;
+}
+function calcPartnerDeal(){
+  const i=pcInputs(); const warn=pcValidate(i); const c=pcCompute(i);
+  // warnings
+  const wbox=document.getElementById('pcWarn');
+  const extra=[];
+  if(c.loss) extra.push(['err','Deal ini RUGI — Partner Profit = 0, kerugian ditanggung Perkasa.']);
+  else if(c.custom) extra.push(['warn','Custom Deal: '+(c.share.reason||'butuh kesepakatan khusus')+'.']);
+  if(c.partnerPct>50 && !c.loss) extra.push(['warn','Porsi partner >50% → Custom Deal bila tarif tidak tersedia.']);
+  wbox.innerHTML=[...warn,...extra].map(([k,m])=>`<div class="alert ${k==='err'?'red':'amber'}" style="margin:4px 0"><span class="a-ic">${k==='err'?'🔴':'🟡'}</span><div>${m}</div></div>`).join('');
+  // summary cards
+  const val=v=>v==null?'—':fmtRp(v);
+  const share = c.loss?'0%' : c.custom?'Custom' : c.share.pct+'%';
+  document.getElementById('pcSummary').innerHTML=[
+    kcard('Base Unit Price',fmtRp(c.base),c.unit||'—','k-blue'),
+    kcard('Total Capital',fmtRp(c.totalCapital),`Partner ${c.partnerPct.toFixed(1)}% · Perkasa ${c.perkasaPct.toFixed(1)}%`,'k-teal'),
+    kcard('Partner Capital',fmtRp(c.partner),c.partnerPct.toFixed(1)+'% dari base','k-teal'),
+    kcard('Holding / Tier',c.hold+' hari',c.share.holding?`tier ${c.share.holding} hari`:'—','k-blue'),
+    kcard('Partner Profit Share',share,'dari NET PROFIT (bukan bunga)','k-amber'),
+    kcard('Total Cost Basis',fmtRp(c.totalCostBasis),`biaya langsung ${fmtRp(c.directCosts)}`,'k-purple'),
+    kcard('Net Profit',fmtRp(c.netProfit),c.loss?'RUGI':'setelah biaya langsung',c.netProfit>=0?'k-green':'k-red'),
+    kcard('Partner Profit',val(c.partnerProfit),'bagian partner','k-amber'),
+    kcard('Perkasa Profit',val(c.perkasaProfit),'bagian Perkasa','k-purple'),
+    kcard('Modal Dikembalikan',fmtRp(c.partner)+' / '+fmtRp(c.perkasa),'Partner / Perkasa','k-teal'),
+    kcard('Partner Settlement',val(c.custom?null:c.partnerSettlement),'Modal + Profit','k-green'),
+    kcard('Perkasa Realization',val(c.custom?null:c.perkasaRealization),'Modal + Profit','k-green'),
+  ].join('');
+  // donut
+  const legend=document.getElementById('pcDistLegend');
+  if(pcDonutChart){pcDonutChart.destroy();pcDonutChart=null;}
+  if(!c.loss && !c.custom && c.netProfit>0){
+    const pP=c.partnerProfit, pK=c.perkasaProfit;
+    const pctP=Math.round(pP/c.netProfit*100), pctK=100-pctP;
+    pcDonutChart=new Chart(document.getElementById('pcDonut').getContext('2d'),{
+      type:'doughnut',
+      data:{labels:['Partner','Perkasa'],datasets:[{data:[pP,pK],backgroundColor:['#C07A0E','#7A5C9E'],borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>x.label+': '+fmtRp(x.parsed)}}}}
+    });
+    legend.innerHTML=`<div style="font-size:12px;color:var(--text3);margin-bottom:6px">Net Profit ${fmtRp(c.netProfit)}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin:6px 0"><span style="width:12px;height:12px;border-radius:3px;background:#C07A0E;display:inline-block"></span><b>Partner</b> · ${pctP}% · ${fmtRp(pP)}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin:6px 0"><span style="width:12px;height:12px;border-radius:3px;background:#7A5C9E;display:inline-block"></span><b>Perkasa</b> · ${pctK}% · ${fmtRp(pK)}</div>`;
+  } else {
+    legend.innerHTML=`<div style="color:var(--text3);font-size:12.5px">${c.loss?'Deal rugi — tidak ada profit untuk dibagi.':'Custom Deal — tarif belum ditentukan.'}</div>`;
+  }
+  // accounting flow
+  document.getElementById('pcFlow').innerHTML=
+    `Modal Partner ${fmtRp(c.partner)} + Modal Perkasa ${fmtRp(c.perkasa)}<br>↓ Akuisisi unit ${fmtRp(c.base)}<br>↓ Terjual ${fmtRp(c.sell)}<br>− Biaya langsung ${fmtRp(c.directCosts)}<br><b>= Net Profit ${fmtRp(c.netProfit)}</b><br>↓ Kembalikan modal (Partner ${fmtRp(c.partner)} + Perkasa ${fmtRp(c.perkasa)})<br>↓ Bagi Net Profit → Partner ${val(c.partnerProfit)} + Perkasa ${val(c.perkasaProfit)}`;
+  return c;
+}
+function resetPartnerDeal(){
+  const set=(id,v)=>document.getElementById(id).value=v;
+  set('pcType','Motor');document.getElementById('pcType').value='Motor';
+  set('pcUnit','');set('pcBase',10000000);set('pcSell',12500000);set('pcPartner',5000000);set('pcPerkasa',5000000);
+  set('pcRepair',0);set('pcTransport',0);set('pcDoc',0);set('pcMkt',0);set('pcHold',20);
+  document.getElementById('pcStatus').value='Simulation';document.getElementById('pcEditId').value='';
+  calcPartnerDeal();
+}
+async function renderPartnerSimulator(){ await ensurePartnerPolicy(); calcPartnerDeal(); }
+
+// ── DEAL PERSISTENCE ──
+function pcDealRow(){
+  const i=pcInputs();
+  return { unit_name:i.unit||'(tanpa nama)', vehicle_type:i.type, base_price:i.base, selling_price:i.sell,
+    partner_capital:i.partner, perkasa_capital:i.perkasa, repair_cost:i.repair, transport_cost:i.transport,
+    doc_cost:i.doc, marketing_cost:i.mkt, holding_days:i.hold, status:i.status };
+}
+async function savePartnerDeal(){
+  const c=calcPartnerDeal();
+  if(c.base<=0){ showToast('❌ Base Price harus > 0.'); return; }
+  const row=pcDealRow(); const id=document.getElementById('pcEditId').value;
+  try{
+    let error;
+    if(id){ ({error}=await db.from('partner_deals').update(row).eq('id',id)); }
+    else { ({error}=await db.from('partner_deals').insert(row)); }
+    if(error)throw error;
+    showToast('✅ Deal tersimpan.'); document.getElementById('pcEditId').value='';
+    showSubTab('partner','prtab-deals');
+  }catch(e){
+    showToast('⚠ Penyimpanan deal belum aktif. Modul disimpan setelah admin mengaktifkan.');
+  }
+}
+async function renderPartnerDeals(){
+  await ensurePartnerPolicy();
+  const kpi=document.getElementById('pcDealsKPI'), tb=document.getElementById('pcDealsTable');
+  let data=null;
+  try{ const r=await db.from('partner_deals').select('*').order('id',{ascending:false}); if(r.error)throw r.error; data=r.data||[]; }
+  catch(e){ kpi.innerHTML=''; tb.innerHTML='<tr><td>'+moduleMsg('partner_deals','Partner Deals')+'</td></tr>'; return; }
+  const comp=data.map(d=>pcCompute({type:d.vehicle_type,unit:d.unit_name,base:+d.base_price,sell:+d.selling_price,
+    partner:+d.partner_capital,perkasa:+d.perkasa_capital,repair:+d.repair_cost,transport:+d.transport_cost,
+    doc:+d.doc_cost,mkt:+d.marketing_cost,hold:+d.holding_days,status:d.status,id:d.id}));
+  const sumPP=comp.reduce((a,c)=>a+(c.partnerProfit||0),0), sumPK=comp.reduce((a,c)=>a+(c.perkasaProfit||0),0);
+  kpi.innerHTML=[kcard('Total Deals',String(data.length),'tersimpan','k-blue'),
+    kcard('Total Partner Profit',fmtRp(sumPP),'estimasi','k-amber'),
+    kcard('Total Perkasa Profit',fmtRp(sumPK),'estimasi','k-purple')].join('');
+  const stColor=s=>({Sold:'#178A5A',Settled:'#178A5A',Loss:'#D33A2C','Settlement Pending':'#C07A0E',Funded:'#2563C9','In Inventory':'#4A7C7C',Simulation:'#7A5C9E'}[s]||'var(--text2)');
+  tb.innerHTML=`<thead><tr><th>Deal / Unit</th><th>Jenis</th><th class="num">Base</th><th class="num">Partner (%)</th><th class="num">Perkasa</th><th class="num">Hari</th><th class="num">Share</th><th class="num">Net Profit</th><th class="num">Partner Profit</th><th class="num">Perkasa Profit</th><th>Status</th><th></th></tr></thead><tbody>`+
+    (comp.map(c=>`<tr>
+      <td>${esc(c.unit)}</td><td>${c.type}</td><td class="num">${fmtRp(c.base)}</td>
+      <td class="num">${fmtRp(c.partner)}<br><span style="color:var(--text3);font-size:11px">${c.partnerPct.toFixed(1)}%</span></td>
+      <td class="num">${fmtRp(c.perkasa)}</td><td class="num">${c.hold}</td>
+      <td class="num">${c.loss?'0%':c.custom?'Custom':c.share.pct+'%'}</td>
+      <td class="num ${c.netProfit>=0?'':'neg'}" style="${c.netProfit<0?'color:var(--red)':''}">${fmtRp(c.netProfit)}</td>
+      <td class="num">${c.partnerProfit==null?'—':fmtRp(c.partnerProfit)}</td>
+      <td class="num">${c.perkasaProfit==null?'—':fmtRp(c.perkasaProfit)}</td>
+      <td><span style="background:${stColor(c.status)}18;color:${stColor(c.status)};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">${esc(c.status)}</span></td>
+      <td style="white-space:nowrap"><button class="btn-sm" onclick="editPartnerDeal(${c.id})">Buka</button> <button class="btn-sm" onclick="deletePartnerDeal(${c.id})">🗑</button></td>
+    </tr>`).join('')||`<tr><td colspan="12" style="padding:18px;text-align:center;color:var(--text3)">Belum ada deal tersimpan. Buat di Deal Simulator lalu “Simpan Deal”.</td></tr>`)+'</tbody>';
+}
+async function editPartnerDeal(id){
+  try{ const {data}=await db.from('partner_deals').select('*').eq('id',id).single();
+    if(!data)return;
+    const s=(k,v)=>document.getElementById(k).value=v;
+    document.getElementById('pcType').value=data.vehicle_type;
+    s('pcUnit',data.unit_name);s('pcBase',data.base_price);s('pcSell',data.selling_price);
+    s('pcPartner',data.partner_capital);s('pcPerkasa',data.perkasa_capital);s('pcRepair',data.repair_cost);
+    s('pcTransport',data.transport_cost);s('pcDoc',data.doc_cost);s('pcMkt',data.marketing_cost);s('pcHold',data.holding_days);
+    document.getElementById('pcStatus').value=data.status; document.getElementById('pcEditId').value=data.id;
+    showSubTab('partner','prtab-simulator'); calcPartnerDeal();
+  }catch(e){ showToast('❌ Gagal memuat deal.'); }
+}
+async function deletePartnerDeal(id){
+  if(!confirm('Hapus deal ini?'))return;
+  try{ const {error}=await db.from('partner_deals').delete().eq('id',id); if(error)throw error;
+    showToast('🗑 Deal dihapus.'); renderPartnerDeals();
+  }catch(e){ showToast('❌ Gagal menghapus.'); }
+}
+
+// ── PARTNER VIEW (presentation mode; no internal Perkasa financials) ──
+function openPartnerView(){
+  const c=pcCompute(pcInputs());
+  const val=v=>v==null?'—':fmtRp(v);
+  const share=c.loss?'0%':c.custom?'Custom':c.share.pct+'%';
+  const row=(l,v,strong)=>`<div style="display:flex;justify-content:space-between;padding:10px 2px;border-bottom:1px solid var(--border);${strong?'font-weight:700;font-size:15px':''}"><span style="color:${strong?'var(--text)':'var(--text2)'}">${l}</span><span style="font-family:monospace">${v}</span></div>`;
+  const ov=document.createElement('div');
+  ov.id='pcOverlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,20,30,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML=`<div style="background:var(--surface);border-radius:16px;max-width:460px;width:100%;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:90vh;overflow:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Simulasi Kolaborasi Partner</div>
+      <button class="btn-sm" onclick="document.getElementById('pcOverlay').remove()">✕</button></div>
+    <h2 style="margin:0 0 2px;font-size:20px">${esc(c.unit||'Unit')}</h2>
+    <div style="color:var(--text3);font-size:13px;margin-bottom:14px">${c.type} · ${c.hold} hari</div>
+    ${row('Base Price',fmtRp(c.base))}
+    ${row('Modal Partner',fmtRp(c.partner))}
+    ${row('Porsi Modal Partner',c.partnerPct.toFixed(1)+'%')}
+    ${row('Holding Period',c.hold+' hari')}
+    ${row('Partner Profit Share',share)}
+    ${row('Estimasi Net Profit',fmtRp(c.netProfit))}
+    ${row('Modal Dikembalikan',fmtRp(c.partner))}
+    ${row('Partner Profit',val(c.partnerProfit))}
+    ${row('Total Settlement ke Partner',val(c.custom?null:c.partnerSettlement),true)}
+    <p style="font-size:11px;color:var(--text3);margin:14px 0 0">Partner Profit Share adalah bagian dari Net Profit — bukan bunga atau return atas modal. Modal dikembalikan terpisah sebelum profit dibagi.</p>
+  </div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov)ov.remove(); });
+  document.body.appendChild(ov);
 }
 
 async function renderCashflow(){
