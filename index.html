@@ -4012,7 +4012,9 @@ const PC_POLICY_DEFAULT={
   Mobil:[[6,7,8,9,10],[9,10,11,12,13],[11,12,14,15,17],[14,15,17,18,20],[17,18,20,22,24],[20,20,null,null,null]],
   Motor:[[5,5,6,7,8],[8,9,10,11,12],[9,10,11,12,14],[11,12,14,15,17],[14,15,17,18,20],[20,null,null,null,null]]
 };
-let PC_POLICY=null, pcDonutChart=null, pcPolicyLoaded=false, pcPolicyEditing=false;
+let PC_POLICY=null, pcDonutChart=null, pcPolicyLoaded=false, pcPolicyEditing=false, PC_DEALS_CACHE=[];
+const PC_PASS=()=>adminPassCache||'__internal__';   // app internal-op convention
+const PC_FUNDED_STATES=['Funded','In Inventory','Sold','Settlement Pending','Settled','Loss'];
 
 async function ensurePartnerPolicy(){
   if(pcPolicyLoaded) return;
@@ -4067,13 +4069,14 @@ async function savePartnerPolicy(){
     const val=inp.value.trim()===''?null:Number(inp.value);
     PC_POLICY[t][b][h]=(val==null||isNaN(val))?null:val;
   });
-  // persist: DB if available, else device-local
+  // persist via gated RPC (admin-only); fallback to device-local if unavailable
   let dbOk=false;
   try{
     const rows=[]; ['Mobil','Motor'].forEach(t=>PC_BRACKETS.forEach((bl,bi)=>PC_HOLD.forEach((hl,hi)=>
       rows.push({vehicle_type:t,bracket_label:bl,holding_label:hl,share_pct:PC_POLICY[t][bi][hi]}))));
-    const {error}=await db.from('partner_profit_policy').upsert(rows,{onConflict:'vehicle_type,bracket_label,holding_label'});
-    if(!error)dbOk=true;
+    const {data,error}=await db.rpc('pm_partner_policy_save',{p_pass:PC_PASS(),p_rows:rows});
+    if(!error && data && data.ok)dbOk=true;
+    else if(data && data.ok===false) showToast('❌ '+(data.error||'Tidak berwenang.'));
   }catch(e){}
   if(!dbOk) localStorage.setItem('pm_partner_policy',JSON.stringify(PC_POLICY));
   showToast(dbOk?'✅ Tarif tersimpan.':'✅ Tarif tersimpan di perangkat ini.');
@@ -4090,14 +4093,19 @@ function pcInputs(){
     repair:n('pcRepair'), transport:n('pcTransport'), doc:n('pcDoc'), mkt:n('pcMkt'),
     hold:n('pcHold'), status:document.getElementById('pcStatus').value };
 }
-function pcCompute(i){
+function pcCompute(i, appliedShare){
   const totalCapital=i.partner+i.perkasa;
   const partnerPct=i.base>0?i.partner/i.base*100:0;
   const perkasaPct=i.base>0?i.perkasa/i.base*100:0;
   const directCosts=i.repair+i.transport+i.doc+i.mkt;
   const totalCostBasis=i.base+directCosts;
   const netProfit=i.sell-totalCostBasis;
-  const share=pcLookupShare(i.type,partnerPct,i.hold);
+  // Historical deals pass the share % stamped when funded (policy integrity);
+  // otherwise look up the CURRENT policy.
+  const share = (appliedShare!=null)
+    ? {pct:Number(appliedShare), ...pcLookupShare(i.type,partnerPct,i.hold), pct2:undefined, applied:true, custom:false}
+    : pcLookupShare(i.type,partnerPct,i.hold);
+  if(appliedShare!=null) share.pct=Number(appliedShare);
   let partnerProfit=0, perkasaProfit=netProfit, loss=false, custom=false;
   if(netProfit<=0){ loss=true; partnerProfit=0; perkasaProfit=netProfit; }
   else if(share.custom){ custom=true; partnerProfit=null; perkasaProfit=null; }
@@ -4183,27 +4191,39 @@ function pcDealRow(){
 async function savePartnerDeal(){
   const c=calcPartnerDeal();
   if(c.base<=0){ showToast('❌ Base Price harus > 0.'); return; }
-  const row=pcDealRow(); const id=document.getElementById('pcEditId').value;
+  const status=document.getElementById('pcStatus').value;
+  const funded=PC_FUNDED_STATES.includes(status);
+  // Funded/active deals must be balanced and (except Loss) have a concrete share
+  if(funded){
+    if(Math.round(c.partner+c.perkasa)!==Math.round(c.base)){
+      showToast('❌ Deal '+status+' harus seimbang: Partner + Perkasa = Base Price.'); return; }
+    if(c.custom && status!=='Loss'){
+      showToast('❌ Deal '+status+' butuh tarif konkret (bukan Custom).'); return; }
+  }
+  const payload=pcDealRow();
+  payload.applied_partner_share_pct = (status==='Simulation') ? null
+    : (c.loss ? 0 : (c.custom ? null : c.share.pct));   // stamp policy at funding
+  const id=document.getElementById('pcEditId').value;
   try{
-    let error;
-    if(id){ ({error}=await db.from('partner_deals').update(row).eq('id',id)); }
-    else { ({error}=await db.from('partner_deals').insert(row)); }
+    const {data,error}=await db.rpc('pm_partner_deal_save',{p_pass:PC_PASS(),p_id:id?Number(id):null,p_payload:payload});
     if(error)throw error;
+    if(!data||!data.ok){ showToast('❌ '+((data&&data.error)||'Gagal menyimpan.')); return; }
     showToast('✅ Deal tersimpan.'); document.getElementById('pcEditId').value='';
     showSubTab('partner','prtab-deals');
-  }catch(e){
-    showToast('⚠ Penyimpanan deal belum aktif. Modul disimpan setelah admin mengaktifkan.');
-  }
+  }catch(e){ showToast('⚠ Penyimpanan deal belum aktif. Aktifkan modul lebih dulu.'); }
 }
 async function renderPartnerDeals(){
   await ensurePartnerPolicy();
   const kpi=document.getElementById('pcDealsKPI'), tb=document.getElementById('pcDealsTable');
   let data=null;
-  try{ const r=await db.from('partner_deals').select('*').order('id',{ascending:false}); if(r.error)throw r.error; data=r.data||[]; }
-  catch(e){ kpi.innerHTML=''; tb.innerHTML='<tr><td>'+moduleMsg('partner_deals','Partner Deals')+'</td></tr>'; return; }
+  try{ const {data:res,error}=await db.rpc('pm_partner_deals_list',{p_pass:PC_PASS()}); if(error)throw error;
+    if(!res||!res.ok)throw new Error((res&&res.error)||'x'); data=res.deals||[]; }
+  catch(e){ kpi.innerHTML=''; tb.innerHTML='<tr><td colspan="12">'+moduleMsg('partner_deals','Partner Deals')+'</td></tr>'; return; }
+  PC_DEALS_CACHE=data;
   const comp=data.map(d=>pcCompute({type:d.vehicle_type,unit:d.unit_name,base:+d.base_price,sell:+d.selling_price,
     partner:+d.partner_capital,perkasa:+d.perkasa_capital,repair:+d.repair_cost,transport:+d.transport_cost,
-    doc:+d.doc_cost,mkt:+d.marketing_cost,hold:+d.holding_days,status:d.status,id:d.id}));
+    doc:+d.doc_cost,mkt:+d.marketing_cost,hold:+d.holding_days,status:d.status,id:d.id},
+    d.applied_partner_share_pct!=null?Number(d.applied_partner_share_pct):null));
   const sumPP=comp.reduce((a,c)=>a+(c.partnerProfit||0),0), sumPK=comp.reduce((a,c)=>a+(c.perkasaProfit||0),0);
   kpi.innerHTML=[kcard('Total Deals',String(data.length),'tersimpan','k-blue'),
     kcard('Total Partner Profit',fmtRp(sumPP),'estimasi','k-amber'),
@@ -4223,8 +4243,8 @@ async function renderPartnerDeals(){
     </tr>`).join('')||`<tr><td colspan="12" style="padding:18px;text-align:center;color:var(--text3)">Belum ada deal tersimpan. Buat di Deal Simulator lalu “Simpan Deal”.</td></tr>`)+'</tbody>';
 }
 async function editPartnerDeal(id){
-  try{ const {data}=await db.from('partner_deals').select('*').eq('id',id).single();
-    if(!data)return;
+  try{ const data=PC_DEALS_CACHE.find(d=>Number(d.id)===Number(id));
+    if(!data){ showToast('❌ Deal tidak ditemukan.'); return; }
     const s=(k,v)=>document.getElementById(k).value=v;
     document.getElementById('pcType').value=data.vehicle_type;
     s('pcUnit',data.unit_name);s('pcBase',data.base_price);s('pcSell',data.selling_price);
@@ -4236,7 +4256,8 @@ async function editPartnerDeal(id){
 }
 async function deletePartnerDeal(id){
   if(!confirm('Hapus deal ini?'))return;
-  try{ const {error}=await db.from('partner_deals').delete().eq('id',id); if(error)throw error;
+  try{ const {data,error}=await db.rpc('pm_partner_deal_delete',{p_pass:PC_PASS(),p_id:Number(id)}); if(error)throw error;
+    if(!data||!data.ok){ showToast('❌ '+((data&&data.error)||'Gagal.')); return; }
     showToast('🗑 Deal dihapus.'); renderPartnerDeals();
   }catch(e){ showToast('❌ Gagal menghapus.'); }
 }
