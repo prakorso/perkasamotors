@@ -728,6 +728,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div id="sec-unit" class="section">
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
           <button class="btn-sm role-internal" onclick="openCostLedger()" style="padding:10px 16px;font-size:14px;font-weight:600">🧾 Cost Ledger</button>
+          <button class="btn-sm role-internal" onclick="openFunding()" style="padding:10px 16px;font-size:14px;font-weight:600">◆ Funding</button>
           <button class="btn-sm role-internal" onclick="bukaInputBaru()" style="padding:10px 18px;font-size:14px;font-weight:600">+ Input Unit Baru</button>
         </div>
         <div class="filter-bar">
@@ -1535,7 +1536,8 @@ function transformUnit(r){
     pctPanji:pctP.toFixed(2), pctPandu:pctD.toFixed(2),
     totalModal, totalFee, keuntunganBersih:bersih,
     kasBisnis, bagiPanji:bagiP, bagiPandu:bagiD,
-    modalPartner, modalPanji:modalP, modalPandu:modalD, partners
+    modalPartner, modalPanji:modalP, modalPandu:modalD, partners,
+    fundingModel:r.funding_model||'legacy'
   };
 }
 
@@ -4386,6 +4388,120 @@ async function delCostEntry(id){
   try{ const {error}=await db.from('unit_cost_entries').delete().eq('id',id); if(error)throw error;
     showToast('🗑 Biaya dihapus.'); loadCostEntries();
   }catch(e){ showToast('❌ Gagal menghapus.'); }
+}
+
+// ═══════════════════ D4 · UNIT FUNDING (Phase 1) ═══════════════════
+// Perkasa-model units only (legacy excluded). Base Unit Cost + Funding Gap +
+// Status are DB-derived (v_unit_funding). Funding % is kept separate from
+// Profit Share % (agreement stored in a different table via a gated RPC).
+let UF_UNIT=null;
+function openFunding(unitId){
+  const perkasa=(units||[]).filter(u=>u.fundingModel==='perkasa').sort((a,b)=>String(a.nama||'').localeCompare(String(b.nama||'')));
+  const ov=document.createElement('div'); ov.id='ufOverlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,20,30,.55);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow:auto';
+  const opts=perkasa.map(u=>`<option value="${u.id}"${String(u.id)===String(unitId)?' selected':''}>${esc(u.nama)}${u.status==='terjual'?' (terjual)':''}</option>`).join('');
+  ov.innerHTML=`<div style="background:var(--surface);border-radius:16px;max-width:660px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Unit Funding · Perkasa Model</div>
+      <button class="btn-sm" onclick="document.getElementById('ufOverlay').remove()">✕</button></div>
+    <div style="font-size:11.5px;color:var(--text3);margin-bottom:12px">Hanya unit model <b>Perkasa</b>. Unit legacy tidak muncul di sini.</div>
+    ${perkasa.length?`<div class="fg" style="margin:0 0 12px"><label>Unit</label><select id="ufUnit" onchange="loadFunding()">${opts}</select></div>`
+      :`<div style="padding:14px;background:var(--bg);border-radius:10px;margin-bottom:12px;font-size:13px;color:var(--text2)">Belum ada unit model Perkasa. Buat unit baru (model Perkasa) di fase berikutnya, atau tandai unit sebagai Perkasa lewat Cost Ledger.</div>
+       <div class="fg" style="margin:0 0 10px"><label>Buat Unit Perkasa cepat</label>
+         <div style="display:flex;gap:8px"><input id="ufNewNama" placeholder="Nama unit" style="flex:2;padding:9px 11px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text)">
+         <select id="ufNewJenis" style="flex:1;padding:9px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text)"><option>Mobil</option><option>Motor</option></select>
+         <button class="btn-sm" onclick="createPerkasaUnit()">+ Buat</button></div></div>`}
+    <div id="ufBody"></div>
+  </div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov)ov.remove(); });
+  document.body.appendChild(ov);
+  if(perkasa.length) loadFunding();
+}
+async function createPerkasaUnit(){
+  const nama=(document.getElementById('ufNewNama')||{}).value?.trim();
+  if(!nama){ showToast('❌ Nama unit wajib.'); return; }
+  const jenis=document.getElementById('ufNewJenis').value;
+  try{ const {error}=await db.from('units').insert({nama,jenis,status:'aktif',tgl:new Date().toISOString().slice(0,10),funding_model:'perkasa'});
+    if(error)throw error; showToast('✅ Unit Perkasa dibuat.'); await loadUnits(); document.getElementById('ufOverlay').remove(); openFunding();
+  }catch(e){ showToast('⚠ Gagal (kolom funding_model belum ada?).'); }
+}
+async function loadFunding(){
+  const sel=document.getElementById('ufUnit'); if(!sel)return; UF_UNIT=sel.value;
+  const body=document.getElementById('ufBody');
+  let vf=null, entries=null, agr=null;
+  try{
+    const r=await db.from('v_unit_funding').select('*').eq('unit_id',UF_UNIT).single(); if(r.error)throw r.error; vf=r.data;
+    const e=await db.from('unit_funding').select('*').eq('unit_id',UF_UNIT).order('funded_date'); entries=e.data||[];
+    const a=await db.from('unit_partner_agreement').select('*').eq('unit_id',UF_UNIT); agr=(a.data&&a.data[0])||null;
+  }catch(err){ FIN_STATUS['unit_funding']=/schema cache|does not exist|find the table|pgrst205|42p01|relation/.test(((err.message||'')+' '+(err.code||'')).toLowerCase())?'missing':'apifail';
+    body.innerHTML=moduleMsg('unit_funding','Unit Funding'); return; }
+  const stColor={funded:'#178A5A',under:'#C07A0E',over:'#D33A2C',unfunded:'#7A5C9E'}[vf.funding_status]||'var(--text2)';
+  const hasPartner=entries.some(e=>e.source==='partner');
+  body.innerHTML=`
+    <div class="ih-grid" style="margin-bottom:12px">
+      ${kcard('Base Unit Cost',fmtRp(vf.base_unit_cost),'DB-derived (v_unit_cost) ✓','k-blue')}
+      ${kcard('Total Funding',fmtRp(vf.total_funding),`Perkasa ${fmtRp(vf.perkasa_funding)} · Partner ${fmtRp(vf.partner_funding)}`,'k-teal')}
+      ${kcard('Funding Gap',fmtRp(vf.funding_gap),vf.funding_status,'k-'+(vf.funding_status==='funded'?'green':vf.funding_status==='over'?'red':'amber'))}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.3fr .9fr auto;gap:8px;align-items:end">
+      <div class="fg" style="margin:0"><label>Sumber</label><select id="ufSrc" onchange="document.getElementById('ufPnameWrap').style.display=this.value==='partner'?'block':'none'"><option value="perkasa">Perkasa</option><option value="partner">Partner</option></select></div>
+      <div class="fg" style="margin:0" id="ufPnameWrap" ><label>Nama Partner</label><input id="ufPname" placeholder="mis. Reivan"></div>
+      <div class="fg" style="margin:0"><label>Nominal</label><input id="ufAmt" type="number" placeholder="0"></div>
+      <button class="confirm" onclick="addFunding()">+ Dana</button>
+    </div>
+    <div id="ufPnameHide"></div>
+    <div class="table-scroll" style="margin-top:8px"><table class="track-table" id="ufTable"></table></div>
+    <div id="ufAgreement" style="margin-top:14px">${hasPartner?agreementHtml(agr):'<div style="font-size:11.5px;color:var(--text3)">Partner Agreement muncul saat ada Partner funding. Funding % ≠ Profit Share %.</div>'}</div>`;
+  document.getElementById('ufPnameWrap').style.display='none';
+  document.getElementById('ufTable').innerHTML=`<thead><tr><th>Tanggal</th><th>Sumber</th><th>Partner</th><th class="num">Nominal</th><th></th></tr></thead><tbody>`+
+    (entries.map(e=>`<tr><td>${esc(e.funded_date)}</td><td>${e.source==='partner'?'Partner':'Perkasa'}</td><td>${esc(e.partner_name||'—')}</td>
+      <td class="num">${fmtRp(e.amount)}</td><td><button class="btn-sm" onclick="delFunding(${e.id})">🗑</button></td></tr>`).join('')
+      ||`<tr><td colspan="5" style="padding:14px;text-align:center;color:var(--text3)">Belum ada funding.</td></tr>`)+'</tbody>';
+}
+function agreementHtml(a){
+  return `<div class="card" style="margin:0"><div class="card-hdr"><div class="card-title" style="font-size:13px">Partner Agreement (Profit Share ≠ Funding)</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end">
+      <div class="fg" style="margin:0"><label>Nama Partner</label><input id="agrName" value="${a?esc(a.partner_name):''}" placeholder="Reivan"></div>
+      <div class="fg" style="margin:0"><label>Tipe</label><select id="agrType" onchange="agrTypeChange()">
+        <option value="profit_share_pct"${a&&a.agreement_type==='profit_share_pct'?' selected':''}>Profit Share %</option>
+        <option value="fee_pct_capital"${a&&a.agreement_type==='fee_pct_capital'?' selected':''}>Fee % Capital</option>
+        <option value="fixed_fee"${a&&a.agreement_type==='fixed_fee'?' selected':''}>Fixed Fee</option></select></div>
+      <div class="fg" style="margin:0" id="agrValWrap"><label id="agrValLbl">Nilai</label><input id="agrVal" type="number" value="${a?(a.profit_share_pct??a.fee_pct??a.fixed_fee??''):''}"></div>
+      <div class="fg" style="margin:0"><label>Loss Exposure % (opsional)</label><input id="agrLoss" type="number" value="${a&&a.loss_exposure_pct!=null?a.loss_exposure_pct:''}" placeholder="kosong = default funding %"></div>
+      <button class="confirm" onclick="saveAgreement()" style="align-self:end">💾 Simpan Agreement</button>
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin:8px 0 0">Persentase funding <b>tidak</b> otomatis menjadi profit share. Loss exposure default = funding exposure (D5).</p></div>`;
+}
+function agrTypeChange(){ const t=document.getElementById('agrType').value;
+  document.getElementById('agrValLbl').textContent=t==='fixed_fee'?'Fee (Rp)':t==='fee_pct_capital'?'Fee % modal':'Profit Share %'; }
+async function addFunding(){
+  if(!UF_UNIT){ showToast('❌ Pilih unit.'); return; }
+  const src=document.getElementById('ufSrc').value, amt=Number(document.getElementById('ufAmt').value)||0;
+  const pname=document.getElementById('ufPname').value.trim();
+  if(amt<0){ showToast('❌ Nominal tidak boleh negatif.'); return; }
+  if(src==='partner'&&!pname){ showToast('❌ Nama partner wajib untuk funding partner.'); return; }
+  const row={ unit_id:Number(UF_UNIT), source:src, amount:amt, funded_date:new Date().toISOString().slice(0,10) };
+  if(src==='partner') row.partner_name=pname;
+  try{ const {error}=await db.from('unit_funding').insert(row); if(error)throw error;
+    showToast('✅ Funding ditambahkan.'); document.getElementById('ufAmt').value=''; document.getElementById('ufPname').value=''; loadFunding();
+  }catch(e){ showToast('⚠ Funding belum aktif di database.'); }
+}
+async function delFunding(id){
+  if(!confirm('Hapus funding ini?'))return;
+  try{ const {error}=await db.from('unit_funding').delete().eq('id',id); if(error)throw error;
+    showToast('🗑 Funding dihapus.'); loadFunding();
+  }catch(e){ showToast('❌ Gagal.'); }
+}
+async function saveAgreement(){
+  const type=document.getElementById('agrType').value, val=document.getElementById('agrVal').value;
+  const payload={ partner_name:document.getElementById('agrName').value.trim(), agreement_type:type,
+    loss_exposure_pct:document.getElementById('agrLoss').value||null };
+  if(type==='fixed_fee')payload.fixed_fee=val; else if(type==='fee_pct_capital')payload.fee_pct=val; else payload.profit_share_pct=val;
+  if(!payload.partner_name){ showToast('❌ Nama partner wajib.'); return; }
+  try{ const {data,error}=await db.rpc('pm_partner_agreement_save',{p_pass:(typeof PC_PASS==='function'?PC_PASS():(adminPassCache||'__internal__')),p_unit_id:Number(UF_UNIT),p_payload:payload});
+    if(error)throw error; if(!data||!data.ok){ showToast('❌ '+((data&&data.error)||'Gagal.')); return; }
+    showToast('✅ Agreement tersimpan.'); loadFunding();
+  }catch(e){ showToast('⚠ Agreement belum aktif di database.'); }
 }
 
 async function renderCashflow(){
