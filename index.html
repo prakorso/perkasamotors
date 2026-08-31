@@ -4144,6 +4144,7 @@ function calcPartnerDeal(){
     kcard('Total Cost Basis',fmtRp(c.totalCostBasis),`biaya langsung ${fmtRp(c.directCosts)}`,'k-purple'),
     kcard('Net Profit',fmtRp(c.netProfit),c.loss?'RUGI':'setelah biaya langsung',c.netProfit>=0?'k-green':'k-red'),
     kcard('Partner Profit',val(c.partnerProfit),'bagian partner','k-amber'),
+    kcard('Effective Partner Gain',(c.partnerProfit!=null&&c.partner>0)?(c.partnerProfit/c.partner*100).toFixed(1)+'%':'—','informational only — bukan share','k-blue'),
     kcard('Perkasa Profit',val(c.perkasaProfit),'bagian Perkasa','k-purple'),
     kcard('Modal Dikembalikan',fmtRp(c.partner)+' / '+fmtRp(c.perkasa),'Partner / Perkasa','k-teal'),
     kcard('Partner Settlement',val(c.custom?null:c.partnerSettlement),'Modal + Profit','k-green'),
@@ -4220,27 +4221,31 @@ async function renderPartnerDeals(){
     if(!res||!res.ok)throw new Error((res&&res.error)||'x'); data=res.deals||[]; }
   catch(e){ kpi.innerHTML=''; tb.innerHTML='<tr><td colspan="12">'+moduleMsg('partner_deals','Partner Deals')+'</td></tr>'; return; }
   PC_DEALS_CACHE=data;
-  const comp=data.map(d=>pcCompute({type:d.vehicle_type,unit:d.unit_name,base:+d.base_price,sell:+d.selling_price,
+  const comp=data.map(d=>{ const c=pcCompute({type:d.vehicle_type,unit:d.unit_name,base:+d.base_price,sell:+d.selling_price,
     partner:+d.partner_capital,perkasa:+d.perkasa_capital,repair:+d.repair_cost,transport:+d.transport_cost,
     doc:+d.doc_cost,mkt:+d.marketing_cost,hold:+d.holding_days,status:d.status,id:d.id},
-    d.applied_partner_share_pct!=null?Number(d.applied_partner_share_pct):null));
+    d.applied_partner_share_pct!=null?Number(d.applied_partner_share_pct):null);
+    c._stamped=(d.applied_partner_share_pct!=null); return c; });
   const sumPP=comp.reduce((a,c)=>a+(c.partnerProfit||0),0), sumPK=comp.reduce((a,c)=>a+(c.perkasaProfit||0),0);
   kpi.innerHTML=[kcard('Total Deals',String(data.length),'tersimpan','k-blue'),
     kcard('Total Partner Profit',fmtRp(sumPP),'estimasi','k-amber'),
     kcard('Total Perkasa Profit',fmtRp(sumPK),'estimasi','k-purple')].join('');
   const stColor=s=>({Sold:'#178A5A',Settled:'#178A5A',Loss:'#D33A2C','Settlement Pending':'#C07A0E',Funded:'#2563C9','In Inventory':'#4A7C7C',Simulation:'#7A5C9E'}[s]||'var(--text2)');
-  tb.innerHTML=`<thead><tr><th>Deal / Unit</th><th>Jenis</th><th class="num">Base</th><th class="num">Partner (%)</th><th class="num">Perkasa</th><th class="num">Hari</th><th class="num">Share</th><th class="num">Net Profit</th><th class="num">Partner Profit</th><th class="num">Perkasa Profit</th><th>Status</th><th></th></tr></thead><tbody>`+
-    (comp.map(c=>`<tr>
+  const effGain=c=>(c.partnerProfit!=null && c.partner>0)?(c.partnerProfit/c.partner*100):null;
+  tb.innerHTML=`<thead><tr><th>Deal / Unit</th><th>Jenis</th><th class="num">Base</th><th class="num">Partner (%)</th><th class="num">Perkasa</th><th class="num">Hari</th><th class="num">Applied Share</th><th class="num">Net Profit</th><th class="num">Partner Profit</th><th class="num" title="Informational only — Partner Profit / Partner Capital">Eff. Gain*</th><th class="num">Perkasa Profit</th><th>Status</th><th></th></tr></thead><tbody>`+
+    (comp.map(c=>{ const eg=effGain(c); return `<tr>
       <td>${esc(c.unit)}</td><td>${c.type}</td><td class="num">${fmtRp(c.base)}</td>
       <td class="num">${fmtRp(c.partner)}<br><span style="color:var(--text3);font-size:11px">${c.partnerPct.toFixed(1)}%</span></td>
       <td class="num">${fmtRp(c.perkasa)}</td><td class="num">${c.hold}</td>
-      <td class="num">${c.loss?'0%':c.custom?'Custom':c.share.pct+'%'}</td>
+      <td class="num">${c.loss?'0%':c.custom?'Custom':c.share.pct+'%'}${c._stamped?'<br><span style="color:var(--text3);font-size:10px">stamped</span>':''}</td>
       <td class="num ${c.netProfit>=0?'':'neg'}" style="${c.netProfit<0?'color:var(--red)':''}">${fmtRp(c.netProfit)}</td>
       <td class="num">${c.partnerProfit==null?'—':fmtRp(c.partnerProfit)}</td>
+      <td class="num" style="color:var(--text3)">${eg==null?'—':eg.toFixed(1)+'%'}</td>
       <td class="num">${c.perkasaProfit==null?'—':fmtRp(c.perkasaProfit)}</td>
       <td><span style="background:${stColor(c.status)}18;color:${stColor(c.status)};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">${esc(c.status)}</span></td>
       <td style="white-space:nowrap"><button class="btn-sm" onclick="editPartnerDeal(${c.id})">Buka</button> <button class="btn-sm" onclick="deletePartnerDeal(${c.id})">🗑</button></td>
-    </tr>`).join('')||`<tr><td colspan="12" style="padding:18px;text-align:center;color:var(--text3)">Belum ada deal tersimpan. Buat di Deal Simulator lalu “Simpan Deal”.</td></tr>`)+'</tbody>';
+    </tr>`;}).join('')||`<tr><td colspan="13" style="padding:18px;text-align:center;color:var(--text3)">Belum ada deal tersimpan. Buat di Deal Simulator lalu “Simpan Deal”.</td></tr>`)+'</tbody>'
+    +`<tfoot><tr><td colspan="13" style="padding:8px 12px;color:var(--text3);font-size:11px">*Eff. Gain = Partner Profit / Partner Capital — informational only, bukan penentu Partner Profit Share. Historical deals memakai Applied Share yang di-stamp saat funding.</td></tr></tfoot>`;
 }
 async function editPartnerDeal(id){
   try{ const data=PC_DEALS_CACHE.find(d=>Number(d.id)===Number(id));
@@ -4262,31 +4267,46 @@ async function deletePartnerDeal(id){
   }catch(e){ showToast('❌ Gagal menghapus.'); }
 }
 
-// ── PARTNER VIEW (presentation mode; no internal Perkasa financials) ──
+// ── PARTNER VIEW (presentation mode; ONLY partner-relevant fields — no internal
+//    Perkasa reserve/liabilities/other deals/company financials are shown) ──
 function openPartnerView(){
   const c=pcCompute(pcInputs());
   const val=v=>v==null?'—':fmtRp(v);
   const share=c.loss?'0%':c.custom?'Custom':c.share.pct+'%';
-  const row=(l,v,strong)=>`<div style="display:flex;justify-content:space-between;padding:10px 2px;border-bottom:1px solid var(--border);${strong?'font-weight:700;font-size:15px':''}"><span style="color:${strong?'var(--text)':'var(--text2)'}">${l}</span><span style="font-family:monospace">${v}</span></div>`;
+  // Settlement-waterfall line
+  const line=(l,v,o={})=>`<div style="display:flex;justify-content:space-between;padding:${o.tight?'6px':'9px'} 2px;${o.border?'border-bottom:1px solid var(--border);':''}${o.strong?'font-weight:700;font-size:15px;':''}${o.rule?'border-top:2px solid var(--text3);margin-top:4px;padding-top:9px;':''}">
+    <span style="color:${o.strong?'var(--text)':'var(--text2)'}">${l}</span>
+    <span style="font-family:monospace;color:${o.neg?'var(--red)':o.strong?'var(--green)':'var(--text)'}">${o.neg?'− ':''}${v}</span></div>`;
   const ov=document.createElement('div');
   ov.id='pcOverlay';
   ov.style.cssText='position:fixed;inset:0;background:rgba(15,20,30,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-  ov.innerHTML=`<div style="background:var(--surface);border-radius:16px;max-width:460px;width:100%;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:90vh;overflow:auto">
+  ov.innerHTML=`<div style="background:var(--surface);border-radius:16px;max-width:480px;width:100%;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:90vh;overflow:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Simulasi Kolaborasi Partner</div>
+      <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Partner Settlement</div>
       <button class="btn-sm" onclick="document.getElementById('pcOverlay').remove()">✕</button></div>
     <h2 style="margin:0 0 2px;font-size:20px">${esc(c.unit||'Unit')}</h2>
-    <div style="color:var(--text3);font-size:13px;margin-bottom:14px">${c.type} · ${c.hold} hari</div>
-    ${row('Base Price',fmtRp(c.base))}
-    ${row('Modal Partner',fmtRp(c.partner))}
-    ${row('Porsi Modal Partner',c.partnerPct.toFixed(1)+'%')}
-    ${row('Holding Period',c.hold+' hari')}
-    ${row('Partner Profit Share',share)}
-    ${row('Estimasi Net Profit',fmtRp(c.netProfit))}
-    ${row('Modal Dikembalikan',fmtRp(c.partner))}
-    ${row('Partner Profit',val(c.partnerProfit))}
-    ${row('Total Settlement ke Partner',val(c.custom?null:c.partnerSettlement),true)}
-    <p style="font-size:11px;color:var(--text3);margin:14px 0 0">Partner Profit Share adalah bagian dari Net Profit — bukan bunga atau return atas modal. Modal dikembalikan terpisah sebelum profit dibagi.</p>
+    <div style="color:var(--text3);font-size:13px;margin-bottom:14px">${c.type} · Holding ${c.hold} hari · Porsi Modal ${c.partnerPct.toFixed(1)}%</div>
+
+    ${line('Selling Price',fmtRp(c.sell),{border:true})}
+    ${line('Acquisition Cost + Direct Costs',fmtRp(c.base+c.directCosts),{neg:true,border:true})}
+    ${line('NET PROFIT',fmtRp(c.netProfit),{rule:true,strong:true})}
+
+    <div style="height:8px"></div>
+    ${line('Original Partner Capital Returned',fmtRp(c.partner),{border:true})}
+    ${line('Partner Profit Share',share,{border:true})}
+    ${line('Partner Profit',val(c.partnerProfit),{border:true})}
+    ${line('TOTAL PARTNER SETTLEMENT',val(c.custom?null:c.partnerSettlement),{rule:true,strong:true})}
+
+    <div style="height:10px"></div>
+    ${line('Perkasa Profit',val(c.perkasaProfit),{tight:true})}
+
+    <div style="background:var(--bg);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:11.5px;color:var(--text2);line-height:1.6">
+      <b>Modal dikembalikan terlebih dahulu.</b> Profit kemudian dihitung setelah seluruh biaya langsung dan dibagikan sesuai Partner Profit Share.<br>
+      • Capital Returned <b>bukan</b> profit.<br>
+      • Partner Profit = Net Profit × Partner Profit Share.<br>
+      • Partner Profit Share adalah bagian dari <b>Net Profit</b> — bukan bunga/return atas modal.<br>
+      • Partner <b>tidak</b> memperoleh kepemilikan/ekuitas dari perhitungan ini.
+    </div>
   </div>`;
   ov.addEventListener('click',e=>{ if(e.target===ov)ov.remove(); });
   document.body.appendChild(ov);
