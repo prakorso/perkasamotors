@@ -461,14 +461,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <p id="sbTagline">Jual Beli Otomotif</p>
     </div>
     <nav class="sb-nav">
-      <button class="nav-btn active role-investor" data-nav="investor" onclick="showSection('investor')"><span class="ni">◆</span><span>Portofolio Saya</span></button>
-      <button class="nav-btn role-investor" data-nav="investor-track" onclick="showSection('investor-track')"><span class="ni">★</span><span>Rekam Jejak</span></button>
       <button class="nav-btn active role-internal" data-nav="home" onclick="showSection('home')"><span class="ni">⌂</span><span>Ringkasan</span></button>
       <button class="nav-btn role-internal" data-nav="unit" onclick="showSection('unit')"><span class="ni">≡</span><span>Unit</span></button>
-      <button class="nav-btn role-internal" data-nav="keuangan" onclick="showSection('keuangan')"><span class="ni">💰</span><span>Uang</span></button>
-      <button class="nav-btn role-internal" data-nav="funding" onclick="showSection('funding')"><span class="ni">◆</span><span>Modal &amp; Investor</span></button>
-      <button class="nav-btn role-internal" data-nav="partner" onclick="showSection('partner')"><span class="ni">🤝</span><span>Partner Collaboration</span></button>
-      <button class="nav-btn role-internal" data-nav="analitik" onclick="showSection('analitik')"><span class="ni">📊</span><span>Reports</span></button>
+      <button class="nav-btn role-internal" data-nav="keuangan" onclick="showSection('keuangan')"><span class="ni">◇</span><span>Keuangan</span></button>
+      <button class="nav-btn role-internal" data-nav="funding" onclick="showSection('funding')"><span class="ni">◆</span><span>Modal</span></button>
+      <button class="nav-btn role-internal" data-nav="analitik" onclick="showSection('analitik')"><span class="ni">▦</span><span>Reports</span></button>
       <button class="nav-btn role-internal" data-nav="pengaturan" onclick="showSection('pengaturan')"><span class="ni">⚙</span><span>Pengaturan</span></button>
     </nav>
     <div class="sb-foot">
@@ -524,7 +521,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
 
         <div class="card" id="alertCard">
-          <div class="card-hdr"><div class="card-title">⚠ Alert Center</div></div>
+          <div class="card-hdr"><div class="card-title">Alert Center</div></div>
           <div class="alert-stack" id="alertStack"></div>
         </div>
 
@@ -580,9 +577,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="card no-print">
           <div class="card-hdr"><div class="card-title">Quick Action</div></div>
           <div class="qa-grid">
-            <button class="qa-btn role-internal" onclick="bukaInputBaru()"><span class="qa-ic">＋</span>Tambah Unit</button>
-            <button class="qa-btn role-internal" onclick="showSection('funding')"><span class="qa-ic">◆</span>Tambah Funding</button>
-            <button class="qa-btn role-internal" onclick="showSection('funding')"><span class="qa-ic">💸</span>Catat Pembayaran</button>
+            <button class="qa-btn role-internal" onclick="openFunding()"><span class="qa-ic">＋</span>Tambah Unit</button>
+            <button class="qa-btn role-internal" onclick="showSection('funding')"><span class="qa-ic">◆</span>Modal</button>
+            <button class="qa-btn role-internal" onclick="showSection('keuangan')"><span class="qa-ic">◇</span>Keuangan</button>
             <button class="qa-btn" onclick="showSection('analitik');setTimeout(exportInsightPDF,300)"><span class="qa-ic">⬇</span>Export Report</button>
           </div>
         </div>
@@ -649,7 +646,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
       <div id="sec-input" class="section role-internal">
         <div class="edit-banner" id="editBanner">
-          <span>✏️ Sedang mengedit unit: <strong id="editUnitName"></strong></span>
+          <span>Sedang mengedit unit: <strong id="editUnitName"></strong></span>
           <button onclick="cancelEdit()">Batal edit</button>
         </div>
         <div class="card">
@@ -729,15 +726,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="pv-row" id="pvUR" style="display:none"><span>Profit Bersih (dibagi)</span><span id="pvU">Rp0</span></div>
           <div class="pv-row" id="pvBR" style="display:none"><span>Bagi Panji / Pandu</span><span id="pvB">—</span></div>
         </div>
-        <button class="btn-primary" id="saveBtn" onclick="simpanUnit()">💾 Simpan Unit</button>
+        <button class="btn-primary" id="saveBtn" onclick="simpanUnit()">Simpan Unit</button>
       </div>
 
       <div id="sec-unit" class="section">
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
-          <button class="btn-sm role-internal" onclick="openCostLedger()" style="padding:10px 16px;font-size:14px;font-weight:600">🧾 Cost Ledger</button>
-          <button class="btn-sm role-internal" onclick="openFunding()" style="padding:10px 16px;font-size:14px;font-weight:600">◆ Funding</button>
-          <button class="btn-sm role-internal" onclick="openSettle()" style="padding:10px 16px;font-size:14px;font-weight:600">◧ Settle</button>
-          <button class="btn-sm role-internal" onclick="bukaInputBaru()" style="padding:10px 18px;font-size:14px;font-weight:600">+ Input Unit Baru</button>
+          <button class="btn-sm role-internal" onclick="openCostLedger()" style="padding:10px 16px;font-size:14px;font-weight:600">Cost Ledger</button>
+          <button class="btn-sm role-internal" onclick="openSettle()" style="padding:10px 16px;font-size:14px;font-weight:600">Settle</button>
+          <button class="btn-sm role-internal" id="btnLegacyInput" onclick="bukaInputBaru()" style="display:none;padding:10px 16px;font-size:13px;font-weight:600;opacity:.85">+ Input Unit Legacy</button>
+          <button class="btn-primary role-internal" onclick="openFunding()" style="padding:10px 18px;font-size:14px;font-weight:600">+ Tambah Unit</button>
         </div>
         <div class="filter-bar">
           <span class="filter-label">Filter:</span>
@@ -762,8 +759,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <!-- ═══════════ FUNDING LEDGER ═══════════ -->
       <div id="sec-funding" class="section">
   <div class="sub-tab-bar">
-    <button class="stab active" data-st="ftab-ledger" onclick="showSubTab('funding','ftab-ledger')">💰 Funding Ledger</button>
-    <button class="stab" data-st="ftab-dataroom" onclick="showSubTab('funding','ftab-dataroom')">📋 Data Room</button>
+    <button class="stab active" data-st="ftab-ledger" onclick="showSubTab('funding','ftab-ledger')">Funding Ledger</button>
+    <button class="stab" data-st="ftab-dataroom" onclick="showSubTab('funding','ftab-dataroom')">Data Room</button>
   </div>
   <div id="ftab-ledger" class="stab-panel active">
         <div id="capitalOverview"></div>
@@ -806,7 +803,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
 
         <div class="card">
-          <div class="card-hdr"><div class="card-title">🧮 Simulasi Imbal Hasil</div></div>
+          <div class="card-hdr"><div class="card-title">Simulasi Imbal Hasil</div></div>
           <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Estimasi berbasis ROI rata-rata historis per siklus jual. Bukan jaminan — hasil aktual bergantung performa unit.</p>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
             <div class="fg" style="flex:1;min-width:160px;margin-bottom:0">
@@ -846,8 +843,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <!-- ═══════════ ANALITIK ═══════════ -->
       <div id="sec-analitik" class="section role-internal">
   <div class="sub-tab-bar">
-    <button class="stab active" data-st="atab-kinerja" onclick="showSubTab('analitik','atab-kinerja')">📊 Kinerja</button>
-    <button class="stab" data-st="atab-inventori-partner" onclick="showSubTab('analitik','atab-inventori-partner')">📦 Detail (Inventori &amp; Partner)</button>
+    <button class="stab active" data-st="atab-kinerja" onclick="showSubTab('analitik','atab-kinerja')">Kinerja</button>
+    <button class="stab" data-st="atab-inventori-partner" onclick="showSubTab('analitik','atab-inventori-partner')">Detail (Inventori &amp; Partner)</button>
   </div>
   <div id="atab-kinerja" class="stab-panel active">
         <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
@@ -991,12 +988,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <!-- ═══════════ KEUANGAN ═══════════ -->
       <div id="sec-keuangan" class="section role-internal">
   <div class="sub-tab-bar">
-    <button class="stab active" data-st="ktab-kas" onclick="showSubTab('keuangan','ktab-kas')">🏦 Kas Bisnis</button>
-    <button class="stab" data-st="ktab-inventori" onclick="showSubTab('keuangan','ktab-inventori')">📦 Inventori Aset</button>
-    <button class="stab" data-st="ktab-utang" onclick="showSubTab('keuangan','ktab-utang')">🏛️ Utang</button>
-    <button class="stab" data-st="ktab-payroll" onclick="showSubTab('keuangan','ktab-payroll')">👥 Payroll</button>
-    <button class="stab" data-st="ktab-cashflow" onclick="showSubTab('keuangan','ktab-cashflow')">📈 Cashflow</button>
-    <button class="stab" data-st="ktab-laporan" onclick="showSubTab('keuangan','ktab-laporan')">📄 Laporan</button>
+    <button class="stab active" data-st="ktab-kas" onclick="showSubTab('keuangan','ktab-kas')">Kas Bisnis</button>
+    <button class="stab" data-st="ktab-inventori" onclick="showSubTab('keuangan','ktab-inventori')">Inventori Aset</button>
+    <button class="stab" data-st="ktab-utang" onclick="showSubTab('keuangan','ktab-utang')">Utang</button>
+    <button class="stab" data-st="ktab-payroll" onclick="showSubTab('keuangan','ktab-payroll')">Payroll</button>
+    <button class="stab" data-st="ktab-cashflow" onclick="showSubTab('keuangan','ktab-cashflow')">Cashflow</button>
+    <button class="stab" data-st="ktab-laporan" onclick="showSubTab('keuangan','ktab-laporan')">Laporan</button>
   </div>
   <div id="ktab-utang" class="stab-panel">
         <div class="ih-grid" id="debtKPIGrid" style="margin-bottom:16px"></div>
@@ -1070,7 +1067,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
               <div class="fg" style="flex:2;min-width:160px;margin-bottom:0"><label>Unit</label><input type="text" id="kasEditNama" readonly></div>
               <div class="fg" style="flex:1;min-width:130px;margin-bottom:0"><label>Kas Bisnis (Rp)</label><input type="number" id="kasEditNom"></div>
-              <button class="btn-sm" style="height:40px" onclick="simpanKasEdit()">💾 Update</button>
+              <button class="btn-sm" style="height:40px" onclick="simpanKasEdit()">Update</button>
               <button class="btn-sm" style="height:40px" onclick="document.getElementById('kasEditForm').style.display='none'">Batal</button>
             </div>
           </div>
@@ -1090,7 +1087,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               <div class="fg" style="flex:2;min-width:160px;margin-bottom:0"><label>Keterangan</label><input type="text" id="kasKeluarKet" placeholder="mis. Beli kamera, operasional"></div>
               <div class="fg" style="flex:1;min-width:130px;margin-bottom:0"><label>Nominal (Rp)</label><input type="number" id="kasKeluarNom" placeholder="0"></div>
               <div class="fg" style="flex:1;min-width:120px;margin-bottom:0"><label>Tanggal</label><input type="date" id="kasKeluarTgl"></div>
-              <button class="btn-sm" style="height:40px" id="kasKeluarSaveBtn" onclick="simpanKasKeluar()">💾 Simpan</button>
+              <button class="btn-sm" style="height:40px" id="kasKeluarSaveBtn" onclick="simpanKasKeluar()">Simpan</button>
             </div>
           </div>
           <div id="kasKeluarList"></div>
@@ -1138,7 +1135,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               <input type="text" id="asetCatatan" placeholder="opsional">
             </div>
           </div>
-          <button class="btn-primary" style="margin-top:4px" onclick="tambahAset()">💾 Simpan Aset</button>
+          <button class="btn-primary" style="margin-top:4px" onclick="tambahAset()">Simpan Aset</button>
           </div>
           <div class="table-scroll">
             <table class="track-table" id="asetTable"></table>
@@ -1210,9 +1207,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <!-- ═══════════ PARTNER COLLABORATION ═══════════ -->
       <div id="sec-partner" class="section role-internal">
         <div class="sub-tab-bar">
-          <button class="stab" data-st="prtab-policy" onclick="showSubTab('partner','prtab-policy')">📋 Policy</button>
-          <button class="stab active" data-st="prtab-simulator" onclick="showSubTab('partner','prtab-simulator')">🧮 Deal Simulator</button>
-          <button class="stab" data-st="prtab-deals" onclick="showSubTab('partner','prtab-deals')">📑 Active Deals</button>
+          <button class="stab" data-st="prtab-policy" onclick="showSubTab('partner','prtab-policy')">Policy</button>
+          <button class="stab active" data-st="prtab-simulator" onclick="showSubTab('partner','prtab-simulator')">Deal Simulator</button>
+          <button class="stab" data-st="prtab-deals" onclick="showSubTab('partner','prtab-deals')">Active Deals</button>
         </div>
 
         <!-- POLICY -->
@@ -1224,7 +1221,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="card"><div class="card-hdr"><div class="card-title">Kebijakan Bagi Hasil — Motor</div></div>
             <div class="table-scroll"><table class="track-table" id="polTableMotor"></table></div></div>
           <p style="font-size:11.5px;color:var(--text3);margin-top:2px">Partner Profit Share dihitung dari Net Profit setelah pengembalian modal dan biaya transaksi. Ini bukan return atas modal. Sel <b>Custom</b> memerlukan kesepakatan khusus.</p>
-          <div id="polSaveBar" style="display:none;margin-top:10px"><button class="confirm" onclick="savePartnerPolicy()">💾 Simpan Tarif</button> <button class="btn-sm" onclick="togglePolicyEdit()">Batal</button></div>
+          <div id="polSaveBar" style="display:none;margin-top:10px"><button class="confirm" onclick="savePartnerPolicy()">Simpan Tarif</button> <button class="btn-sm" onclick="togglePolicyEdit()">Batal</button></div>
         </div>
 
         <!-- SIMULATOR -->
@@ -1250,9 +1247,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               </div>
               <div id="pcWarn" style="margin-top:6px"></div>
               <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-                <button class="confirm" onclick="savePartnerDeal()">💾 Simpan Deal</button>
+                <button class="confirm" onclick="savePartnerDeal()">Simpan Deal</button>
                 <button class="btn-sm" onclick="resetPartnerDeal()">↺ Reset Contoh</button>
-                <button class="btn-sm" onclick="openPartnerView()">👁 Partner View</button>
+                <button class="btn-sm" onclick="openPartnerView()">Partner View</button>
                 <input type="hidden" id="pcEditId">
               </div>
             </div>
@@ -1284,7 +1281,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div id="sec-pengaturan" class="section">
   <div class="sub-tab-bar">
     <button class="stab active" data-st="ptab-settings" onclick="showSubTab('pengaturan','ptab-settings')">⚙ Pengaturan</button>
-    <button class="stab" data-st="ptab-audit" onclick="showSubTab('pengaturan','ptab-audit')">📜 Audit Trail</button>
+    <button class="stab" data-st="ptab-audit" onclick="showSubTab('pengaturan','ptab-audit')">Audit Trail</button>
   </div>
   <div id="ptab-settings" class="stab-panel active">
         <div class="card">
@@ -1327,13 +1324,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <input type="color" id="setAccent" value="#2563C9" oninput="livePreview()" style="height:42px;padding:4px;cursor:pointer">
           </div>
 
-          <button class="btn-primary" onclick="saveSettings()">💾 Simpan Pengaturan</button>
+          <button class="btn-primary" onclick="saveSettings()">Simpan Pengaturan</button>
           <button class="btn-ghost" onclick="resetSettings()">↺ Kembalikan ke Default</button>
           <p style="font-size:12px;color:var(--text3);margin-top:14px;text-align:center">Pengaturan tampilan disimpan di browser ini. Perubahan langsung terlihat.</p>
         </div>
 
         <div class="card role-internal">
-          <div class="card-hdr"><div class="card-title">🔐 Manajemen Akses</div></div>
+          <div class="card-hdr"><div class="card-title">Manajemen Akses</div></div>
 
           <div id="adminLocked" style="display:none">
             <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Masukkan password admin untuk akses panel ini.</p>
@@ -1366,12 +1363,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               <input type="checkbox" id="admEmailEnabled" style="width:16px;height:16px;cursor:pointer">
               Kirim email saat unit ditandai <strong>terjual</strong>
             </label>
-            <button class="btn-primary" style="margin-top:0" onclick="saveAdminConfig()">💾 Simpan Pengaturan Admin</button>
-            <button class="btn-ghost" style="color:var(--amber)" onclick="fixKasBisnis()">🔧 Fix Data Lama (Kas Bisnis)</button>
+            <button class="btn-primary" style="margin-top:0" onclick="saveAdminConfig()">Simpan Pengaturan Admin</button>
+            <button class="btn-ghost" style="color:var(--amber)" onclick="fixKasBisnis()">Fix Data Lama (Kas Bisnis)</button>
             <button class="btn-ghost" onclick="lockAdmin()">Tutup Panel</button>
 
             <div style="border-top:1px solid var(--border);margin:20px 0 16px"></div>
-            <div class="card-title" style="margin-bottom:6px">👥 Akun Investor</div>
+            <div class="card-title" style="margin-bottom:6px">Akun Investor</div>
             <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Buat login untuk investor / partner sharing modal. Mereka hanya melihat portofolio investasinya sendiri — profit & margin bisnis disembunyikan. <b>Penting:</b> pakai username yang sama dengan nama partner di funding (mis. partner "Budi" → username <b>budi</b>) supaya datanya otomatis cocok.</p>
             <div id="invList" style="margin-bottom:14px"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
@@ -1428,19 +1425,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
   <!-- ═══════════ MOBILE BOTTOM NAV + FAB ═══════════ -->
   <nav class="bottom-nav" id="bottomNav">
-    <button class="bn-btn role-investor" data-bn="investor" onclick="showSection('investor')"><span class="bn-ic">◆</span>Portofolio</button>
-    <button class="bn-btn role-investor" data-bn="investor-track" onclick="showSection('investor-track')"><span class="bn-ic">★</span>Rekam Jejak</button>
-    <button class="bn-btn active role-internal" data-bn="home" onclick="showSection('home')"><span class="bn-ic">⌂</span>Dashboard</button>
+    <button class="bn-btn active role-internal" data-bn="home" onclick="showSection('home')"><span class="bn-ic">⌂</span>Ringkasan</button>
     <button class="bn-btn role-internal" data-bn="unit" onclick="showSection('unit')"><span class="bn-ic">≡</span>Unit</button>
-    <button class="bn-btn role-internal" data-bn="funding" onclick="showSection('funding')"><span class="bn-ic">◆</span>Funding</button>
-    <button class="bn-btn role-internal" data-bn="keuangan" onclick="showSection('keuangan')"><span class="bn-ic">💰</span>Keuangan</button>
-    <button class="bn-btn role-internal" data-bn="analitik" onclick="showSection('analitik')"><span class="bn-ic">📊</span>Analitik</button>
+    <button class="bn-btn role-internal" data-bn="keuangan" onclick="showSection('keuangan')"><span class="bn-ic">◇</span>Keuangan</button>
+    <button class="bn-btn role-internal" data-bn="funding" onclick="showSection('funding')"><span class="bn-ic">◆</span>Modal</button>
+    <button class="bn-btn role-internal" data-bn="analitik" onclick="showSection('analitik')"><span class="bn-ic">▦</span>Reports</button>
     <button class="bn-btn role-internal" data-bn="pengaturan" onclick="showSection('pengaturan')"><span class="bn-ic">⚙</span>Pengaturan</button>
   </nav>
   <div class="fab-menu" id="fabMenu">
-    <button class="fab-item" onclick="toggleFab();bukaInputBaru()">＋ Tambah Unit</button>
-    <button class="fab-item" onclick="toggleFab();showSection('funding')">◆ Tambah Funding</button>
-    <button class="fab-item" onclick="toggleFab();showSection('keuangan')">💸 Keuangan</button>
+    <button class="fab-item" onclick="toggleFab();openFunding()">＋ Tambah Unit</button>
+    <button class="fab-item" onclick="toggleFab();showSection('funding')">◆ Modal</button>
+    <button class="fab-item" onclick="toggleFab();showSection('keuangan')">◇ Keuangan</button>
   </div>
   <button class="fab role-internal" id="fab" onclick="toggleFab()">＋</button>
 </div>
@@ -1448,7 +1443,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div class="toast" id="toast"></div>
 
 <script>
-// ⚙️ Supabase Config
+// Supabase Config
 const SUPABASE_URL = 'https://pefkfuoowzfnbkmygzxo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZmtmdW9vd3pmbmJrbXlnenhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzOTA2MjIsImV4cCI6MjA5Njk2NjYyMn0.vMlXRGlYEe2r5N7UlO7MKqJZ_l2a8hwiO1nN_G3zf04';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -1686,7 +1681,7 @@ async function loadUnits(){
     if(error)throw error;
     units=(data||[]).map(transformUnit);
     updateMetrics(); setSyncStatus('ok');
-  }catch(e){ setSyncStatus('error'); showToast('❌ Gagal memuat data. Cek koneksi.'); }
+  }catch(e){ setSyncStatus('error'); showToast('Gagal memuat data. Cek koneksi.'); }
   await loadFin();
   setLoading(false);
   const sec=document.querySelector('.section.active');
@@ -1713,13 +1708,13 @@ function closeSidebar(){
   document.getElementById('sbBackdrop').classList.remove('show');
 }
 function showSection(s,fromPop){
-  // Investor hanya boleh membuka halaman miliknya sendiri
-  if(isInvestor() && !['investor','investor-track'].includes(s)) s='investor';
+  // D7.2.2 — safe route redirects for retired/consolidated destinations
+  const redirect={investor:'funding','investor-track':'unit',partner:'funding'};
+  if(redirect[s]) s=redirect[s];
   const internalOnly=['input','keuangan','analitik','unit','funding','home'];
   if(!isInternal() && !isInvestor() && internalOnly.includes(s)) s='home';
-  const titles={home:'Ringkasan',input:editingId?'Edit Unit':'Input Unit Baru',unit:'Daftar Unit',
-    funding:'Modal & Investor',keuangan:'Uang',analitik:'Reports',pengaturan:'Pengaturan',partner:'Partner Collaboration',
-    investor:'Portofolio Saya','investor-track':'Rekam Jejak & Simulasi'};
+  const titles={home:'Ringkasan',input:editingId?'Edit Unit':'Input Unit Baru',unit:'Unit',
+    funding:'Modal',keuangan:'Keuangan',analitik:'Reports',pengaturan:'Pengaturan'};
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav===s));
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.toggle('active',b.dataset.bn===s));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
@@ -1811,7 +1806,7 @@ function startIdleTimer(){
 function resetIdle(){
   if(!currentUser)return;
   clearTimeout(idleTimer);
-  idleTimer=setTimeout(()=>{ showToast('🔒 Sesi berakhir karena idle 30 menit'); doLogout(); }, 30*60*1000);
+  idleTimer=setTimeout(()=>{ showToast('Sesi berakhir karena idle 30 menit'); doLogout(); }, 30*60*1000);
 }
 
 function addBiaya(who,ket='',nom=''){
@@ -1996,7 +1991,7 @@ function updateFormDist(){
   });
   const el=document.getElementById('fStakeTotal');
   const diff=+(100-totalPct).toFixed(1);
-  if(Math.abs(diff)<0.5){el.textContent=`Total ${totalPct.toFixed(0)}% ✅ pas`;el.style.color='var(--green)';}
+  if(Math.abs(diff)<0.5){el.textContent=`Total ${totalPct.toFixed(0)}%pas`;el.style.color='var(--green)';}
   else{el.textContent=`Total ${totalPct.toFixed(1)}% — harus 100% (${diff>0?'kurang':'lebih'} ${Math.abs(diff).toFixed(1)}%)`;el.style.color='var(--amber,#C07A0E)';}
 }
 
@@ -2047,7 +2042,7 @@ function startEdit(id){
   document.getElementById('editBanner').classList.add('show');
   document.getElementById('editUnitName').textContent=u.nama;
   document.getElementById('formCardTitle').textContent='Edit Informasi Unit';
-  document.getElementById('saveBtn').innerHTML='💾 Simpan Perubahan';
+  document.getElementById('saveBtn').innerHTML='Simpan Perubahan';
   showSection('input');
   window.scrollTo(0,0);
 }
@@ -2056,7 +2051,7 @@ function bukaInputBaru(){
   editingId=null;
   document.getElementById('editBanner').classList.remove('show');
   document.getElementById('formCardTitle').textContent='Informasi Unit';
-  document.getElementById('saveBtn').innerHTML='💾 Simpan Unit';
+  document.getElementById('saveBtn').innerHTML='Simpan Unit';
   resetForm();
   // pastikan minimal satu baris biaya Panji/Pandu tersedia
   if(!document.querySelector('#biayas-panji .biaya-row'))addBiaya('panji');
@@ -2068,15 +2063,15 @@ function cancelEdit(){
   editingId=null;
   document.getElementById('editBanner').classList.remove('show');
   document.getElementById('formCardTitle').textContent='Informasi Unit';
-  document.getElementById('saveBtn').innerHTML='💾 Simpan Unit';
+  document.getElementById('saveBtn').innerHTML='Simpan Unit';
   resetForm();
 }
 
 async function simpanUnit(){
   const nama=document.getElementById('namaUnit').value.trim();
-  if(!nama){showToast('⚠️ Nama unit wajib diisi!');return;}
+  if(!nama){showToast('Nama unit wajib diisi!');return;}
   const p=getBiayas('panji'),d=getBiayas('pandu');
-  if(!sumB(p)&&!sumB(d)){showToast('⚠️ Minimal satu biaya Panji/Pandu harus diisi!');return;}
+  if(!sumB(p)&&!sumB(d)){showToast('Minimal satu biaya Panji/Pandu harus diisi!');return;}
   const status=document.getElementById('statusUnit').value;
   const harga=status==='terjual'?(parseFloat(document.getElementById('hargaJual').value)||0):0;
   const tglJual=status==='terjual'?(document.getElementById('tglJual').value||new Date().toISOString().slice(0,10)):null;
@@ -2120,7 +2115,7 @@ async function simpanUnit(){
   };
 
   const btn=document.getElementById('saveBtn');
-  btn.disabled=true; btn.textContent='⏳ Menyimpan...'; setSyncStatus('syncing');
+  btn.disabled=true; btn.textContent='Menyimpan...'; setSyncStatus('syncing');
 
   let error;
   if(editingId){ ({error}=await db.from('units').update(row).eq('id',editingId)); }
@@ -2129,13 +2124,13 @@ async function simpanUnit(){
   btn.disabled=false;
   if(!error){
     setSyncStatus('ok');
-    showToast(editingId?'✅ Perubahan tersimpan!':'✅ Unit berhasil disimpan!');
+    showToast(editingId?'Perubahan tersimpan!':'Unit berhasil disimpan!');
     logAudit(editingId?'EDIT':'SIMPAN','unit',editingId||row.nama,`${row.nama} — ${row.status}`);
     cancelEdit(); await loadUnits();
   }else{
     setSyncStatus('error');
-    btn.innerHTML=editingId?'💾 Simpan Perubahan':'💾 Simpan Unit';
-    showToast('❌ Gagal: '+(error.message||'unknown'));
+    btn.innerHTML=editingId?'Simpan Perubahan':'Simpan Unit';
+    showToast('Gagal: '+(error.message||'unknown'));
   }
 }
 
@@ -2181,11 +2176,16 @@ function agingBadge(u){
   if(u.status==='terjual')return '';
   const d=holdingDays(u), t=agingTier(d);
   const lbl={1:'Sehat',2:'Perhatikan',3:'Mendesak',4:'Kritis'}[t]||'';
-  return `<span class="aging-badge a${t}">⏱ ${d} hari · ${lbl}</span>`;
+  return `<span class="aging-badge a${t}">${d} hari · ${lbl}</span>`;
 }
+function isLegacyUnit(u){return (u.fundingModel||'legacy')==='legacy';}
 function renderUnits(){
   const el=document.getElementById('unitList');
-  if(!units.length){el.innerHTML=`<div class="empty-state">🚗<br><br>Belum ada unit. Tambahkan unit di menu Input Unit.</div>`;return;}
+  // Legacy create entry only when open legacy units still exist
+  const openLegacy=units.some(u=>isLegacyUnit(u)&&u.status!=='terjual');
+  const lb=document.getElementById('btnLegacyInput');
+  if(lb)lb.style.display=openLegacy?'':'none';
+  if(!units.length){el.innerHTML=`<div class="empty-state">Belum ada unit. Gunakan tombol Tambah Unit.</div>`;return;}
   // Terapkan filter
   let pool=units.slice();
   if(unitFilter==='ready') pool=pool.filter(u=>u.status!=='terjual');
@@ -2211,14 +2211,14 @@ function renderUnits(){
     const partnerChips=(u.partners||[]).map(p=>{
       const feeAmt=p.feeAmount!==undefined?+p.feeAmount:feeOf(p,uGross);
       const fee=feeAmt?` · fee ${fmtRp(feeAmt)}`:'';
-      return `<span class="partner-chip">🤝 ${p.nama||'Partner'}: ${fmtRp(p.funding)}${fee}</span>`;
+      return `<span class="partner-chip">${p.nama||'Partner'}: ${fmtRp(p.funding)}${fee}</span>`;
     }).join('');
     const metaParts=[u.jenis];
     if(u.kategori)metaParts.push(u.kategori);
     if(u.tahun)metaParts.push('Th '+u.tahun);
     if(u.plat)metaParts.push(u.plat);
     if(u.kondisi)metaParts.push(u.kondisi);
-    if(u.lokasi)metaParts.push('📍 '+u.lokasi);
+    if(u.lokasi)metaParts.push(''+u.lokasi);
     if(u.pic)metaParts.push('PIC '+u.pic);
     metaParts.push('Masuk '+u.tgl);
     if(sold&&u.tglJual)metaParts.push('Jual '+u.tglJual);
@@ -2228,7 +2228,9 @@ function renderUnits(){
         <div class="unit-actions">
           ${agingBadge(u)}
           <span class="badge ${u.status}">${sold?'Terjual':'Aktif'}</span>
-          ${ig&&!sold?`<button class="btn-sm success" onclick="openTerjualModal(${u.id})">Tandai Terjual</button>`:''}
+          ${isLegacyUnit(u)?`<span class="badge" style="background:var(--surface2);color:var(--text3);border:1px solid var(--border)">LEGACY</span>`:''}
+          ${ig&&!sold&&isLegacyUnit(u)?`<button class="btn-sm success" onclick="openTerjualModal(${u.id})">Tandai Terjual</button>`:''}
+          ${ig&&!sold&&!isLegacyUnit(u)?`<button class="btn-sm success" onclick="openSettle(${u.id})">Settle</button>`:''}
           ${ig?`<button class="btn-sm edit" onclick="startEdit(${u.id})">Edit</button>`:''}
           ${ig?`<button class="btn-sm danger" onclick="hapusUnit(${u.id})">Hapus</button>`:''}
         </div>
@@ -2352,14 +2354,14 @@ function updateDistNote(){
   });
   const el=document.getElementById('stakeTotal');
   const diff=+(100-totalPct).toFixed(1);
-  if(Math.abs(diff)<0.5){el.textContent=`Total ${totalPct.toFixed(0)}% ✅ pas`;el.style.color='var(--green)';}
+  if(Math.abs(diff)<0.5){el.textContent=`Total ${totalPct.toFixed(0)}%pas`;el.style.color='var(--green)';}
   else{el.textContent=`Total ${totalPct.toFixed(1)}% — harus 100% (${diff>0?'kurang':'lebih'} ${Math.abs(diff).toFixed(1)}%)`;el.style.color='var(--amber,#C07A0E)';}
 }
 async function confirmTerjual(){
   const targetId=pendingTerjualId;
-  if(targetId===null||targetId===undefined){showToast('⚠️ Unit tidak ditemukan.');return;}
+  if(targetId===null||targetId===undefined){showToast('Unit tidak ditemukan.');return;}
   const h=parseFloat(document.getElementById('modalHarga').value)||0;
-  if(!h){showToast('⚠️ Harga jual harus diisi!');return;}
+  if(!h){showToast('Harga jual harus diisi!');return;}
   const tgl=document.getElementById('modalTglJual').value||new Date().toISOString().slice(0,10);
   const {keuntungan,parts}=terjualBersih();
   const kas=kasNominal(keuntungan);
@@ -2381,8 +2383,8 @@ async function confirmTerjual(){
     updated_at:new Date().toISOString()
   }).eq('id',targetId);
   setLoading(false);
-  if(!error){setSyncStatus('ok');showToast('✅ Status berhasil diupdate!');logAudit('TERJUAL','unit',targetId,`Jual ${fmtRp(h)} · Kas ${fmtRp(kas)} · Panji ${fmtRp(bagiPanji)} · Pandu ${fmtRp(bagiPandu)}${partnerTotal?' · Partner '+fmtRp(partnerTotal):''}`);await loadUnits();renderUnits();}
-  else{setSyncStatus('error');showToast('❌ Gagal: '+(error.message||''));}
+  if(!error){setSyncStatus('ok');showToast('Status berhasil diupdate!');logAudit('TERJUAL','unit',targetId,`Jual ${fmtRp(h)} · Kas ${fmtRp(kas)} · Panji ${fmtRp(bagiPanji)} · Pandu ${fmtRp(bagiPandu)}${partnerTotal?' · Partner '+fmtRp(partnerTotal):''}`);await loadUnits();renderUnits();}
+  else{setSyncStatus('error');showToast('Gagal: '+(error.message||''));}
 }
 
 async function hapusUnit(id){
@@ -2391,8 +2393,8 @@ async function hapusUnit(id){
   setSyncStatus('syncing'); setLoading(true,'Menghapus unit...');
   const {error}=await db.from('units').delete().eq('id',id);
   setLoading(false);
-  if(!error){setSyncStatus('ok');showToast('🗑️ Unit dihapus');logAudit('HAPUS','unit',id,u?u.nama:'—');await loadUnits();renderUnits();}
-  else{setSyncStatus('error');showToast('❌ Gagal: '+(error.message||''));}
+  if(!error){setSyncStatus('ok');showToast('Unit dihapus');logAudit('HAPUS','unit',id,u?u.nama:'—');await loadUnits();renderUnits();}
+  else{setSyncStatus('error');showToast('Gagal: '+(error.message||''));}
 }
 
 function netProfitOf(u){
@@ -2607,7 +2609,7 @@ function renderInsight(){
     <div style="margin-top:10px">
       ${[['Total profit',fmtRp(s.total)],['Profit/unit',fmtRp(s.perUnit)],['Unit terjual',s.count+' / '+s.totalUnits],['Avg holding',s.avgHold.toFixed(1)+' hari']].map(([l,v])=>`<div class="seg-row"><span class="sr-l">${l}</span><span class="sr-v">${v}</span></div>`).join('')}
     </div></div>`;
-  document.getElementById('segmentCards').innerHTML=segCard(ins.motor,'motor','🏍','Motor')+segCard(ins.mobil,'mobil','🚗','Mobil');
+  document.getElementById('segmentCards').innerHTML=segCard(ins.motor,'motor','','Motor')+segCard(ins.mobil,'mobil','','Mobil');
 
   // Track record table (urut terbaru jual dulu, dengan filter segmen)
   let trackPool=ins.perUnit.slice();
@@ -3022,8 +3024,8 @@ async function renderCommandCenter(){
       <div class="table-scroll"><table class="track-table" id="ccUnitTable"></table></div></div>
 
     <!-- DECISIONS/ALERTS -->
-    <div class="card"><div class="card-hdr"><div class="card-title">⚠ Perlu Perhatian / Keputusan</div></div>
-      <div class="alert-stack">${att.length?att.map(([lv,m])=>`<div class="alert ${lv==='red'?'red':'amber'}"><span class="a-ic">${lv==='red'?'🔴':'🟡'}</span><div>${m}</div></div>`).join(''):'<div class="alert green"><span class="a-ic">🟢</span><div>Tidak ada tindakan mendesak.</div></div>'}</div>
+    <div class="card"><div class="card-hdr"><div class="card-title">Perlu Perhatian / Keputusan</div></div>
+      <div class="alert-stack">${att.length?att.map(([lv,m])=>`<div class="alert ${lv==='red'?'red':'amber'}"><span class="a-ic">${lv==='red'?'':''}</span><div>${m}</div></div>`).join(''):'<div class="alert green"><span class="a-ic"></span><div>Tidak ada tindakan mendesak.</div></div>'}</div>
       <p style="font-size:11px;color:var(--text3);margin-top:6px">Alert berbasis fakta yang ada. Alert berbasis threshold (min cash, ROI, holding, konsentrasi) menyusul di D7.6 dengan policy configurable.</p></div>
   `;
   // charts
@@ -3080,7 +3082,7 @@ function renderHome(){
   if(!alerts.length)alerts.push(['green','Tidak ada masalah terdeteksi. Semua indikator dalam batas aman. ✓']);
   const needAttention=alerts.filter(a=>a[0]!=='green').length;
   document.getElementById('alertStack').innerHTML=alerts.map(([lvl,msg])=>{
-    const ic={red:'🔴',amber:'🟡',green:'🟢'}[lvl];
+    const ic={red:'',amber:'',green:''}[lvl];
     return `<div class="alert ${lvl}"><span class="a-ic">${ic}</span><div>${msg}</div></div>`;
   }).join('');
 
@@ -3105,7 +3107,7 @@ function renderHome(){
   // Hierarki (brief §7): Safe Cash → Kas Aktual/Cadangan/Liabilities → Revenue/Profit/Inventory/Modal
   const kpis = c ? [
     safeCash!=null
-      ? ['Safe Cash'+src, fmtRpShort(safeCash), pool.is_provisional?'⚠ provisional':'kas aman dipakai','k-green']
+      ? ['Safe Cash'+src, fmtRpShort(safeCash), pool.is_provisional?'provisional':'kas aman dipakai','k-green']
       : ['Profit Bersih'+src, fmtRpShort(c.realized_profit), 'laba terealisasi','k-green'],
     pool
       ? ['Kas Aktual'+src, fmtRpShort(pool.actual_cash), pool.is_provisional?'provisional':'kas aktual','k-teal']
@@ -3162,7 +3164,7 @@ function renderUpcomingObligations(){
   const today=new Date().toISOString().slice(0,10);
   el.innerHTML=rows.map(r=>{ const over=r.due_date<today;
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 2px;border-bottom:1px dashed var(--border)">
-    <div><div style="font-size:13px">${r.type==='debt'?'🏛️':'👥'} ${esc(r.name)}</div>
+    <div><div style="font-size:13px">${r.type==='debt'?'':''} ${esc(r.name)}</div>
       <div style="font-size:11px;color:${over?'var(--red)':'var(--text3)'}">${esc(r.due_date)}${over?' · terlewat':''}</div></div>
     <div style="font-family:monospace;font-weight:600">${fmtRp(r.amount)}</div></div>`;}).join('');
 }
@@ -3283,7 +3285,7 @@ function renderInvestorHome(){
   ];
   document.getElementById('kpiGrid').innerHTML=kpis.map(([l,v,s,c])=>
     `<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
-  document.getElementById('alertStack').innerHTML=`<div class="alert green"><span class="a-ic">🟢</span><div>Anda login sebagai <b>Investor</b>. Hanya data investasi pribadi Anda yang ditampilkan.</div></div>`;
+  document.getElementById('alertStack').innerHTML=`<div class="alert green"><span class="a-ic"></span><div>Anda login sebagai <b>Investor</b>. Hanya data investasi pribadi Anda yang ditampilkan.</div></div>`;
   // Portfolio cards in profit trend slot? render as table inside investorSummary
   document.getElementById('investorSummary').innerHTML=mine.map(f=>
     `<div class="kpi k-blue"><div class="kpi-label">${f.namaUnit}</div><div class="kpi-value" style="font-size:16px">${fmtRpShort(f.funding)}</div><div class="kpi-sub">Funding ${f.fundingDate} · <span class="fund-status ${f.status}">${f.status==='active'?'Aktif':'Belum dibayar'}</span></div><div class="kpi-sub">Est. return ${fmtRpShort(f.estReturn)}</div></div>`
@@ -3378,7 +3380,7 @@ function tandaiLunas(unitId, investor){
   if(!confirm(`Tandai funding ${investor} sebagai LUNAS? Tindakan ini tidak bisa dibatalkan.`))return;
   setFundingPaid(unitId, investor);
   renderFunding();
-  showToast('✅ Funding '+investor+' ditandai lunas');
+  showToast('Funding '+investor+' ditandai lunas');
 }
 
 function showToast(msg){
@@ -3393,7 +3395,7 @@ document.getElementById('modalHarga').addEventListener('keydown',e=>{if(e.key===
 let adminPassCache='';
 async function unlockAdmin(){
   const pass=document.getElementById('adminPassInput').value;
-  if(!pass){showToast('⚠️ Masukkan password admin');return;}
+  if(!pass){showToast('Masukkan password admin');return;}
   setLoading(true,'Memeriksa akses admin...');
   const {data,error}=await db.rpc('pm_get_admin_config',{p_pass:pass});
   setLoading(false);
@@ -3404,9 +3406,9 @@ async function unlockAdmin(){
     document.getElementById('admEmails').value=data.emails||'';
     document.getElementById('admEmailEnabled').checked=!!data.emailEnabled;
     renderInvestorList(data.investors||[]);
-    showToast('✅ Panel admin terbuka');
+    showToast('Panel admin terbuka');
   }else{
-    showToast('❌ '+((data&&data.error)||'Password admin salah'));
+    showToast(''+((data&&data.error)||'Password admin salah'));
   }
 }
 function lockAdmin(){
@@ -3431,7 +3433,7 @@ async function fixKasBisnis(){
     if(!error)updated++;
   }
   setLoading(false);
-  showToast('✅ '+updated+' unit diperbarui');
+  showToast(''+updated+' unit diperbarui');
   await loadUnits();
 }
 async function saveAdminConfig(){
@@ -3449,9 +3451,9 @@ async function saveAdminConfig(){
   if(!error&&data&&data.ok){
     if(document.getElementById('admNewPass').value.trim())adminPassCache=document.getElementById('admNewPass').value.trim();
     ['admPanjiPass','admPanduPass','admNewPass'].forEach(id=>document.getElementById(id).value='');
-    showToast('✅ Pengaturan admin tersimpan');
+    showToast('Pengaturan admin tersimpan');
   }else{
-    showToast('❌ '+((data&&data.error)||'Gagal menyimpan'));
+    showToast(''+((data&&data.error)||'Gagal menyimpan'));
   }
 }
 
@@ -3510,24 +3512,24 @@ function editKasUnit(unitId){
 async function simpanKasEdit(){
   const id=parseInt(document.getElementById('kasEditUnitId').value);
   const nom=parseFloat(document.getElementById('kasEditNom').value);
-  if(isNaN(nom)){showToast('⚠️ Nominal wajib diisi');return;}
+  if(isNaN(nom)){showToast('Nominal wajib diisi');return;}
   setSyncStatus('syncing');
   const {error}=await db.from('units').update({kas_bisnis:nom,updated_at:new Date().toISOString()}).eq('id',id);
-  if(error){setSyncStatus('error');showToast('❌ Gagal menyimpan');return;}
+  if(error){setSyncStatus('error');showToast('Gagal menyimpan');return;}
   logAudit('KAS','unit',id,`edit kas → ${fmtRp(nom)}`);
   document.getElementById('kasEditForm').style.display='none';
   setSyncStatus('ok');
-  await loadUnits(); renderKas(); showToast('✅ Kas diperbarui');
+  await loadUnits(); renderKas(); showToast('Kas diperbarui');
 }
 async function hapusKasUnit(unitId){
   const u=units.find(x=>x.id===unitId); if(!u)return;
   if(!confirm(`Hapus "${u.nama}" dari daftar kas? Barisnya akan hilang dari sini dan kas-nya tidak dihitung. Unit tetap aman di Daftar Unit — muncul lagi di kas jika kas-nya diatur ulang dari Edit unit.`))return;
   setSyncStatus('syncing');
   const {error}=await db.from('units').update({kas_bisnis:-1,updated_at:new Date().toISOString()}).eq('id',unitId);
-  if(error){setSyncStatus('error');showToast('❌ Gagal');return;}
+  if(error){setSyncStatus('error');showToast('Gagal');return;}
   logAudit('KAS','unit',unitId,'dihapus dari daftar kas');
   setSyncStatus('ok');
-  await loadUnits(); renderKas(); showToast('✅ Dihapus dari daftar kas');
+  await loadUnits(); renderKas(); showToast('Dihapus dari daftar kas');
 }
 // ── Pengeluaran kas: tambah / edit / hapus ──
 function kasKeluarRow(x){
@@ -3545,7 +3547,7 @@ function bukaKasForm(){
   document.getElementById('kasKeluarKet').value='';
   document.getElementById('kasKeluarNom').value='';
   document.getElementById('kasKeluarTgl').value=new Date().toISOString().slice(0,10);
-  document.getElementById('kasKeluarSaveBtn').textContent='💾 Simpan';
+  document.getElementById('kasKeluarSaveBtn').textContent='Simpan';
   document.getElementById('kasKeluarForm').style.display='block';
 }
 function editKasKeluar(id,ket,nom,tgl){
@@ -3553,7 +3555,7 @@ function editKasKeluar(id,ket,nom,tgl){
   document.getElementById('kasKeluarKet').value=ket;
   document.getElementById('kasKeluarNom').value=nom;
   document.getElementById('kasKeluarTgl').value=tgl||new Date().toISOString().slice(0,10);
-  document.getElementById('kasKeluarSaveBtn').textContent='💾 Update';
+  document.getElementById('kasKeluarSaveBtn').textContent='Update';
   document.getElementById('kasKeluarForm').style.display='block';
   document.getElementById('kasKeluarKet').focus();
 }
@@ -3562,15 +3564,15 @@ async function simpanKasKeluar(){
   const ket=document.getElementById('kasKeluarKet').value.trim();
   const nom=parseFloat(document.getElementById('kasKeluarNom').value)||0;
   const tgl=document.getElementById('kasKeluarTgl').value||new Date().toISOString().slice(0,10);
-  if(!ket||!nom){showToast('⚠️ Keterangan dan nominal wajib diisi');return;}
+  if(!ket||!nom){showToast('Keterangan dan nominal wajib diisi');return;}
   const payload={keterangan:ket,nominal:nom,tgl};
   let error;
   if(id){ ({error}=await db.from('kas_keluar').update(payload).eq('id',id)); }
   else { ({error}=await db.from('kas_keluar').insert(payload)); }
-  if(error){showToast('❌ Gagal menyimpan');return;}
+  if(error){showToast('Gagal menyimpan');return;}
   logAudit('KAS','kas_keluar',id||'',`${id?'edit ':''}${ket} — ${fmtRp(nom)}`);
   document.getElementById('kasKeluarForm').style.display='none';
-  renderKas(); showToast(id?'✅ Diperbarui':'✅ Tersimpan');
+  renderKas(); showToast(id?'Diperbarui':'Tersimpan');
 }
 async function hapusKasKeluar(id){
   if(!confirm('Hapus entri pengeluaran ini?'))return;
@@ -3615,17 +3617,17 @@ async function renderInventori(){
 async function tambahAset(){
   const nama=document.getElementById('asetNama').value.trim();
   const nilaiBeli=parseFloat(document.getElementById('asetNilaiBeli').value)||0;
-  if(!nama||!nilaiBeli){showToast('⚠️ Nama dan nilai beli wajib diisi');return;}
+  if(!nama||!nilaiBeli){showToast('Nama dan nilai beli wajib diisi');return;}
   const {error}=await db.from('aset_inventori').insert({
     nama, kategori:document.getElementById('asetKategori').value,
     nilai_beli:nilaiBeli, nilai_skrg:parseFloat(document.getElementById('asetNilaiSkrg').value)||nilaiBeli,
     tgl:document.getElementById('asetTgl').value||new Date().toISOString().slice(0,10),
     catatan:document.getElementById('asetCatatan').value.trim()
   });
-  if(error){showToast('❌ Gagal menyimpan');return;}
+  if(error){showToast('Gagal menyimpan');return;}
   ['asetNama','asetNilaiBeli','asetNilaiSkrg','asetCatatan'].forEach(id=>document.getElementById(id).value='');
   closeCollapse('asetForm');
-  renderInventori(); showToast('✅ Aset disimpan');
+  renderInventori(); showToast('Aset disimpan');
 }
 async function hapusAset(id){
   if(!confirm('Hapus aset ini?'))return;
@@ -3835,23 +3837,23 @@ function renderInvestorList(list){
 async function addInvestor(){
   const u=document.getElementById('invUser').value.trim();
   const p=document.getElementById('invPass').value.trim();
-  if(!u||!p){showToast('⚠️ Username & password wajib diisi');return;}
+  if(!u||!p){showToast('Username & password wajib diisi');return;}
   setLoading(true,'Menambah akun investor...');
   const {data,error}=await db.rpc('pm_save_investor',{p_admin_pass:adminPassCache||'__internal__',p_username:u,p_password:p});
   setLoading(false);
   if(!error&&data&&data.ok){
     document.getElementById('invUser').value='';document.getElementById('invPass').value='';
-    showToast('✅ Investor '+data.username+' ditambahkan');
+    showToast('Investor '+data.username+' ditambahkan');
     refreshInvestorList();
-  }else showToast('❌ '+((data&&data.error)||'Gagal menambah'));
+  }else showToast(''+((data&&data.error)||'Gagal menambah'));
 }
 async function deleteInvestor(username){
   if(!confirm('Hapus akun investor '+username+'?'))return;
   setLoading(true,'Menghapus akun...');
   const {data,error}=await db.rpc('pm_delete_investor',{p_admin_pass:adminPassCache||'__internal__',p_username:username});
   setLoading(false);
-  if(!error&&data&&data.ok){showToast('✅ Akun dihapus');refreshInvestorList();}
-  else showToast('❌ '+((data&&data.error)||'Gagal menghapus'));
+  if(!error&&data&&data.ok){showToast('Akun dihapus');refreshInvestorList();}
+  else showToast(''+((data&&data.error)||'Gagal menghapus'));
 }
 async function refreshInvestorList(){
   const {data}=await db.rpc('pm_get_admin_config',{p_pass:adminPassCache||'__internal__'});
@@ -3988,9 +3990,9 @@ function saveSettings(){
     localStorage.setItem(SETTINGS_KEY,JSON.stringify(s));
     applySettings(s);
     tempImage=null;
-    showToast('✅ Pengaturan tersimpan!');
+    showToast('Pengaturan tersimpan!');
   }catch(err){
-    showToast('❌ Gambar terlalu besar. Coba gambar lebih kecil.');
+    showToast('Gambar terlalu besar. Coba gambar lebih kecil.');
   }
 }
 
@@ -4077,16 +4079,16 @@ async function saveDebt(){
     interest_rate:g('dbRate')?+g('dbRate'):null, tenor_months:+g('dbTenor')||1,
     installment_amount:+g('dbInstall')||0, start_date:g('dbStart')||null,
     first_due_date:g('dbFirstDue')||null, drawdown_date:g('dbDrawdown')||null, notes:g('dbNotes').trim() };
-  if(!row.name){ showToast('❌ Nama utang wajib diisi.'); return; }
+  if(!row.name){ showToast('Nama utang wajib diisi.'); return; }
   try{
     const {data,error}=await db.from('debts').insert(row).select().single();
     if(error)throw error;
     const {error:e2}=await db.rpc('pm_debt_build_schedule',{p_debt_id:data.id});
     if(e2)throw e2;
-    showToast('✅ Utang tersimpan & jadwal dibuat.');
+    showToast('Utang tersimpan & jadwal dibuat.');
     ['dbName','dbLender','dbPrincipal','dbTotal','dbTenor','dbInstall','dbRate','dbStart','dbFirstDue','dbDrawdown','dbNotes'].forEach(i=>document.getElementById(i).value='');
     await finRefresh(); renderDebt();
-  }catch(e){ showToast('❌ Gagal: '+(e.message||e)); }
+  }catch(e){ showToast('Gagal: '+(e.message||e)); }
 }
 async function showDebtSchedule(debtId,name){
   const card=document.getElementById('debtScheduleCard'), tb=document.getElementById('debtSchedTable');
@@ -4103,8 +4105,8 @@ async function showDebtSchedule(debtId,name){
 async function payDebt(paymentId,debtId,name){
   if(!confirm('Catat pembayaran cicilan ini?'))return;
   try{ const {error}=await db.rpc('pm_debt_pay',{p_payment_id:paymentId,p_amount:null,p_date:null}); if(error)throw error;
-    showToast('✅ Pembayaran tercatat.'); await finRefresh(); renderDebt(); showDebtSchedule(debtId,name);
-  }catch(e){ showToast('❌ Gagal: '+(e.message||e)); }
+    showToast('Pembayaran tercatat.'); await finRefresh(); renderDebt(); showDebtSchedule(debtId,name);
+  }catch(e){ showToast('Gagal: '+(e.message||e)); }
 }
 
 // ── PAYROLL ──
@@ -4141,7 +4143,7 @@ async function renderPayroll(){
 }
 async function savePerson(){
   const name=document.getElementById('pyName').value.trim();
-  if(!name){ showToast('❌ Nama wajib diisi.'); return; }
+  if(!name){ showToast('Nama wajib diisi.'); return; }
   const method=document.getElementById('pyMethod').value;
   try{
     const {data,error}=await db.from('payroll_people').insert({name,role:document.getElementById('pyRole').value.trim()}).select().single();
@@ -4151,22 +4153,22 @@ async function savePerson(){
       percent_value:(method==='fixed')?0:(+document.getElementById('pyPct').value||0),
       percent_basis:null };   // basis DELIBERATELY unset — "Belum dikonfigurasi"
     const {error:e2}=await db.from('payroll_rules').insert(rule); if(e2)throw e2;
-    showToast('✅ Karyawan tersimpan.');
+    showToast('Karyawan tersimpan.');
     ['pyName','pyRole','pyBase','pyPct'].forEach(i=>document.getElementById(i).value='');
     await finRefresh(); renderPayroll();
-  }catch(e){ showToast('❌ Gagal: '+(e.message||e)); }
+  }catch(e){ showToast('Gagal: '+(e.message||e)); }
 }
 async function runPayroll(){
   const period=new Date().toISOString().slice(0,7);
   try{ const {error}=await db.rpc('pm_payroll_run',{p_period_ym:period}); if(error)throw error;
-    showToast('✅ Payroll '+period+' dihitung.'); await finRefresh(); renderPayroll();
-  }catch(e){ showToast('❌ Gagal: '+(e.message||e)); }
+    showToast('Payroll '+period+' dihitung.'); await finRefresh(); renderPayroll();
+  }catch(e){ showToast('Gagal: '+(e.message||e)); }
 }
 async function payPayroll(oblId){
   if(!confirm('Catat pembayaran gaji ini?'))return;
   try{ const {error}=await db.rpc('pm_payroll_pay',{p_obligation_id:oblId,p_amount:null,p_date:null}); if(error)throw error;
-    showToast('✅ Gaji dibayar.'); await finRefresh(); renderPayroll();
-  }catch(e){ showToast('❌ Gagal: '+(e.message||e)); }
+    showToast('Gaji dibayar.'); await finRefresh(); renderPayroll();
+  }catch(e){ showToast('Gagal: '+(e.message||e)); }
 }
 
 // ═══════════════════ PARTNER COLLABORATION (Phase 1) ═══════════════════
@@ -4243,10 +4245,10 @@ async function savePartnerPolicy(){
       rows.push({vehicle_type:t,bracket_label:bl,holding_label:hl,share_pct:PC_POLICY[t][bi][hi]}))));
     const {data,error}=await db.rpc('pm_partner_policy_save',{p_pass:PC_PASS(),p_rows:rows});
     if(!error && data && data.ok)dbOk=true;
-    else if(data && data.ok===false) showToast('❌ '+(data.error||'Tidak berwenang.'));
+    else if(data && data.ok===false) showToast(''+(data.error||'Tidak berwenang.'));
   }catch(e){}
   if(!dbOk) localStorage.setItem('pm_partner_policy',JSON.stringify(PC_POLICY));
-  showToast(dbOk?'✅ Tarif tersimpan.':'✅ Tarif tersimpan di perangkat ini.');
+  showToast(dbOk?'Tarif tersimpan.':'Tarif tersimpan di perangkat ini.');
   pcPolicyEditing=false; document.getElementById('polSaveBar').style.display='none';
   document.getElementById('polEditBtn').style.display='inline-block';
   renderPartnerPolicy(); if(document.getElementById('prtab-simulator').classList.contains('active'))calcPartnerDeal();
@@ -4298,7 +4300,7 @@ function calcPartnerDeal(){
   if(c.loss) extra.push(['err','Deal ini RUGI — Partner Profit = 0, kerugian ditanggung Perkasa.']);
   else if(c.custom) extra.push(['warn','Custom Deal: '+(c.share.reason||'butuh kesepakatan khusus')+'.']);
   if(c.partnerPct>50 && !c.loss) extra.push(['warn','Porsi partner >50% → Custom Deal bila tarif tidak tersedia.']);
-  wbox.innerHTML=[...warn,...extra].map(([k,m])=>`<div class="alert ${k==='err'?'red':'amber'}" style="margin:4px 0"><span class="a-ic">${k==='err'?'🔴':'🟡'}</span><div>${m}</div></div>`).join('');
+  wbox.innerHTML=[...warn,...extra].map(([k,m])=>`<div class="alert ${k==='err'?'red':'amber'}" style="margin:4px 0"><span class="a-ic">${k==='err'?'':''}</span><div>${m}</div></div>`).join('');
   // summary cards
   const val=v=>v==null?'—':fmtRp(v);
   const share = c.loss?'0%' : c.custom?'Custom' : c.share.pct+'%';
@@ -4358,15 +4360,15 @@ function pcDealRow(){
 }
 async function savePartnerDeal(){
   const c=calcPartnerDeal();
-  if(c.base<=0){ showToast('❌ Base Price harus > 0.'); return; }
+  if(c.base<=0){ showToast('Base Price harus > 0.'); return; }
   const status=document.getElementById('pcStatus').value;
   const funded=PC_FUNDED_STATES.includes(status);
   // Funded/active deals must be balanced and (except Loss) have a concrete share
   if(funded){
     if(Math.round(c.partner+c.perkasa)!==Math.round(c.base)){
-      showToast('❌ Deal '+status+' harus seimbang: Partner + Perkasa = Base Price.'); return; }
+      showToast('Deal '+status+' harus seimbang: Partner + Perkasa = Base Price.'); return; }
     if(c.custom && status!=='Loss'){
-      showToast('❌ Deal '+status+' butuh tarif konkret (bukan Custom).'); return; }
+      showToast('Deal '+status+' butuh tarif konkret (bukan Custom).'); return; }
   }
   const payload=pcDealRow();
   payload.applied_partner_share_pct = (status==='Simulation') ? null
@@ -4375,10 +4377,10 @@ async function savePartnerDeal(){
   try{
     const {data,error}=await db.rpc('pm_partner_deal_save',{p_pass:PC_PASS(),p_id:id?Number(id):null,p_payload:payload});
     if(error)throw error;
-    if(!data||!data.ok){ showToast('❌ '+((data&&data.error)||'Gagal menyimpan.')); return; }
-    showToast('✅ Deal tersimpan.'); document.getElementById('pcEditId').value='';
+    if(!data||!data.ok){ showToast(''+((data&&data.error)||'Gagal menyimpan.')); return; }
+    showToast('Deal tersimpan.'); document.getElementById('pcEditId').value='';
     showSubTab('partner','prtab-deals');
-  }catch(e){ showToast('⚠ Penyimpanan deal belum aktif. Aktifkan modul lebih dulu.'); }
+  }catch(e){ showToast('Penyimpanan deal belum aktif. Aktifkan modul lebih dulu.'); }
 }
 async function renderPartnerDeals(){
   await ensurePartnerPolicy();
@@ -4410,13 +4412,13 @@ async function renderPartnerDeals(){
       <td class="num" style="color:var(--text3)">${eg==null?'—':eg.toFixed(1)+'%'}</td>
       <td class="num">${c.perkasaProfit==null?'—':fmtRp(c.perkasaProfit)}</td>
       <td><span style="background:${stColor(c.status)}18;color:${stColor(c.status)};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">${esc(c.status)}</span></td>
-      <td style="white-space:nowrap"><button class="btn-sm" onclick="editPartnerDeal(${c.id})">Buka</button> <button class="btn-sm" onclick="deletePartnerDeal(${c.id})">🗑</button></td>
+      <td style="white-space:nowrap"><button class="btn-sm" onclick="editPartnerDeal(${c.id})">Buka</button> <button class="btn-sm" onclick="deletePartnerDeal(${c.id})"></button></td>
     </tr>`;}).join('')||`<tr><td colspan="13" style="padding:18px;text-align:center;color:var(--text3)">Belum ada deal tersimpan. Buat di Deal Simulator lalu “Simpan Deal”.</td></tr>`)+'</tbody>'
     +`<tfoot><tr><td colspan="13" style="padding:8px 12px;color:var(--text3);font-size:11px">*Eff. Gain = Partner Profit / Partner Capital — informational only, bukan penentu Partner Profit Share. Historical deals memakai Applied Share yang di-stamp saat funding.</td></tr></tfoot>`;
 }
 async function editPartnerDeal(id){
   try{ const data=PC_DEALS_CACHE.find(d=>Number(d.id)===Number(id));
-    if(!data){ showToast('❌ Deal tidak ditemukan.'); return; }
+    if(!data){ showToast('Deal tidak ditemukan.'); return; }
     const s=(k,v)=>document.getElementById(k).value=v;
     document.getElementById('pcType').value=data.vehicle_type;
     s('pcUnit',data.unit_name);s('pcBase',data.base_price);s('pcSell',data.selling_price);
@@ -4424,14 +4426,14 @@ async function editPartnerDeal(id){
     s('pcTransport',data.transport_cost);s('pcDoc',data.doc_cost);s('pcMkt',data.marketing_cost);s('pcHold',data.holding_days);
     document.getElementById('pcStatus').value=data.status; document.getElementById('pcEditId').value=data.id;
     showSubTab('partner','prtab-simulator'); calcPartnerDeal();
-  }catch(e){ showToast('❌ Gagal memuat deal.'); }
+  }catch(e){ showToast('Gagal memuat deal.'); }
 }
 async function deletePartnerDeal(id){
   if(!confirm('Hapus deal ini?'))return;
   try{ const {data,error}=await db.rpc('pm_partner_deal_delete',{p_pass:PC_PASS(),p_id:Number(id)}); if(error)throw error;
-    if(!data||!data.ok){ showToast('❌ '+((data&&data.error)||'Gagal.')); return; }
-    showToast('🗑 Deal dihapus.'); renderPartnerDeals();
-  }catch(e){ showToast('❌ Gagal menghapus.'); }
+    if(!data||!data.ok){ showToast(''+((data&&data.error)||'Gagal.')); return; }
+    showToast('Deal dihapus.'); renderPartnerDeals();
+  }catch(e){ showToast('Gagal menghapus.'); }
 }
 
 // ── PARTNER VIEW (presentation mode; ONLY partner-relevant fields — no internal
@@ -4530,28 +4532,28 @@ async function loadCostEntries(){
   tb.innerHTML=`<thead><tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th class="num">Nominal</th><th></th></tr></thead><tbody>`+
     (entries.map(e=>`<tr><td>${esc(e.entry_date)}</td><td>${esc(e.category)}</td><td>${esc(e.description||'')}${e.note?`<br><span style="color:var(--text3);font-size:11px">${esc(e.note)}</span>`:''}</td>
       <td class="num">${fmtRp(e.amount)}</td>
-      <td><button class="btn-sm" onclick="delCostEntry(${e.id})">🗑</button></td></tr>`).join('')
+      <td><button class="btn-sm" onclick="delCostEntry(${e.id})"></button></td></tr>`).join('')
       ||`<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text3)">Belum ada biaya. Tambahkan di atas.</td></tr>`)+'</tbody>';
 }
 async function addCostEntry(){
-  if(!UCE_UNIT){ showToast('❌ Pilih unit dulu.'); return; }
+  if(!UCE_UNIT){ showToast('Pilih unit dulu.'); return; }
   const amt=Number(document.getElementById('uceAmt').value)||0;
-  if(amt<0){ showToast('❌ Nominal tidak boleh negatif.'); return; }
+  if(amt<0){ showToast('Nominal tidak boleh negatif.'); return; }
   const row={ unit_id:Number(UCE_UNIT), category:document.getElementById('uceCat').value,
     description:document.getElementById('uceDesc').value.trim(), amount:amt,
     entry_date:document.getElementById('uceDate').value||new Date().toISOString().slice(0,10),
     note:document.getElementById('uceNote').value.trim() };
   try{ const {error}=await db.from('unit_cost_entries').insert(row); if(error)throw error;
-    showToast('✅ Biaya ditambahkan.');
+    showToast('Biaya ditambahkan.');
     document.getElementById('uceDesc').value=''; document.getElementById('uceAmt').value=''; document.getElementById('uceNote').value='';
     loadCostEntries();
-  }catch(e){ showToast('⚠ Cost Ledger belum aktif di database.'); }
+  }catch(e){ showToast('Cost Ledger belum aktif di database.'); }
 }
 async function delCostEntry(id){
   if(!confirm('Hapus biaya ini?'))return;
   try{ const {error}=await db.from('unit_cost_entries').delete().eq('id',id); if(error)throw error;
-    showToast('🗑 Biaya dihapus.'); loadCostEntries();
-  }catch(e){ showToast('❌ Gagal menghapus.'); }
+    showToast('Biaya dihapus.'); loadCostEntries();
+  }catch(e){ showToast('Gagal menghapus.'); }
 }
 
 // ═══════════════════ D4 · UNIT FUNDING (Phase 1) ═══════════════════
@@ -4583,11 +4585,11 @@ function openFunding(unitId){
 }
 async function createPerkasaUnit(){
   const nama=(document.getElementById('ufNewNama')||{}).value?.trim();
-  if(!nama){ showToast('❌ Nama unit wajib.'); return; }
+  if(!nama){ showToast('Nama unit wajib.'); return; }
   const jenis=document.getElementById('ufNewJenis').value;
   try{ const {error}=await db.from('units').insert({nama,jenis,status:'aktif',tgl:new Date().toISOString().slice(0,10),funding_model:'perkasa'});
-    if(error)throw error; showToast('✅ Unit Perkasa dibuat.'); await loadUnits(); document.getElementById('ufOverlay').remove(); openFunding();
-  }catch(e){ showToast('⚠ Gagal (kolom funding_model belum ada?).'); }
+    if(error)throw error; showToast('Unit Perkasa dibuat.'); await loadUnits(); document.getElementById('ufOverlay').remove(); openFunding();
+  }catch(e){ showToast('Gagal (kolom funding_model belum ada?).'); }
 }
 async function loadFunding(){
   const sel=document.getElementById('ufUnit'); if(!sel)return; UF_UNIT=sel.value;
@@ -4619,7 +4621,7 @@ async function loadFunding(){
   document.getElementById('ufPnameWrap').style.display='none';
   document.getElementById('ufTable').innerHTML=`<thead><tr><th>Tanggal</th><th>Sumber</th><th>Partner</th><th class="num">Nominal</th><th></th></tr></thead><tbody>`+
     (entries.map(e=>`<tr><td>${esc(e.funded_date)}</td><td>${e.source==='partner'?'Partner':'Perkasa'}</td><td>${esc(e.partner_name||'—')}</td>
-      <td class="num">${fmtRp(e.amount)}</td><td><button class="btn-sm" onclick="delFunding(${e.id})">🗑</button></td></tr>`).join('')
+      <td class="num">${fmtRp(e.amount)}</td><td><button class="btn-sm" onclick="delFunding(${e.id})"></button></td></tr>`).join('')
       ||`<tr><td colspan="5" style="padding:14px;text-align:center;color:var(--text3)">Belum ada funding.</td></tr>`)+'</tbody>';
 }
 function agreementHtml(a){
@@ -4632,40 +4634,40 @@ function agreementHtml(a){
         <option value="fixed_fee"${a&&a.agreement_type==='fixed_fee'?' selected':''}>Fixed Fee</option></select></div>
       <div class="fg" style="margin:0" id="agrValWrap"><label id="agrValLbl">Nilai</label><input id="agrVal" type="number" value="${a?(a.profit_share_pct??a.fee_pct??a.fixed_fee??''):''}"></div>
       <div class="fg" style="margin:0"><label>Loss Exposure % (opsional)</label><input id="agrLoss" type="number" value="${a&&a.loss_exposure_pct!=null?a.loss_exposure_pct:''}" placeholder="kosong = default funding %"></div>
-      <button class="confirm" onclick="saveAgreement()" style="align-self:end">💾 Simpan Agreement</button>
+      <button class="confirm" onclick="saveAgreement()" style="align-self:end">Simpan Agreement</button>
     </div>
     <p style="font-size:11px;color:var(--text3);margin:8px 0 0">Persentase funding <b>tidak</b> otomatis menjadi profit share. Loss exposure default = funding exposure (D5).</p></div>`;
 }
 function agrTypeChange(){ const t=document.getElementById('agrType').value;
   document.getElementById('agrValLbl').textContent=t==='fixed_fee'?'Fee (Rp)':t==='fee_pct_capital'?'Fee % modal':'Profit Share %'; }
 async function addFunding(){
-  if(!UF_UNIT){ showToast('❌ Pilih unit.'); return; }
+  if(!UF_UNIT){ showToast('Pilih unit.'); return; }
   const src=document.getElementById('ufSrc').value, amt=Number(document.getElementById('ufAmt').value)||0;
   const pname=document.getElementById('ufPname').value.trim();
-  if(amt<0){ showToast('❌ Nominal tidak boleh negatif.'); return; }
-  if(src==='partner'&&!pname){ showToast('❌ Nama partner wajib untuk funding partner.'); return; }
+  if(amt<0){ showToast('Nominal tidak boleh negatif.'); return; }
+  if(src==='partner'&&!pname){ showToast('Nama partner wajib untuk funding partner.'); return; }
   const row={ unit_id:Number(UF_UNIT), source:src, amount:amt, funded_date:new Date().toISOString().slice(0,10) };
   if(src==='partner') row.partner_name=pname;
   try{ const {error}=await db.from('unit_funding').insert(row); if(error)throw error;
-    showToast('✅ Funding ditambahkan.'); document.getElementById('ufAmt').value=''; document.getElementById('ufPname').value=''; loadFunding();
-  }catch(e){ showToast('⚠ Funding belum aktif di database.'); }
+    showToast('Funding ditambahkan.'); document.getElementById('ufAmt').value=''; document.getElementById('ufPname').value=''; loadFunding();
+  }catch(e){ showToast('Funding belum aktif di database.'); }
 }
 async function delFunding(id){
   if(!confirm('Hapus funding ini?'))return;
   try{ const {error}=await db.from('unit_funding').delete().eq('id',id); if(error)throw error;
-    showToast('🗑 Funding dihapus.'); loadFunding();
-  }catch(e){ showToast('❌ Gagal.'); }
+    showToast('Funding dihapus.'); loadFunding();
+  }catch(e){ showToast('Gagal.'); }
 }
 async function saveAgreement(){
   const type=document.getElementById('agrType').value, val=document.getElementById('agrVal').value;
   const payload={ partner_name:document.getElementById('agrName').value.trim(), agreement_type:type,
     loss_exposure_pct:document.getElementById('agrLoss').value||null };
   if(type==='fixed_fee')payload.fixed_fee=val; else if(type==='fee_pct_capital')payload.fee_pct=val; else payload.profit_share_pct=val;
-  if(!payload.partner_name){ showToast('❌ Nama partner wajib.'); return; }
+  if(!payload.partner_name){ showToast('Nama partner wajib.'); return; }
   try{ const {data,error}=await db.rpc('pm_partner_agreement_save',{p_pass:(typeof PC_PASS==='function'?PC_PASS():(adminPassCache||'__internal__')),p_unit_id:Number(UF_UNIT),p_payload:payload});
-    if(error)throw error; if(!data||!data.ok){ showToast('❌ '+((data&&data.error)||'Gagal.')); return; }
-    showToast('✅ Agreement tersimpan.'); loadFunding();
-  }catch(e){ showToast('⚠ Agreement belum aktif di database.'); }
+    if(error)throw error; if(!data||!data.ok){ showToast(''+((data&&data.error)||'Gagal.')); return; }
+    showToast('Agreement tersimpan.'); loadFunding();
+  }catch(e){ showToast('Agreement belum aktif di database.'); }
 }
 
 // ═══════════════════ D5 · SALE & SETTLEMENT (perkasa units) ═══════════════════
@@ -4725,17 +4727,17 @@ function stPreview(){
     <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Net Sale Proceeds</span><span class="mono">${fmtRp(net)}</span></div>
     <div style="display:flex;justify-content:space-between;padding:4px 0;color:var(--text3)"><span>− Base Unit Cost</span><span class="mono">${fmtRp(base)}</span></div>
     <div style="display:flex;justify-content:space-between;padding:6px 0;font-weight:700;border-top:1px solid var(--border)"><span>${loss?'True Unit LOSS':'True Unit Profit'}</span><span class="mono" style="color:${loss?'var(--red)':'var(--green)'}">${fmtRp(truep)}</span></div>
-    ${loss?'<div style="font-size:11.5px;color:var(--red);margin-top:4px">⚠ Loss: partner ikut menanggung pro-rata funding exposure; partner fee = 0.</div>':''}
+    ${loss?'<div style="font-size:11.5px;color:var(--red);margin-top:4px">Loss: partner ikut menanggung pro-rata funding exposure; partner fee = 0.</div>':''}
     <div style="font-size:11px;color:var(--text3);margin-top:4px">Preview (estimasi). Alokasi final oleh DB.</div></div>`;
 }
 async function confirmSettle(base){
   const price=Number(document.getElementById('stPrice').value)||0, cost=Number(document.getElementById('stCost').value)||0;
-  if(price<=0){ showToast('❌ Harga jual harus > 0.'); return; }
+  if(price<=0){ showToast('Harga jual harus > 0.'); return; }
   if(!confirm('Konfirmasi settlement? Snapshot bersifat immutable (koreksi via Reverse).'))return;
   try{ const {data,error}=await db.rpc('pm_unit_settle_v2',{p_pass:ST_PASS(),p_unit_id:Number(ST_UNIT),p_selling_price:price,p_selling_cost:cost,p_settle_date:document.getElementById('stDate').value||null});
-    if(error)throw error; if(!data||!data.ok){ showToast('❌ '+((data&&data.error)||'Gagal.')); return; }
-    showToast('✅ Unit ter-settle.'); await loadUnits(); loadSettle();
-  }catch(e){ showToast('⚠ Settlement belum aktif di database.'); }
+    if(error)throw error; if(!data||!data.ok){ showToast(''+((data&&data.error)||'Gagal.')); return; }
+    showToast('Unit ter-settle.'); await loadUnits(); loadSettle();
+  }catch(e){ showToast('Settlement belum aktif di database.'); }
 }
 function settledSummary(s){
   const row=(l,v,o={})=>`<div style="display:flex;justify-content:space-between;padding:${o.strong?'9px':'7px'} 2px;${o.rule?'border-top:2px solid var(--text3);margin-top:4px;':'border-bottom:1px dashed var(--border);'}${o.strong?'font-weight:700;':''}"><span style="color:${o.strong?'var(--text)':'var(--text2)'}">${l}</span><span class="mono" style="color:${o.neg?'var(--red)':o.strong?'var(--green)':'var(--text)'}">${v}</span></div>`;
@@ -4759,11 +4761,11 @@ function settledSummary(s){
 }
 async function reverseSettle(unitId){
   const reason=prompt('Alasan reversal (untuk audit):'); if(reason===null)return;
-  if(!reason.trim()){ showToast('❌ Alasan wajib.'); return; }
+  if(!reason.trim()){ showToast('Alasan wajib.'); return; }
   try{ const {data,error}=await db.rpc('pm_unit_settle_reverse',{p_pass:ST_PASS(),p_unit_id:Number(unitId),p_reason:reason.trim()});
-    if(error)throw error; if(!data||!data.ok){ showToast('❌ '+((data&&data.error)||'Gagal.')); return; }
+    if(error)throw error; if(!data||!data.ok){ showToast(''+((data&&data.error)||'Gagal.')); return; }
     showToast('↺ Settlement di-reverse. Unit kembali Active.'); await loadUnits(); loadSettle();
-  }catch(e){ showToast('❌ Gagal reverse.'); }
+  }catch(e){ showToast('Gagal reverse.'); }
 }
 
 async function renderCashflow(){
@@ -4780,7 +4782,7 @@ async function renderCashflow(){
   const verified=String(cf.opening_verified)==='true';
 
   pos.innerHTML=[
-    ['Kas Awal',fmtRpShort(opening),verified?'terverifikasi':'⚠ belum diverifikasi','k-'+(verified?'blue':'amber')],
+    ['Kas Awal',fmtRpShort(opening),verified?'terverifikasi':'belum diverifikasi','k-'+(verified?'blue':'amber')],
     ['Total Masuk',fmtRpShort(inflow),'inflow','k-green'],
     ['Total Keluar',fmtRpShort(outflow),'outflow','k-red'],
     ['Net Pergerakan',fmtRpShort(net),net>=0?'surplus':'defisit','k-'+(net>=0?'green':'red')],
@@ -4863,7 +4865,7 @@ async function renderLaporan(){
           ${L('Retensi cadangan (10%, apropriasi)',-Math.abs(vp.reserve_retention_appropriation||0),false,1)}
         </tbody></table></div>${split}</div>${govNote}`;
     } else {
-      vpCard.innerHTML=`<div class="card" style="border-color:var(--amber,#9A6300)"><div style="padding:6px 2px;font-size:12.5px;color:var(--text2)">ℹ Laporan tervalidasi (view <b>v_pnl</b>) belum aktif. Menampilkan perhitungan operasional lama. Jalankan SQL Phase 5–8 di Supabase untuk mengaktifkan angka sumber-tunggal.</div></div>`;
+      vpCard.innerHTML=`<div class="card" style="border-color:var(--amber,#9A6300)"><div style="padding:6px 2px;font-size:12.5px;color:var(--text2)">Laporan tervalidasi (view <b>v_pnl</b>) belum aktif. Menampilkan perhitungan operasional lama. Jalankan SQL Phase 5–8 di Supabase untuk mengaktifkan angka sumber-tunggal.</div></div>`;
     }
   }
 
