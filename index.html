@@ -577,7 +577,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="card no-print">
           <div class="card-hdr"><div class="card-title">Quick Action</div></div>
           <div class="qa-grid">
-            <button class="qa-btn role-internal" onclick="openFunding()"><span class="qa-ic">＋</span>Tambah Unit</button>
+            <button class="qa-btn role-internal" onclick="openUnitCreate()"><span class="qa-ic">＋</span>Tambah Unit</button>
             <button class="qa-btn role-internal" onclick="showSection('funding')"><span class="qa-ic">◆</span>Modal</button>
             <button class="qa-btn role-internal" onclick="showSection('keuangan')"><span class="qa-ic">◇</span>Keuangan</button>
             <button class="qa-btn" onclick="showSection('analitik');setTimeout(exportInsightPDF,300)"><span class="qa-ic">⬇</span>Export Report</button>
@@ -734,7 +734,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <button class="btn-sm role-internal" onclick="openCostLedger()" style="padding:10px 16px;font-size:14px;font-weight:600">Cost Ledger</button>
           <button class="btn-sm role-internal" onclick="openSettle()" style="padding:10px 16px;font-size:14px;font-weight:600">Settle</button>
           <button class="btn-sm role-internal" id="btnLegacyInput" onclick="bukaInputBaru()" style="display:none;padding:10px 16px;font-size:13px;font-weight:600;opacity:.85">+ Input Unit Legacy</button>
-          <button class="btn-primary role-internal" onclick="openFunding()" style="padding:10px 18px;font-size:14px;font-weight:600">+ Tambah Unit</button>
+          <button class="btn-primary role-internal" onclick="openUnitCreate()" style="padding:10px 18px;font-size:14px;font-weight:600">+ Tambah Unit</button>
         </div>
         <div class="filter-bar">
           <span class="filter-label">Filter:</span>
@@ -1433,7 +1433,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="bn-btn role-internal" data-bn="pengaturan" onclick="showSection('pengaturan')"><span class="bn-ic">⚙</span>Pengaturan</button>
   </nav>
   <div class="fab-menu" id="fabMenu">
-    <button class="fab-item" onclick="toggleFab();openFunding()">＋ Tambah Unit</button>
+    <button class="fab-item" onclick="toggleFab();openUnitCreate()">＋ Tambah Unit</button>
     <button class="fab-item" onclick="toggleFab();showSection('funding')">◆ Modal</button>
     <button class="fab-item" onclick="toggleFab();showSection('keuangan')">◇ Keuangan</button>
   </div>
@@ -2231,7 +2231,7 @@ function renderUnits(){
           ${isLegacyUnit(u)?`<span class="badge" style="background:var(--surface2);color:var(--text3);border:1px solid var(--border)">LEGACY</span>`:''}
           ${ig&&!sold&&isLegacyUnit(u)?`<button class="btn-sm success" onclick="openTerjualModal(${u.id})">Tandai Terjual</button>`:''}
           ${ig&&!sold&&!isLegacyUnit(u)?`<button class="btn-sm success" onclick="openSettle(${u.id})">Settle</button>`:''}
-          ${ig?`<button class="btn-sm edit" onclick="startEdit(${u.id})">Edit</button>`:''}
+          ${ig?`<button class="btn-sm edit" onclick="editUnitRouter(${u.id})">Edit</button>`:''}
           ${ig?`<button class="btn-sm danger" onclick="hapusUnit(${u.id})">Hapus</button>`:''}
         </div>
       </div>
@@ -4485,37 +4485,231 @@ function openPartnerView(){
 // Base Unit Cost is DB-derived (v_unit_cost). Frontend never recomputes the
 // authoritative figure. Direct unit costs only — no payroll/office/overhead.
 const UCE_CATS=['Purchase','Service','Repair','Sparepart','Transport','Document/Tax','Direct Marketing','Other'];
+// Cost Ledger = ADDITIONAL direct costs only. 'Purchase' (Base Unit Cost /
+// acquisition) is captured once at unit creation and must not be re-entered here.
+const UCE_ADD_CATS=UCE_CATS.filter(c=>c!=='Purchase');
+
+// ═══════════════════ PERKASA · UNIFIED CREATE (unit + initial funding) ═══════════════════
+// One flow: create the Perkasa unit AND record its Base Unit Cost (acquisition,
+// stored as the single 'Purchase' cost entry — DB-derived, never re-entered) plus
+// Initial Funding (Perkasa/Partner) in a single modal. "Save & Add Another" resets
+// the form for rapid multi-unit entry without reselecting anything.
+function ucRecalc(){
+  const base=Number((document.getElementById('ucBase')||{}).value)||0;
+  const pk=Number((document.getElementById('ucPerkasa')||{}).value)||0;
+  const pt=Number((document.getElementById('ucPartnerAmt')||{}).value)||0;
+  const funding=pk+pt, total=base; // Additional=0 at creation → Total = Base
+  const gap=total-funding;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('ucSumBase',fmtRp(base)); set('ucSumFunding',fmtRp(funding));
+  set('ucSumAdd',fmtRp(0)); set('ucSumTotal',fmtRp(total));
+  const g=document.getElementById('ucSumGap');
+  if(g){ g.textContent=(gap===0?'Seimbang':(gap>0?'Kurang dana '+fmtRp(gap):'Lebih dana '+fmtRp(-gap)));
+    g.style.color=gap===0?'var(--green,#178A5A)':(gap>0?'var(--amber,#C07A0E)':'var(--red,#D33A2C)'); }
+}
+function openUnitCreate(){
+  const ov=document.createElement('div'); ov.id='ucOverlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,20,30,.55);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow:auto';
+  ov.innerHTML=`<div style="background:var(--surface);border-radius:16px;max-width:660px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+      <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Tambah Unit · Perkasa</div>
+      <button class="btn-sm" onclick="document.getElementById('ucOverlay').remove()">✕</button></div>
+    <div style="font-size:11.5px;color:var(--text3);margin-bottom:14px">Buat unit dan alokasi dana awal dalam satu langkah. Base Unit Cost = harga akuisisi (tersimpan sebagai satu entri biaya, DB-derived).</div>
+
+    <div style="border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Unit</div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1.1fr;gap:8px">
+        <div class="fg" style="margin:0"><label>Nama Unit</label><input id="ucNama" placeholder="mis. Honda Jazz Putih"></div>
+        <div class="fg" style="margin:0"><label>Jenis</label><select id="ucJenis"><option>Mobil</option><option>Motor</option></select></div>
+        <div class="fg" style="margin:0"><label>Tanggal Masuk</label><input id="ucTgl" type="date"></div>
+      </div>
+    </div>
+
+    <div style="border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Base Unit Cost (Akuisisi)</div>
+      <div class="fg" style="margin:0"><label>Harga Akuisisi Unit (Rp)</label><input id="ucBase" type="number" placeholder="0" oninput="ucRecalc()"></div>
+      <p style="font-size:10.5px;color:var(--text3);margin:6px 0 0">Biaya tambahan (service, sparepart, dll) dicatat terpisah di Cost Ledger.</p>
+    </div>
+
+    <div style="border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Initial Funding</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="fg" style="margin:0"><label>Modal Perkasa (Rp)</label><input id="ucPerkasa" type="number" placeholder="0" oninput="ucRecalc()"></div>
+        <div></div>
+        <div class="fg" style="margin:0"><label>Nama Partner (opsional)</label><input id="ucPartnerName" placeholder="mis. Reivan"></div>
+        <div class="fg" style="margin:0"><label>Modal Partner (Rp)</label><input id="ucPartnerAmt" type="number" placeholder="0" oninput="ucRecalc()"></div>
+      </div>
+      <p style="font-size:10.5px;color:var(--text3);margin:6px 0 0">Funding % ≠ Profit Share %. Partner Agreement diatur nanti di Modal → Funding.</p>
+    </div>
+
+    <div style="background:var(--bg);border-radius:12px;padding:12px 14px;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:12.5px">
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Base Unit Cost</span><b id="ucSumBase">Rp0</b></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Initial Funding</span><b id="ucSumFunding">Rp0</b></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Additional Unit Costs</span><b id="ucSumAdd">Rp0</b></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Total Unit Cost</span><b id="ucSumTotal">Rp0</b></div>
+        <div style="display:flex;justify-content:space-between;grid-column:1/3;border-top:1px dashed var(--border);padding-top:6px;margin-top:2px"><span style="color:var(--text3)">Funding vs Total</span><b id="ucSumGap">Seimbang</b></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn-sm" onclick="saveNewUnit(true)">Simpan &amp; Tambah Lagi</button>
+      <button class="confirm" onclick="saveNewUnit(false)">Simpan &amp; Selesai</button>
+    </div>
+    <div id="ucCount" style="font-size:11px;color:var(--text3);text-align:right;margin-top:8px"></div>
+  </div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov)ov.remove(); });
+  document.body.appendChild(ov);
+  document.getElementById('ucTgl').value=new Date().toISOString().slice(0,10);
+  ucRecalc();
+  document.getElementById('ucNama').focus();
+}
+let ucAddedThisSession=0;
+function ucResetForm(){
+  ['ucNama','ucBase','ucPerkasa','ucPartnerName','ucPartnerAmt'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('ucJenis').value='Mobil';
+  document.getElementById('ucTgl').value=new Date().toISOString().slice(0,10);
+  ucRecalc();
+  document.getElementById('ucNama').focus();
+}
+async function saveNewUnit(addAnother){
+  const nama=(document.getElementById('ucNama').value||'').trim();
+  if(!nama){ showToast('Nama unit wajib.'); document.getElementById('ucNama').focus(); return; }
+  const jenis=document.getElementById('ucJenis').value;
+  const tgl=document.getElementById('ucTgl').value||new Date().toISOString().slice(0,10);
+  const base=Number(document.getElementById('ucBase').value)||0;
+  const pk=Number(document.getElementById('ucPerkasa').value)||0;
+  const ptName=(document.getElementById('ucPartnerName').value||'').trim();
+  const ptAmt=Number(document.getElementById('ucPartnerAmt').value)||0;
+  if(base<0||pk<0||ptAmt<0){ showToast('Nominal tidak boleh negatif.'); return; }
+  if(ptAmt>0&&!ptName){ showToast('Nama partner wajib bila ada modal partner.'); return; }
+  try{
+    const ins=await db.from('units').insert({nama,jenis,status:'aktif',tgl,funding_model:'perkasa'}).select('id').single();
+    if(ins.error)throw ins.error;
+    const uid=ins.data.id;
+    if(base>0){ const c=await db.from('unit_cost_entries').insert({unit_id:uid,category:'Purchase',description:'Akuisisi unit',amount:base,entry_date:tgl}); if(c.error)throw c.error; }
+    const frows=[];
+    if(pk>0)frows.push({unit_id:uid,source:'perkasa',amount:pk,funded_date:tgl});
+    if(ptAmt>0)frows.push({unit_id:uid,source:'partner',partner_name:ptName,amount:ptAmt,funded_date:tgl});
+    if(frows.length){ const f=await db.from('unit_funding').insert(frows); if(f.error)throw f.error; }
+    ucAddedThisSession++;
+    await loadUnits();
+    if(addAnother){
+      ucResetForm();
+      const c=document.getElementById('ucCount'); if(c)c.textContent=ucAddedThisSession+' unit ditambahkan sesi ini';
+      showToast('Unit "'+nama+'" tersimpan. Lanjut unit berikutnya.');
+    }else{
+      document.getElementById('ucOverlay').remove();
+      showToast('Unit "'+nama+'" tersimpan.');
+      {const _su=document.getElementById('sec-unit'); if(_su&&_su.classList.contains('active'))renderUnits();}
+    }
+  }catch(e){ showToast('Gagal menyimpan unit: '+((e&&e.message)||'cek koneksi / kolom funding_model')); }
+}
+
+// ═══════════════════ PERKASA · DEDICATED EDIT (never the legacy editor) ═══════════════════
+function openPerkasaEdit(id){
+  const u=(units||[]).find(x=>String(x.id)===String(id)); if(!u)return;
+  const settled=u.status==='terjual';
+  const ov=document.createElement('div'); ov.id='peOverlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,20,30,.55);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow:auto';
+  ov.innerHTML=`<div style="background:var(--surface);border-radius:16px;max-width:560px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Edit Unit · Perkasa</div>
+      <button class="btn-sm" onclick="document.getElementById('peOverlay').remove()">✕</button></div>
+    <div style="font-size:11.5px;color:var(--text3);margin-bottom:14px">Unit model Perkasa. Base Unit Cost & funding dikelola lewat Cost Ledger / Funding (DB-derived).</div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px">
+      <div class="fg" style="margin:0"><label>Nama Unit</label><input id="peNama" value="${esc(u.nama)}"></div>
+      <div class="fg" style="margin:0"><label>Jenis</label><select id="peJenis"><option${u.jenis==='Mobil'?' selected':''}>Mobil</option><option${u.jenis==='Motor'?' selected':''}>Motor</option></select></div>
+    </div>
+    <div class="fg" style="margin:0 0 14px"><label>Tanggal Masuk</label><input id="peTgl" type="date" value="${esc(u.tgl||'')}"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="btn-sm" onclick="document.getElementById('peOverlay').remove();openCostLedger(${u.id})">Cost Ledger</button>
+      <button class="btn-sm" onclick="document.getElementById('peOverlay').remove();openFunding(${u.id})">Funding</button>
+      <button class="btn-sm" onclick="document.getElementById('peOverlay').remove();openSettle(${u.id})">${settled?'Settlement':'Settle'}</button>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-sm" onclick="document.getElementById('peOverlay').remove()">Batal</button>
+      <button class="confirm" onclick="savePerkasaEdit(${u.id})">Simpan</button>
+    </div>
+  </div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov)ov.remove(); });
+  document.body.appendChild(ov);
+}
+async function savePerkasaEdit(id){
+  const nama=(document.getElementById('peNama').value||'').trim();
+  if(!nama){ showToast('Nama unit wajib.'); return; }
+  const jenis=document.getElementById('peJenis').value;
+  const tgl=document.getElementById('peTgl').value||null;
+  try{ const {error}=await db.from('units').update({nama,jenis,tgl}).eq('id',id); if(error)throw error;
+    showToast('Unit diperbarui.'); await loadUnits();
+    document.getElementById('peOverlay').remove();
+    {const _su=document.getElementById('sec-unit'); if(_su&&_su.classList.contains('active'))renderUnits();}
+  }catch(e){ showToast('Gagal memperbarui unit.'); }
+}
+function editUnitRouter(id){
+  const u=(units||[]).find(x=>String(x.id)===String(id));
+  if(u&&(u.fundingModel||'legacy')==='perkasa') return openPerkasaEdit(id);
+  return startEdit(id);
+}
+
 let UCE_UNIT=null;
+let UCE_FILTER='all', UCE_SEARCH='';
+// Cost Ledger candidates: active/ready PERKASA units only (exclude sold/settled).
+function uceCandidates(){
+  return (units||[]).filter(u=>(u.fundingModel||'legacy')==='perkasa' && u.status!=='terjual')
+    .filter(u=>UCE_FILTER==='all'||u.jenis===UCE_FILTER)
+    .filter(u=>!UCE_SEARCH||String(u.nama||'').toLowerCase().includes(UCE_SEARCH))
+    .sort((a,b)=>String(a.nama||'').localeCompare(String(b.nama||'')));
+}
+function uceRenderSelect(unitId){
+  const list=uceCandidates();
+  const cur=(unitId!=null&&list.some(u=>String(u.id)===String(unitId)))?String(unitId):(list[0]?String(list[0].id):'');
+  const sel=document.getElementById('uceUnit'); if(!sel)return cur;
+  sel.innerHTML=list.length?list.map(u=>`<option value="${u.id}"${String(u.id)===cur?' selected':''}>${esc(u.nama)} · ${esc(u.jenis)}</option>`).join('')
+    :'<option value="">(tidak ada unit Perkasa aktif)</option>';
+  return cur;
+}
+function uceSetFilter(f){ UCE_FILTER=f; document.querySelectorAll('#uceFilterBar .chip').forEach(c=>c.classList.toggle('active',c.dataset.uf===f)); const cur=uceRenderSelect(); loadCostEntries(); }
+function uceOnSearch(v){ UCE_SEARCH=String(v||'').toLowerCase(); uceRenderSelect(); loadCostEntries(); }
 function openCostLedger(unitId){
+  UCE_FILTER='all'; UCE_SEARCH='';
   const ov=document.createElement('div'); ov.id='uceOverlay';
   ov.style.cssText='position:fixed;inset:0;background:rgba(15,20,30,.55);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow:auto';
-  const opts=(units||[]).slice().sort((a,b)=>String(a.nama||'').localeCompare(String(b.nama||''))).map(u=>`<option value="${u.id}"${String(u.id)===String(unitId)?' selected':''}>${esc(u.nama)}${u.status==='terjual'?' (terjual)':''}</option>`).join('');
   ov.innerHTML=`<div style="background:var(--surface);border-radius:16px;max-width:640px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Unit Cost Ledger</div>
+      <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Unit Cost Ledger · Biaya Tambahan</div>
       <button class="btn-sm" onclick="document.getElementById('uceOverlay').remove()">✕</button></div>
-    <div class="fg" style="margin:6px 0 14px"><label>Unit</label>
-      <select id="uceUnit" onchange="loadCostEntries()">${opts||'<option>(tidak ada unit)</option>'}</select></div>
+    <div style="font-size:11.5px;color:var(--text3);margin-bottom:10px">Hanya unit <b>Perkasa aktif/ready</b>. Unit terjual/settled tidak muncul. Base Unit Cost (akuisisi) diatur saat pembuatan unit — bukan di sini.</div>
+    <div id="uceFilterBar" style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+      <button class="chip active" data-uf="all" onclick="uceSetFilter('all')">Semua</button>
+      <button class="chip" data-uf="Mobil" onclick="uceSetFilter('Mobil')">Mobil</button>
+      <button class="chip" data-uf="Motor" onclick="uceSetFilter('Motor')">Motor</button>
+      <input id="uceSearch" oninput="uceOnSearch(this.value)" placeholder="Cari unit…" style="flex:1;min-width:120px;margin-left:auto;padding:8px 11px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text)">
+    </div>
+    <div class="fg" style="margin:0 0 14px"><label>Unit</label>
+      <select id="uceUnit" onchange="loadCostEntries()"></select></div>
     <div class="ih-grid" id="uceKPI" style="margin-bottom:14px"></div>
     <div style="display:grid;grid-template-columns:1.1fr 1.4fr .9fr .9fr;gap:8px;align-items:end">
-      <div class="fg" style="margin:0"><label>Kategori</label><select id="uceCat">${UCE_CATS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="fg" style="margin:0"><label>Kategori</label><select id="uceCat">${UCE_ADD_CATS.map(c=>`<option>${c}</option>`).join('')}</select></div>
       <div class="fg" style="margin:0"><label>Deskripsi</label><input id="uceDesc" placeholder="mis. ganti kampas rem"></div>
       <div class="fg" style="margin:0"><label>Nominal (Rp)</label><input id="uceAmt" type="number" placeholder="0"></div>
       <div class="fg" style="margin:0"><label>Tanggal</label><input id="uceDate" type="date"></div>
     </div>
     <div style="display:flex;gap:8px;margin-top:8px"><input id="uceNote" class="fg" style="flex:1;margin:0;padding:9px 11px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text)" placeholder="Catatan (opsional)">
       <button class="confirm" onclick="addCostEntry()">+ Tambah Biaya</button></div>
-    <p style="font-size:11px;color:var(--text3);margin:8px 0 4px">Hanya biaya langsung unit. <b>Jangan</b> masukkan payroll, kantor, software, atau overhead perusahaan.</p>
+    <p style="font-size:11px;color:var(--text3);margin:8px 0 4px">Hanya biaya langsung tambahan unit. <b>Jangan</b> masukkan akuisisi (Base Unit Cost), payroll, kantor, software, atau overhead perusahaan.</p>
     <div class="table-scroll" style="margin-top:6px"><table class="track-table" id="uceTable"></table></div>
   </div>`;
   ov.addEventListener('click',e=>{ if(e.target===ov)ov.remove(); });
   document.body.appendChild(ov);
   document.getElementById('uceDate').value=new Date().toISOString().slice(0,10);
+  uceRenderSelect(unitId);
   loadCostEntries();
 }
 async function loadCostEntries(){
   const sel=document.getElementById('uceUnit'); if(!sel)return;
   UCE_UNIT=sel.value; const kpi=document.getElementById('uceKPI'), tb=document.getElementById('uceTable');
+  if(!UCE_UNIT){ kpi.innerHTML=''; tb.innerHTML='<tr><td style="padding:16px;text-align:center;color:var(--text3)">Tidak ada unit Perkasa aktif untuk filter ini.</td></tr>'; return; }
   let entries=null, baseCost=null;
   try{
     const r=await db.from('unit_cost_entries').select('*').eq('unit_id',UCE_UNIT).order('entry_date',{ascending:true});
@@ -4525,9 +4719,15 @@ async function loadCostEntries(){
     baseCost=v.data?Number(v.data.base_unit_cost):null;
   }catch(e){ FIN_STATUS['unit_cost_entries']=/schema cache|does not exist|find the table|pgrst205|42p01|relation/.test(((e.message||'')+' '+(e.code||'')).toLowerCase())?'missing':'apifail';
     kpi.innerHTML=''; tb.innerHTML='<tr><td>'+moduleMsg('unit_cost_entries','Cost Ledger')+'</td></tr>'; return; }
+  // Base = acquisition (Purchase entries); Additional = other direct costs.
+  // Total = v_unit_cost.base_unit_cost (DB-derived Σ of all entries) — never recomputed.
+  const base=entries.filter(e=>e.category==='Purchase').reduce((a,e)=>a+Number(e.amount||0),0);
+  const total=baseCost==null?null:Number(baseCost);
+  const addl=total==null?entries.filter(e=>e.category!=='Purchase').reduce((a,e)=>a+Number(e.amount||0),0):(total-base);
   kpi.innerHTML=[
-    kcard('Base Unit Cost',baseCost==null?'—':fmtRp(baseCost),'DB-derived (v_unit_cost) ✓','k-green'),
-    kcard('Jumlah Entri',String(entries.length),'biaya langsung','k-blue'),
+    kcard('Base Unit Cost',fmtRp(base),'akuisisi (saat pembuatan)','k-green'),
+    kcard('Additional Unit Costs',fmtRp(addl),'biaya langsung tambahan','k-amber'),
+    kcard('Total Unit Cost',total==null?'—':fmtRp(total),'DB-derived (v_unit_cost) ✓','k-blue'),
   ].join('');
   tb.innerHTML=`<thead><tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th class="num">Nominal</th><th></th></tr></thead><tbody>`+
     (entries.map(e=>`<tr><td>${esc(e.entry_date)}</td><td>${esc(e.category)}</td><td>${esc(e.description||'')}${e.note?`<br><span style="color:var(--text3);font-size:11px">${esc(e.note)}</span>`:''}</td>
@@ -4537,9 +4737,11 @@ async function loadCostEntries(){
 }
 async function addCostEntry(){
   if(!UCE_UNIT){ showToast('Pilih unit dulu.'); return; }
+  const cat=document.getElementById('uceCat').value;
+  if(cat==='Purchase'){ showToast('Base Unit Cost (akuisisi) tidak dientri di sini.'); return; }
   const amt=Number(document.getElementById('uceAmt').value)||0;
   if(amt<0){ showToast('Nominal tidak boleh negatif.'); return; }
-  const row={ unit_id:Number(UCE_UNIT), category:document.getElementById('uceCat').value,
+  const row={ unit_id:Number(UCE_UNIT), category:cat,
     description:document.getElementById('uceDesc').value.trim(), amount:amt,
     entry_date:document.getElementById('uceDate').value||new Date().toISOString().slice(0,10),
     note:document.getElementById('uceNote').value.trim() };
