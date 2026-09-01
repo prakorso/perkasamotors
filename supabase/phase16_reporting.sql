@@ -55,9 +55,12 @@ from base b, dep d, setl s;
 -- ── Unified P&L base (legacy + future, deduped by funding_model) ──
 -- retained_profit = Perkasa's kept profit (legacy net / future perkasa_retained).
 create or replace view v_unit_pnl_unified as
+-- legacy retained uses the VALIDATED basis (revenue − unit_cost − fixed_fees) so
+-- Σ legacy = v_pnl.realized_unit_profit exactly (ties to v_retained_profit).
 select 'legacy'::text as source, e.id as unit_id, e.nama, e.sale_date as pnl_date,
        e.revenue, e.unit_cost as base_cost, 0::numeric as selling_cost,
-       e.realized_profit as true_profit, e.realized_profit as retained_profit, false as is_loss
+       (e.revenue - e.unit_cost - e.fixed_fees) as true_profit,
+       (e.revenue - e.unit_cost - e.fixed_fees) as retained_profit, false as is_loss
 from v_unit_economics e where e.status='terjual'
 union all
 select 'future'::text, s.unit_id, u.nama, s.settle_date,
