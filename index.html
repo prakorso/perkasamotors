@@ -2913,116 +2913,133 @@ function ccRange(preset){
 }
 function ccSetPeriod(p){ CC_PERIOD=p; if(p==='custom'){ const a=prompt('Dari (YYYY-MM-DD):'); const b=prompt('Sampai (YYYY-MM-DD):'); if(a&&b)CC_CUSTOM=[a,b]; else return; } renderCommandCenter(); }
 function ccSetAsof(v){ CC_ASOF=v||null; renderCommandCenter(); }
+function ccPrevRange(pf,pt){
+  const a=new Date(pf), b=new Date(pt); const len=Math.max(1,Math.round((b-a)/86400000));
+  const pTo=new Date(a.getTime()-86400000); const pFrom=new Date(pTo.getTime()-len*86400000);
+  const f=d=>d.toISOString().slice(0,10); return [f(pFrom),f(pTo)];
+}
+function ccDelta(cur,prev){
+  const d=Number(cur)-Number(prev); if(!isFinite(d)||prev==null) return '';
+  const up=d>=0; return `<span style="font-size:11px;font-weight:700;color:${up?'var(--green)':'var(--red)'}">${up?'▲':'▼'} ${fmtRp(Math.abs(d))}</span>`;
+}
 async function renderCommandCenter(){
   const el=document.getElementById('cmdCenter'), legacy=document.getElementById('homeLegacy');
   const [pf,pt]=ccRange(CC_PERIOD); const asof=CC_ASOF||new Date().toISOString().slice(0,10);
+  el.style.display='block'; if(legacy)legacy.style.display='none';
+  el.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3)"><span class="spin" style="display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></span> Memuat Command Center…</div>';
   let pos=null, pnl=null;
   try{
     const rp=await db.rpc('fn_position',{p_asof:asof}); if(rp.error)throw rp.error; pos=rp.data;
     const rl=await db.rpc('fn_pnl',{p_from:pf,p_to:pt}); if(rl.error)throw rl.error; pnl=rl.data;
-  }catch(e){ el.style.display='none'; if(legacy)legacy.style.display=''; return false; }   // phase16 not deployed → legacy home
-  if(legacy)legacy.style.display='none'; el.style.display='block';
-  const [cf, perf] = await Promise.all([
-    db.rpc('fn_cashflow',{p_from:pf,p_to:pt}).then(r=>r.data).catch(()=>null),
-    db.rpc('fn_unit_performance',{p_from:pf,p_to:pt}).then(r=>r.data).catch(()=>[])
+  }catch(e){ el.style.display='none'; if(legacy)legacy.style.display=''; return false; }
+  const [prv,perf,rp2,rr2]=await Promise.all([
+    (async()=>{const [a,b]=ccPrevRange(pf,pt); return db.rpc('fn_pnl',{p_from:a,p_to:b}).then(r=>r.data).catch(()=>null);})(),
+    db.rpc('fn_unit_performance',{p_from:pf,p_to:pt}).then(r=>r.data).catch(()=>[]),
+    db.from('v_cash_position').select('reserve').single().then(r=>r.data).catch(()=>null),
+    db.from('v_retained_profit').select('future_retained').single().then(r=>r.data).catch(()=>null)
   ]);
+  const reservedCash = rp2 ? Number(rp2.reserve) : 0;
+  const futureRetained = rr2 ? Number(rr2.future_retained) : 0;
   const prov=pos.is_provisional;
-  const pill=(t,c)=>`<span style="font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;background:${c}18;color:${c}">${t}</span>`;
-  const kc=(l,v,s,c)=>`<div class="kpi ${c||'k-blue'}"><div class="kpi-label">${l}</div><div class="kpi-value" style="font-size:19px">${v}</div><div class="kpi-sub">${s||''}</div></div>`;
   const lbl={month:'Bulan Ini',quarter:'Kuartal',ytd:'YTD',year:'Tahun Ini',custom:'Custom'};
-  // Attention
+  const kc=(l,v,s,c)=>`<div class="kpi ${c||'k-blue'}"><div class="kpi-label">${l}</div><div class="kpi-value" style="font-size:19px">${v}</div><div class="kpi-sub">${s||''}</div></div>`;
+  const pill=(t,c)=>`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:${c}22;color:${c}">${t}</span>`;
+  // Attention alerts (existing facts only — no thresholds)
   const att=[];
   if(prov)att.push(['amber','Kas awal belum diverifikasi — Available Cash bersifat provisional.']);
-  if(Number(pos.available_cash)<0)att.push(['red','Available Cash negatif — perhatikan likuiditas.']);
   (FIN.obligations||[]).filter(o=>o.due_date&&o.due_date<=asof).slice(0,3).forEach(o=>att.push(['red',`${o.type==='debt'?'Cicilan utang':'Payroll'} ${esc(o.name)} ${fmtRp(o.amount)} jatuh tempo ${esc(o.due_date)}.`]));
-  (perf||[]).filter(u=>u.is_loss).slice(0,2).forEach(u=>att.push(['amber',`Unit rugi: ${esc(u.nama)} (${fmtRp(u.true_profit)}).`]));
+  (perf||[]).filter(u=>u.is_loss).slice(0,3).forEach(u=>att.push(['amber',`Unit rugi: ${esc(u.nama)} (${fmtRp(u.true_profit)}).`]));
+  if(pos.debt_next_due_date)att.push(['amber',`Cicilan utang berikutnya ${fmtRp(pos.debt_next_due_amount)} — ${esc(pos.debt_next_due_date)}.`]);
 
   el.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-      <div><div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3)">Command Center</div>
-        <div style="font-size:20px;font-weight:800;letter-spacing:-.02em">Posisi Perusahaan</div></div>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        ${['month','quarter','ytd','year','custom'].map(p=>`<button class="chip ${CC_PERIOD===p?'active':''}" onclick="ccSetPeriod('${p}')">${lbl[p]}</button>`).join('')}
-        <span style="font-size:11px;color:var(--text3);margin-left:6px">As-of</span>
-        <input type="date" value="${asof}" onchange="ccSetAsof(this.value)" style="padding:5px 8px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text);font-size:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px">
+      <div><div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3)">Owner Command Center</div>
+        <div style="font-size:20px;font-weight:800;letter-spacing:-.02em">Posisi &amp; Kinerja</div></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;gap:5px;align-items:center"><span style="font-size:10.5px;color:var(--text3)">Periode →</span>
+          ${['month','quarter','ytd','year','custom'].map(p=>`<button class="chip ${CC_PERIOD===p?'active':''}" onclick="ccSetPeriod('${p}')">${lbl[p]}</button>`).join('')}</div>
+        <div style="display:flex;gap:5px;align-items:center"><span style="font-size:10.5px;color:var(--text3)">As-of →</span>
+          <input type="date" value="${asof}" onchange="ccSetAsof(this.value)" style="padding:5px 8px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text);font-size:12px"></div>
       </div>
     </div>
-    <!-- HERO available cash -->
-    <div class="card" style="background:linear-gradient(135deg,var(--accent,#2D6A1F)12,transparent);margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
-        <div><div class="kpi-label">Perkasa Available Cash ${prov?pill('PROVISIONAL','#C07A0E'):''}</div>
-          <div style="font-size:34px;font-weight:800;letter-spacing:-.02em;color:${Number(pos.available_cash)>=0?'var(--green)':'var(--red)'}">${fmtRp(pos.available_cash)}</div>
-          <div class="kpi-sub">Cash-only · bukan equity/debt/partner · as-of ${esc(asof)}</div></div>
-        <div style="text-align:right"><div class="kpi-label">Period Profit · ${lbl[CC_PERIOD]}</div>
-          <div style="font-size:24px;font-weight:800;color:${Number(pnl.unit_retained)>=0?'var(--green)':'var(--red)'}">${fmtRp(pnl.unit_retained)}</div>
-          <div class="kpi-sub">Unified Legacy + Future</div></div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Periode mempengaruhi metrik <b>kinerja</b>. As-of mempengaruhi metrik <b>posisi</b>. Metrik posisi tidak berubah saat periode diganti.</div>
+
+    <!-- HERO: 4 cards -->
+    <div class="kpi-grid" style="margin-bottom:14px">
+      <div class="card" style="grid-column:span 1"><div class="kpi-label">Available Cash ${prov?pill('PROVISIONAL','#C07A0E'):''} <span style="color:var(--text3)">· as-of</span></div>
+        <div style="font-size:30px;font-weight:800;letter-spacing:-.02em;color:${Number(pos.available_cash)>=0?'var(--green)':'var(--red)'}">${fmtRp(pos.available_cash)}</div>
+        <div class="kpi-sub">kas yang aman dipakai · bukan equity/debt/partner</div></div>
+      <div class="card"><div class="kpi-label">Period Profit <span style="color:var(--text3)">· ${lbl[CC_PERIOD]}</span></div>
+        <div style="font-size:26px;font-weight:800;color:${Number(pnl.unit_retained)>=0?'var(--green)':'var(--red)'}">${fmtRp(pnl.unit_retained)}</div>
+        <div class="kpi-sub">Unified Legacy+Future · ${prv?('vs periode lalu '+ccDelta(pnl.unit_retained,prv.unit_retained)):''}</div></div>
+      <div class="card"><div class="kpi-label">Deployed Capital <span style="color:var(--text3)">· as-of</span></div>
+        <div style="font-size:26px;font-weight:800;color:var(--text)">${fmtRp(pos.deployed_capital)}</div>
+        <div class="kpi-sub" style="color:var(--text3)">di unit aktif — <b>BUKAN cash</b></div></div>
+      <div class="card"><div class="kpi-label">Financing &amp; Exposure <span style="color:var(--text3)">· as-of</span></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:13px"><span>Partner Exposure</span><span class="mono" style="font-weight:700;color:#C07A0E">${fmtRp(pos.partner_exposure)}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:13px"><span>Debt Outstanding</span><span class="mono" style="font-weight:700;color:var(--red)">${fmtRp(pos.debt_outstanding)}</span></div>
+        <div class="kpi-sub" style="margin-top:4px">${pos.debt_next_due_date?('utang jatuh tempo '+esc(pos.debt_next_due_date)):'tidak ada jatuh tempo'} · dua hal terpisah</div></div>
+    </div>
+
+    <!-- CASH HIERARCHY -->
+    <div class="two-col">
+      <div class="card"><div class="card-hdr"><div class="card-title">Hierarki Kas (as-of)</div></div>
+        <div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed var(--border)"><span>Available Cash</span><span class="mono" style="font-weight:700">${fmtRp(pos.available_cash)}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed var(--border)"><span>Actual Cash</span><span class="mono">${fmtRp(pos.actual_cash)}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed var(--border)"><span>Reserved (cadangan legacy)</span><span class="mono">${fmtRp(reservedCash)}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:7px 2px"><span>Deployed Capital <span style="font-size:11px;color:var(--text3)">(bukan cash)</span></span><span class="mono" style="color:var(--text3)">${fmtRp(pos.deployed_capital)}</span></div>
+        <p style="font-size:11px;color:var(--text3);margin-top:6px">Deployed Capital sudah keluar dari kas (ada di unit) — tidak bisa dipakai. Tidak ada angka "capital pool" gabungan.</p></div>
+      <div class="card"><div class="card-hdr"><div class="card-title">Profit &amp; Kekayaan</div></div>
+        <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin:2px 0">Kinerja Periode · ${lbl[CC_PERIOD]}</div>
+        <div style="display:flex;justify-content:space-between;padding:5px 2px"><span>Revenue</span><span class="mono">${fmtRp(pnl.revenue)}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 2px"><span>Period Profit</span><span class="mono" style="font-weight:700;color:var(--green)">${fmtRp(pnl.unit_retained)}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 2px"><span>Net Periode</span><span class="mono">${fmtRp(pnl.period_net)}</span></div>
+        <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin:8px 0 2px;border-top:1px solid var(--border);padding-top:6px">Posisi / Kekayaan · as-of</div>
+        <div style="display:flex;justify-content:space-between;padding:5px 2px"><span>Retained Profit (kumulatif)</span><span class="mono" style="font-weight:700">${fmtRp(pos.retained_profit)}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 2px"><span>Future Retained</span><span class="mono">${fmtRp(futureRetained)}</span></div>
+        <p style="font-size:11px;color:var(--text3);margin-top:6px">Period Profit = kinerja periode; Retained Profit = akumulasi ekuitas. Keduanya berbeda.</p></div>
+    </div>
+
+    <!-- WHAT CHANGED -->
+    <div class="card"><div class="card-hdr"><div class="card-title">Apa yang Berubah</div></div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px">
+        <div>Period Profit vs periode lalu: ${prv?ccDelta(pnl.unit_retained,prv.unit_retained):'—'}</div>
+        <div>Revenue vs periode lalu: ${prv?ccDelta(pnl.revenue,prv.revenue):'—'}</div>
       </div>
-    </div>
-    <!-- Position (as-of) -->
-    <div class="card-hdr" style="margin:2px 0 8px"><div class="card-title">Posisi Keuangan (as-of)</div></div>
-    <div class="kpi-grid" style="margin-bottom:14px">
-      ${kc('Kas Aktual',fmtRp(pos.actual_cash),'liquid','k-teal')}
-      ${kc('Modal Deployed',fmtRp(pos.deployed_capital),'di unit aktif','k-purple')}
-      ${kc('Liabilities',fmtRp(pos.liabilities),'utang+payroll+fee','k-red')}
-      ${kc('Retained Profit',fmtRp(pos.retained_profit),'ekuitas','k-green')}
-      ${kc('Company Equity',fmtRp(pos.equity),'founder+retained','k-blue')}
-      ${kc('Partner Exposure',fmtRp(pos.partner_exposure),'external capital','k-amber')}
-      ${kc('Debt Outstanding',fmtRp(pos.debt_outstanding),pos.debt_next_due_date?('jatuh tempo '+esc(pos.debt_next_due_date)):'—','k-red')}
-      ${kc('Unit Aktif',String(pos.active_units),'belum settled','k-blue')}
-    </div>
-    <!-- Performance (period) -->
-    <div class="card-hdr" style="margin:2px 0 8px"><div class="card-title">Kinerja · ${lbl[CC_PERIOD]} <span style="font-size:11px;color:var(--text3)">(${esc(pf)} — ${esc(pt)})</span></div></div>
-    <div class="kpi-grid" style="margin-bottom:14px">
-      ${kc('Revenue',fmtRp(pnl.revenue),'penjualan periode','k-blue')}
-      ${kc('Unit Retained',fmtRp(pnl.unit_retained),`legacy ${fmtRp(pnl.legacy_retained)} · future ${fmtRp(pnl.future_retained)}`,'k-green')}
-      ${kc('OpEx',fmtRp(pnl.opex),'kas keluar','k-amber')}
-      ${kc('Finance Expense',fmtRp(pnl.interest),'bunga (bukan pokok)','k-red')}
-      ${kc('Payroll',fmtRp(pnl.payroll),'gaji dibayar','k-purple')}
-      ${kc('Net Periode',fmtRp(pnl.period_net),'setelah opex/bunga/payroll','k-'+(Number(pnl.period_net)>=0?'green':'red'))}
-    </div>
+      <p style="font-size:11px;color:var(--text3);margin-top:6px">Delta posisi (cash/deployed) vs titik-waktu lalu belum tersedia — butuh historical as-of (gap D7 berikutnya).</p></div>
+
+    <!-- CHARTS: 2 only -->
     <div class="two-col">
-      <div class="card"><div class="card-hdr"><div class="card-title">Cash In vs Out · ${lbl[CC_PERIOD]}</div></div>
-        <div class="chart-wrap" style="height:200px"><canvas id="ccCash"></canvas></div></div>
-      <div class="card"><div class="card-hdr"><div class="card-title">Capital: Deployed vs Available (as-of)</div></div>
-        <div class="chart-wrap" style="height:200px"><canvas id="ccCap"></canvas></div></div>
+      <div class="card"><div class="card-hdr"><div class="card-title">Profit Trend (6 bulan)</div></div><div class="chart-wrap" style="height:200px"><canvas id="ccTrend"></canvas></div></div>
+      <div class="card"><div class="card-hdr"><div class="card-title">Likuiditas: Available vs Deployed (as-of)</div></div><div class="chart-wrap" style="height:200px"><canvas id="ccCap"></canvas></div></div>
     </div>
-    <div class="two-col">
-      <div class="card"><div class="card-hdr"><div class="card-title">Profit Trend (6 bulan, unified)</div></div>
-        <div class="chart-wrap" style="height:200px"><canvas id="ccTrend"></canvas></div></div>
-      <div class="card"><div class="card-hdr"><div class="card-title">Kewajiban Terdekat</div></div>
-        <div id="ccOblig"></div></div>
-    </div>
-    <div class="card"><div class="card-hdr"><div class="card-title">Unit Performance · ${lbl[CC_PERIOD]}</div></div>
+
+    <!-- ATTENTION UNITS -->
+    <div class="card"><div class="card-hdr"><div class="card-title">Unit Perlu Perhatian · ${lbl[CC_PERIOD]}</div></div>
       <div class="table-scroll"><table class="track-table" id="ccUnitTable"></table></div></div>
-    <div class="card"><div class="card-hdr"><div class="card-title">⚠ Perlu Perhatian</div></div>
-      <div class="alert-stack">${att.length?att.map(([lv,m])=>`<div class="alert ${lv==='red'?'red':'amber'}"><span class="a-ic">${lv==='red'?'🔴':'🟡'}</span><div>${m}</div></div>`).join(''):'<div class="alert green"><span class="a-ic">🟢</span><div>Tidak ada tindakan mendesak.</div></div>'}</div></div>
+
+    <!-- DECISIONS/ALERTS -->
+    <div class="card"><div class="card-hdr"><div class="card-title">⚠ Perlu Perhatian / Keputusan</div></div>
+      <div class="alert-stack">${att.length?att.map(([lv,m])=>`<div class="alert ${lv==='red'?'red':'amber'}"><span class="a-ic">${lv==='red'?'🔴':'🟡'}</span><div>${m}</div></div>`).join(''):'<div class="alert green"><span class="a-ic">🟢</span><div>Tidak ada tindakan mendesak.</div></div>'}</div>
+      <p style="font-size:11px;color:var(--text3);margin-top:6px">Alert berbasis fakta yang ada. Alert berbasis threshold (min cash, ROI, holding, konsentrasi) menyusul di D7.6 dengan policy configurable.</p></div>
   `;
   // charts
-  if(cf){ if(ccCashChart)ccCashChart.destroy();
-    const cin=Number(cf.inflow_sales||0)+Number(cf.inflow_debt_draw||0);
-    const cout=Number(cf.outflow_opex||0)+Number(cf.outflow_debt||0)+Number(cf.outflow_payroll||0)+Number(cf.outflow_deploy||0)+Number(cf.outflow_partner_settle||0);
-    ccCashChart=new Chart(document.getElementById('ccCash').getContext('2d'),{type:'bar',
-      data:{labels:['Masuk','Keluar'],datasets:[{data:[cin,cout],backgroundColor:['rgba(23,138,90,.8)','rgba(211,58,44,.78)'],borderRadius:6}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtRp(c.parsed.y)}}},scales:{y:{ticks:{callback:v=>'Rp'+(v/1e6).toFixed(0)+'jt'}}}}}); }
   if(ccCapChart)ccCapChart.destroy();
   ccCapChart=new Chart(document.getElementById('ccCap').getContext('2d'),{type:'bar',
-    data:{labels:['Deployed','Available'],datasets:[{data:[Number(pos.deployed_capital),Math.max(0,Number(pos.available_cash))],backgroundColor:['#7A5C9E','#178A5A'],borderRadius:6}]},
+    data:{labels:['Available Cash','Deployed Capital'],datasets:[{data:[Math.max(0,Number(pos.available_cash)),Number(pos.deployed_capital)],backgroundColor:['#178A5A','#7A5C9E'],borderRadius:6}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtRp(c.parsed.x)}}},scales:{x:{ticks:{callback:v=>'Rp'+(v/1e6).toFixed(0)+'jt'}}}}});
-  // profit trend: last 6 months unit_retained
   ccProfitTrend();
-  // obligations
-  const ob=(FIN.obligations||[]).slice().filter(o=>o.due_date).sort((a,b)=>String(a.due_date).localeCompare(String(b.due_date))).slice(0,6);
-  document.getElementById('ccOblig').innerHTML=ob.length?ob.map(o=>`<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed var(--border)"><div><div style="font-size:13px">${o.type==='debt'?'🏛️':'👥'} ${esc(o.name)}</div><div style="font-size:11px;color:var(--text3)">${esc(o.due_date)}</div></div><span class="mono" style="font-weight:600">${fmtRp(o.amount)}</span></div>`).join(''):'<div style="padding:14px;text-align:center;color:var(--text3)">Tidak ada kewajiban terjadwal.</div>';
-  // unit performance table
-  const rows=(perf||[]);
-  document.getElementById('ccUnitTable').innerHTML=`<thead><tr><th>Unit</th><th>Model</th><th class="num">Base Cost</th><th class="num">Funding</th><th class="num">Sale</th><th class="num">Profit/Loss</th><th>Status</th></tr></thead><tbody>`+
+  // attention-ranked unit table (loss first, then lowest true_profit)
+  const rows=(perf||[]).slice().sort((a,b)=>(b.is_loss-a.is_loss)||(Number(a.true_profit)-Number(b.true_profit)));
+  document.getElementById('ccUnitTable').innerHTML=`<thead><tr><th>Unit</th><th>Model</th><th class="num">Base Cost</th><th class="num">Funding</th><th class="num">Sale</th><th class="num">True Profit</th><th>Status</th></tr></thead><tbody>`+
     (rows.map(u=>`<tr><td>${esc(u.nama)}</td><td>${u.source==='future'?'Perkasa':'Legacy'}</td>
       <td class="num">${fmtRp(u.base_cost)}</td><td class="num">${fmtRp(Number(u.perkasa_funding||0)+Number(u.partner_funding||0))}</td>
       <td class="num">${fmtRp(u.revenue)}</td>
       <td class="num" style="color:${Number(u.true_profit)>=0?'var(--green)':'var(--red)'}">${fmtRp(u.true_profit)}</td>
-      <td>${u.is_loss?'<span style="color:var(--red)">Loss</span>':'Profit'}</td></tr>`).join('')||`<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--text3)">Tidak ada unit pada periode ini.</td></tr>`)+'</tbody>';
+      <td>${u.is_loss?'<span style="color:var(--red);font-weight:600">Loss</span>':'OK'}</td></tr>`).join('')||`<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--text3)">Tidak ada unit pada periode ini.</td></tr>`)+'</tbody>';
   return true;
 }
+
 async function ccProfitTrend(){
   const now=new Date(); const months=[]; const labels=[];
   for(let i=5;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); const from=d.toISOString().slice(0,10); const to=new Date(d.getFullYear(),d.getMonth()+1,0).toISOString().slice(0,10); months.push([from,to]); labels.push(BULAN[d.getMonth()]+"'"+String(d.getFullYear()).slice(2)); }
