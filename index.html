@@ -758,86 +758,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <!-- ═══════════ FUNDING LEDGER ═══════════ -->
       <!-- ═══════════ FUNDING LEDGER ═══════════ -->
       <div id="sec-funding" class="section">
-  <div class="sub-tab-bar">
-    <button class="stab active" data-st="ftab-ledger" onclick="showSubTab('funding','ftab-ledger')">Funding Ledger</button>
-    <button class="stab" data-st="ftab-dataroom" onclick="showSubTab('funding','ftab-dataroom')">Data Room</button>
-  </div>
-  <div id="ftab-ledger" class="stab-panel active">
-        <div id="capitalOverview"></div>
-        <div class="section-hint">Funding Ledger menampilkan seluruh pendanaan partner/investor per unit, lengkap dengan status pembayaran dan estimasi return. Data ditarik dari Support Funding Partner pada tiap unit.</div>
-        <div class="kpi-grid" id="fundingKpi"></div>
-        <div class="filter-bar">
-          <span class="filter-label">Status:</span>
-          <button class="chip active" data-fs="all" onclick="setFundingFilter('all')">Semua</button>
-          <button class="chip" data-fs="active" onclick="setFundingFilter('active')">Aktif</button>
-          <button class="chip" data-fs="pending_payment" onclick="setFundingFilter('pending_payment')">Belum Dibayar</button>
-          <button class="chip" data-fs="paid" onclick="setFundingFilter('paid')">Lunas</button>
-        </div>
+        <div class="section-hint">Partner Collaboration — pendanaan partner opsional per unit. Bukan produk investasi/ROI. Partner Profit % ditentukan otomatis dari Partner Collaboration Policy saat settlement.</div>
+        <div class="kpi-grid" id="pcKpi"></div>
         <div class="card">
-          <div class="card-hdr"><div class="card-title">Funding Ledger</div></div>
-          <div class="table-scroll"><table class="track-table" id="fundingTable"></table></div>
-          <p style="font-size:11px;color:var(--text3);margin-top:10px">Status <b>Aktif</b> = unit masih dijual; <b>Belum Dibayar</b> = unit terjual namun fee partner belum dicairkan; <b>Lunas</b> = sudah dibayar. Estimasi return dihitung dari skema fee partner.</p>
-        </div>
-  </div>
-  <div id="ftab-dataroom" class="stab-panel">
-        <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-          <p style="font-size:13px;color:var(--text2);margin:0;max-width:520px">Halaman ringkas untuk calon investor: rekam jejak, ROI historis, dan simulasi imbal hasil. Profit nominal bisnis tidak ditonjolkan — fokus pada metrik return yang relevan bagi pemodal.</p>
-          <button class="btn-sm no-print" onclick="exportDataRoomPDF()">⬇ Export / Cetak PDF</button>
-        </div>
-        <div class="print-header" id="drPrintHeader"></div>
-
-        <div class="insight-hero">
-          <div class="ih-title">
-            <div>
-              <div class="ih-eyebrow">Investment Memo</div>
-              <h2 class="ih-head" id="drBrand">Perkasa Motors</h2>
-            </div>
-            <div class="ih-period" id="drPeriod">—</div>
-          </div>
-          <div class="ih-grid" id="drScorecards"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">Mengapa Berinvestasi</div></div>
-          <div id="drNarrative" style="font-size:14px;line-height:1.7;color:var(--text)"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">Simulasi Imbal Hasil</div></div>
-          <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Estimasi berbasis ROI rata-rata historis per siklus jual. Bukan jaminan — hasil aktual bergantung performa unit.</p>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
-            <div class="fg" style="flex:1;min-width:160px;margin-bottom:0">
-              <label>Fee Investor per Transaksi (%)</label>
-              <input type="number" id="simFee" placeholder="mis. 5" step="0.5" oninput="renderSimulator()">
-            </div>
-            <div class="fg" style="flex:1;min-width:160px;margin-bottom:0">
-              <label>Atau gunakan ROI historis otomatis</label>
-              <select id="simMode" onchange="renderSimulator()" style="padding:10px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;background:var(--surface);color:var(--text)">
-                <option value="custom">Pakai fee yang saya set</option>
-                <option value="roi">Pakai ROI historis rata-rata</option>
-              </select>
+          <div class="card-hdr"><div class="card-title">Partner Collaboration Policy</div>
+            <div style="display:flex;gap:6px;margin-left:auto">
+              <button class="chip active" id="pcPolMobil" onclick="pcSetPolicyVehicle('Mobil')">Mobil</button>
+              <button class="chip" id="pcPolMotor" onclick="pcSetPolicyVehicle('Motor')">Motor</button>
             </div>
           </div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
-            <div class="fg" style="flex:1;min-width:160px;margin-bottom:0">
-              <label>Nominal Investasi (Rp)</label>
-              <input type="number" id="simNominal" placeholder="50000000" oninput="renderSimulator()">
-            </div>
-            <div class="fg" style="flex:1;min-width:120px;margin-bottom:0">
-              <label>Jumlah Siklus / Tahun</label>
-              <input type="number" id="simCycles" placeholder="otomatis" oninput="renderSimulator()">
-            </div>
-          </div>
-          <div class="ih-grid" id="simResult"></div>
-          <p style="font-size:11px;color:var(--text3);margin-top:10px" id="simNote"></p>
+          <p style="font-size:11.5px;color:var(--text3);margin-bottom:10px">Funding Exposure × Holding Period → Partner Profit %. Nilai konfigurabel (admin). Sel <b>Custom</b> = butuh kesepakatan bespoke.</p>
+          <div class="table-scroll"><table class="track-table" id="pcPolicyTable"></table></div>
         </div>
-
         <div class="card">
-          <div class="card-hdr"><div class="card-title">Rekam Jejak Transaksi (Unit Terjual)</div></div>
-          <div class="table-scroll"><table class="track-table" id="drTrackTable"></table></div>
-          <p style="font-size:11px;color:var(--text3);margin-top:10px">ROI atas modal inti, profit setelah fee. Holding = lama hari modal berputar per unit.</p>
+          <div class="card-hdr"><div class="card-title">Partner Funding Overview</div></div>
+          <div class="table-scroll"><table class="track-table" id="pcOverviewTable"></table></div>
+          <p style="font-size:11px;color:var(--text3);margin-top:10px">Funding Exposure %, Partner Profit %, dan Loss Exposure % independen. Partner Profit % pada unit settled dibekukan di snapshot.</p>
         </div>
-  </div>
       </div>
 
       <!-- ═══════════ ANALITIK ═══════════ -->
@@ -1687,10 +1624,8 @@ async function loadUnits(){
   const sec=document.querySelector('.section.active');
   if(sec&&sec.id==='sec-home')renderHome();
   if(sec&&sec.id==='sec-unit')renderUnits();
-  if(sec&&sec.id==='sec-funding')renderFunding();
+  if(sec&&sec.id==='sec-funding')renderPartnerCollab();
   if(sec&&sec.id==='sec-evaluasi')renderEvaluasi();
-  if(sec&&sec.id==='sec-investor')renderInvestorPortfolio();
-  if(sec&&sec.id==='sec-investor-track')renderInvestorTrack();
 }
 
 // Realtime subscription — auto-refresh when another device saves data
@@ -1728,7 +1663,7 @@ function showSection(s,fromPop){
   if(!fromPop){ try{ history.pushState({sec:s},''); }catch(e){} }
   if(s==='home')renderHome();
   if(s==='unit')renderUnits();
-  if(s==='funding'){renderFunding();showSubTab('funding','ftab-ledger');}
+  if(s==='funding')renderPartnerCollab();
   if(s==='keuangan'){showSubTab('keuangan','ktab-kas');}
   if(s==='analitik'){showSubTab('analitik','atab-kinerja');}
   if(s==='pengaturan'){showSubTab('pengaturan','ptab-settings');}
@@ -1743,7 +1678,7 @@ function showSection(s,fromPop){
   const tabMap={kas:'ktab-kas',inventori:'ktab-inventori',cashflow:'ktab-cashflow',laporan:'ktab-laporan',
     insight:'atab-kinerja',evaluasi:'atab-kinerja',kinerja:'atab-kinerja',
     'inventory-intel':'atab-inventori-partner','invest-dash':'atab-inventori-partner','inventori-partner':'atab-inventori-partner',
-    dataroom:'ftab-dataroom',audit:'ptab-audit'};
+    audit:'ptab-audit'};
   if(subMap[s]){showSection(subMap[s]);showSubTab(subMap[s],tabMap[s]);return;}
 }
 function showSubTab(section,tabId){
@@ -1754,8 +1689,6 @@ function showSubTab(section,tabId){
   if(panel)panel.classList.add('active');
   secEl.querySelectorAll('.stab').forEach(b=>b.classList.toggle('active',b.dataset.st===tabId));
   const renders={
-    'ftab-ledger':()=>renderFunding(),
-    'ftab-dataroom':()=>renderDataRoom(),
     'ktab-kas':()=>renderKas(),
     'ktab-inventori':()=>renderInventori(),
     'ktab-utang':()=>renderDebt(),
@@ -1763,7 +1696,7 @@ function showSubTab(section,tabId){
     'ktab-cashflow':()=>renderCashflow(),
     'ktab-laporan':()=>renderLaporan(),
     'atab-kinerja':()=>{renderInsight();renderEvaluasi();},
-    'atab-inventori-partner':()=>{renderInventoryIntel();renderInvestDash();},
+    'atab-inventori-partner':()=>renderInventoryIntel(),
     'ptab-settings':()=>loadSettingsForm(),
     'ptab-audit':()=>loadAuditLog(),
     'prtab-policy':()=>renderPartnerPolicy(),
@@ -3333,6 +3266,7 @@ function renderCapitalOverview(){
   el.innerHTML=(kpis?`<div class="kpi-grid" style="margin-bottom:14px">${kpis}</div>`:'')+invTbl+capBox;
 }
 function renderFunding(){
+  if(!document.getElementById('fundingTable'))return; // retired: Modal is now Partner Collaboration
   renderCapitalOverview();
   let rows=allFundings();
   if(!isInternal()){ const me=(currentUser||'').toLowerCase(); rows=rows.filter(f=>(f.investor||'').toLowerCase().includes(me)); }
@@ -3759,6 +3693,7 @@ function renderInvestorTrack(){
   document.getElementById('itTrackTable').innerHTML=head+'<tbody>'+body+'</tbody>';
 }
 function renderDataRoom(){
+  if(!document.getElementById('drBrand'))return; // retired investor Data Room
   const s=getSettings();
   document.getElementById('drBrand').textContent=s.brand||'Perkasa Motors';
   const st=dataRoomStats(), ins=st.ins;
@@ -4503,8 +4438,11 @@ function ucRecalc(){
   const totalCost=purchase;            // Additional Direct Costs = 0 at creation
   const totalFunding=pk+pt;
   const gap=totalCost-totalFunding;    // Funding Gap = Total Base Unit Cost − Total Funding
+  const exposure=totalFunding>0?(pt/totalFunding*100):0;   // Funding Exposure % = Partner ÷ Total Funding
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
   set('ucSumCost',fmtRp(totalCost)); set('ucSumFunding',fmtRp(totalFunding));
+  const ex=document.getElementById('ucExposure');
+  if(ex) ex.textContent=pt>0?('Funding Exposure: '+exposure.toFixed(2).replace(/\.00$/,'')+'%'):'Funding Exposure: 0% (tanpa partner)';
   const g=document.getElementById('ucSumGap');
   if(g){ g.textContent=(gap===0?'Seimbang':(gap>0?'Kurang '+fmtRp(gap):'Lebih '+fmtRp(-gap)));
     g.style.color=gap===0?'var(--green,#178A5A)':(gap>0?'var(--amber,#C07A0E)':'var(--blue,#2563C7)'); }
@@ -4541,7 +4479,11 @@ function openUnitCreate(){
         <div class="fg" style="margin:0"><label>Nama Partner (opsional)</label><input id="ucPartnerName" placeholder="mis. Reivan"></div>
         <div class="fg" style="margin:0"><label>Modal Partner — Partner Funding (Rp)</label><input id="ucPartnerAmt" type="number" placeholder="0" oninput="ucRecalc()"></div>
       </div>
-      <p style="font-size:10.5px;color:var(--text3);margin:6px 0 0"><b>Partner Funding ≠ Profit Share.</b> Funding %, Profit Share %, dan Loss Exposure % bersifat independen dan diatur terpisah di Partner Agreement (Modal → Funding).</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;padding:8px 10px;background:var(--bg);border-radius:8px">
+        <b id="ucExposure" style="font-size:12px">Funding Exposure: 0% (tanpa partner)</b>
+        <span style="font-size:10.5px;color:var(--text3);text-align:right">Partner Profit Rate: <b>ditentukan saat settlement</b> berdasarkan holding period &amp; policy.</span>
+      </div>
+      <p style="font-size:10.5px;color:var(--text3);margin:6px 0 0"><b>Partner Funding ≠ Profit Share.</b> Funding Exposure %, Partner Profit %, dan Loss Exposure % bersifat independen. Partner Profit % dipilih otomatis dari Partner Collaboration Policy saat settlement.</p>
     </div>
 
     <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:14px">
@@ -4866,6 +4808,95 @@ async function saveAgreement(){
 // (capital return, partner fee/loss, retained) come from the DB settlement snapshot.
 let ST_UNIT=null;
 const ST_PASS=()=> (typeof PC_PASS==='function'?PC_PASS():(adminPassCache||'__internal__'));
+// Partner Collaboration Policy — tier mapping mirrors fn_partner_policy_rate EXACTLY
+// (numeric thresholds; 50% → highest tier). Preview only; DB RPC is authoritative.
+function pmExposureBracket(exp){ exp=Number(exp)||0;
+  return exp<10?'<10%':exp<20?'10-20%':exp<30?'20-30%':exp<40?'30-40%':exp<50?'40-50%':'>50%'; }
+function pmHoldingBucket(days){ days=Number(days)||0;
+  return days<=30?'<30':days<=60?'31-60':days<=90?'61-90':days<=120?'91-120':'121-180'; }
+// Business-facing exposure label (10-19 style) derived from the engine bracket.
+const PM_EXP_DISPLAY={'<10%':'<10%','10-20%':'10–19%','20-30%':'20–29%','30-40%':'30–39%','40-50%':'40–49%','>50%':'>50%'};
+function pmPolicyShare(matrix,vehicle,bracket,holding){
+  const row=(matrix||[]).find(p=>p.vehicle_type===vehicle&&p.bracket_label===bracket&&p.holding_label===holding);
+  return row?row.share_pct:undefined; // undefined = row missing; null value = Custom
+}
+const PM_BRACKETS=['<10%','10-20%','20-30%','30-40%','40-50%','>50%'];
+const PM_HOLDINGS=['<30','31-60','61-90','91-120','121-180'];
+const PM_HOLD_DISPLAY={'<30':'<30 hari','31-60':'31–60','61-90':'61–90','91-120':'91–120','121-180':'121–180'};
+
+// ═══════════════════ MODAL · PARTNER COLLABORATION (replaces investor model) ═══════════════════
+let _pcVehicle='Mobil';
+async function renderPartnerCollab(){
+  const kpiEl=document.getElementById('pcKpi'), ovEl=document.getElementById('pcOverviewTable');
+  let vfs=[], setl=[], policy=[];
+  try{
+    const a=await db.from('v_unit_funding').select('*'); if(a.error)throw a.error; vfs=a.data||[];
+    const b=await db.from('unit_settlement').select('*').eq('status','settled'); setl=b.data||[];
+    const c=await db.from('partner_profit_policy').select('*'); policy=c.data||[];
+  }catch(e){ if(kpiEl)kpiEl.innerHTML=''; if(ovEl)ovEl.innerHTML='<tr><td>'+moduleMsg('unit_funding','Partner Collaboration')+'</td></tr>'; return; }
+  window._pcPolicy=policy;
+  const byUnit=id=>(units||[]).find(u=>String(u.id)===String(id))||{};
+  const setlByUnit={}; setl.forEach(s=>setlByUnit[s.unit_id]=s);
+  // rows = units that carry partner funding (active or settled)
+  const rows=vfs.filter(v=>Number(v.partner_funding||0)>0);
+  // KPIs
+  let activeCap=0, activeUnits=0, capReturned=0, partnerProfit=0, settleCount=0, lossExp=0;
+  setl.forEach(s=>{ capReturned+=Number(s.capital_return_partner||0); partnerProfit+=Number(s.partner_fee||0);
+    lossExp+=Number(s.partner_loss||0); if(Number(s.partner_funding_snap||0)>0||Number(s.partner_fee||0)>0||Number(s.partner_loss||0)>0)settleCount++; });
+  rows.forEach(v=>{ const u=byUnit(v.unit_id); if(u.status!=='terjual'){ activeCap+=Number(v.partner_funding||0); activeUnits++; } });
+  if(kpiEl)kpiEl.innerHTML=[
+    kcard('Active Partner Capital',fmtRp(activeCap),activeUnits+' unit aktif','k-teal'),
+    kcard('Active Partner Units',String(activeUnits),'kolaborasi berjalan','k-blue'),
+    kcard('Partner Capital Returned',fmtRp(capReturned),'dari settlement','k-green'),
+    kcard('Partner Profit',fmtRp(partnerProfit),'share dari net profit','k-green'),
+    kcard('Partner Settlement',String(settleCount),'unit ter-settle','k-blue'),
+    kcard('Partner Loss Exposure',fmtRp(lossExp),'downside ditanggung partner','k-'+(lossExp>0?'red':'blue')),
+  ].join('');
+  pcRenderPolicyTable();
+  // Overview
+  const today=new Date();
+  const body=rows.map(v=>{
+    const u=byUnit(v.unit_id); const s=setlByUnit[v.unit_id];
+    const vehicle=u.jenis||'Mobil'; const totalF=Number(v.total_funding||0), partnerF=Number(v.partner_funding||0);
+    const exposure=totalF>0?(partnerF/totalF*100):0;
+    const settled=!!s;
+    const acq=u.tgl?new Date(u.tgl):today;
+    const holding=settled&&s.settle_date?Math.max(0,Math.round((new Date(s.settle_date)-acq)/86400000))
+                                        :Math.max(0,Math.round((today-acq)/86400000));
+    const br=pmExposureBracket(exposure), hb=pmHoldingBucket(holding);
+    const liveShare=pmPolicyShare(policy,vehicle,br,hb);
+    const profitPct=settled?(s.applied_partner_profit_pct!=null?s.applied_partner_profit_pct+'%':(s.is_loss?'—':'—'))
+                           :(liveShare==null?'Custom':'~'+liveShare+'% (saat settle)');
+    const profitAmt=settled?fmtRp(s.partner_fee||0):'—';
+    const crloss=settled?(s.is_loss?('<span style="color:var(--red)">−'+fmtRp(s.partner_loss||0)+' loss</span>'):fmtRp(s.capital_return_partner||0)):'—';
+    const setlTxt=settled?esc(s.settle_date):'—';
+    const status=settled?(s.is_loss?'<span class="badge" style="background:var(--red);color:#fff">LOSS</span>':'<span class="badge" style="background:var(--green);color:#fff">SETTLED</span>')
+                        :'<span class="badge aktif">ACTIVE</span>';
+    return `<tr><td>${esc(u.nama||('#'+v.unit_id))}</td><td>${esc(v.partner_name||'Partner')}</td><td>${esc(vehicle)}</td>
+      <td class="num">${fmtRp(v.base_unit_cost)}</td><td class="num">${fmtRp(partnerF)}</td>
+      <td class="num">${exposure.toFixed(2).replace(/\.00$/,'')}%</td><td class="num">${holding} hari</td>
+      <td>${esc(vehicle)} · ${PM_EXP_DISPLAY[br]||br} · ${hb}</td>
+      <td class="num">${profitPct}</td><td class="num">${profitAmt}</td><td class="num">${crloss}</td>
+      <td>${setlTxt}</td><td>${status}</td></tr>`;
+  }).join('');
+  if(ovEl)ovEl.innerHTML=`<thead><tr><th>Unit</th><th>Partner</th><th>Type</th><th class="num">Total Base Unit Cost</th><th class="num">Partner Funding</th><th class="num">Funding Exp %</th><th class="num">Holding</th><th>Policy Bucket</th><th class="num">Partner Profit %</th><th class="num">Partner Profit</th><th class="num">Capital Return / Loss</th><th>Settlement</th><th>Status</th></tr></thead><tbody>`+
+    (body||`<tr><td colspan="13" style="padding:16px;text-align:center;color:var(--text3)">Belum ada kolaborasi partner. Tambahkan Partner Funding saat + Tambah Unit.</td></tr>`)+'</tbody>';
+}
+function pcSetPolicyVehicle(v){ _pcVehicle=v;
+  document.getElementById('pcPolMobil').classList.toggle('active',v==='Mobil');
+  document.getElementById('pcPolMotor').classList.toggle('active',v==='Motor');
+  pcRenderPolicyTable(); }
+function pcRenderPolicyTable(){
+  const el=document.getElementById('pcPolicyTable'); if(!el)return;
+  const pol=window._pcPolicy||[];
+  const head=`<thead><tr><th>Funding Exposure \\ Holding</th>${PM_HOLDINGS.map(h=>`<th class="num">${PM_HOLD_DISPLAY[h]||h}</th>`).join('')}</tr></thead>`;
+  const rows=PM_BRACKETS.map(br=>{
+    const cells=PM_HOLDINGS.map(h=>{ const share=pmPolicyShare(pol,_pcVehicle,br,h);
+      return `<td class="num">${share==null?'<span style="color:var(--amber,#C07A0E)">Custom</span>':share+'%'}</td>`; }).join('');
+    return `<tr><td><b>${PM_EXP_DISPLAY[br]||br}</b></td>${cells}</tr>`;
+  }).join('');
+  el.innerHTML=head+'<tbody>'+rows+'</tbody>';
+}
 function openSettle(unitId){
   const perkasa=(units||[]).filter(u=>u.fundingModel==='perkasa').sort((a,b)=>String(a.nama||'').localeCompare(String(b.nama||'')));
   const ov=document.createElement('div'); ov.id='stOverlay';
@@ -4886,12 +4917,15 @@ function openSettle(unitId){
 async function loadSettle(){
   const sel=document.getElementById('stUnit'); if(!sel)return; ST_UNIT=sel.value;
   const body=document.getElementById('stBody');
-  let vf=null, settled=null;
+  let vf=null, settled=null, policy=[];
   try{
     const f=await db.from('v_unit_funding').select('*').eq('unit_id',ST_UNIT).single(); if(f.error)throw f.error; vf=f.data;
     const s=await db.from('v_unit_settlement').select('*').eq('unit_id',ST_UNIT); settled=(s.data&&s.data[0])||null;
+    const p=await db.from('partner_profit_policy').select('*'); policy=p.data||[];
   }catch(e){ body.innerHTML=moduleMsg('unit_settlement','Settlement'); return; }
   if(settled){ body.innerHTML=settledSummary(settled); return; }
+  const unitMeta=(units||[]).find(u=>String(u.id)===String(ST_UNIT))||{};
+  window._stPolicy=policy; window._stVehicle=unitMeta.jenis||'Mobil'; window._stAcq=unitMeta.tgl||'';
   // Sale form
   body.innerHTML=`
     <div class="ih-grid" style="margin-bottom:10px">
@@ -4904,8 +4938,9 @@ async function loadSettle(){
       <div class="fg" style="margin:0"><label>Selling Cost (broker/komisi/admin)</label><input id="stCost" type="number" value="0" oninput="stPreview()"></div>
       <div class="fg" style="margin:0"><label>Tanggal Jual</label><input id="stDate" type="date"></div>
     </div>
+    <div id="stPolicy" style="margin-top:12px"></div>
     <div id="stPrev" style="margin-top:12px"></div>
-    <p style="font-size:11px;color:var(--text3);margin:8px 0 0">Angka final (capital return, partner fee/loss, retained) dihitung di database saat konfirmasi. Capital Return <b>bukan</b> profit.</p>
+    <p style="font-size:11px;color:var(--text3);margin:8px 0 0">Partner Profit % dipilih otomatis dari Partner Collaboration Policy (Funding Exposure × Holding Period) dan <b>dibekukan</b> di snapshot saat settle. Capital Return <b>bukan</b> profit.</p>
     <button class="confirm" style="margin-top:10px" onclick="confirmSettle(${vf.base_unit_cost})">✓ Konfirmasi Settlement</button>`;
   document.getElementById('stDate').value=new Date().toISOString().slice(0,10);
   window._stFunding=vf; stPreview();
@@ -4914,6 +4949,32 @@ function stPreview(){
   const vf=window._stFunding||{}; const price=Number(document.getElementById('stPrice').value)||0;
   const cost=Number(document.getElementById('stCost').value)||0;
   const net=price-cost, base=Number(vf.base_unit_cost||0), truep=net-base, loss=truep<0;
+  // Partner Collaboration Policy panel (profit case only; loss uses funding exposure)
+  const pol=document.getElementById('stPolicy');
+  if(pol){
+    const totalF=Number(vf.total_funding||0), partnerF=Number(vf.partner_funding||0);
+    const exposure=totalF>0?(partnerF/totalF*100):0;
+    const dateEl=document.getElementById('stDate'); const sd=dateEl&&dateEl.value?new Date(dateEl.value):new Date();
+    const acq=window._stAcq?new Date(window._stAcq):sd;
+    const holding=Math.max(0,Math.round((sd-acq)/86400000));
+    const vehicle=window._stVehicle||'Mobil';
+    if(partnerF<=0){ pol.innerHTML=`<div style="background:var(--bg);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text3)">Tanpa Partner Funding — policy tidak berlaku.</div>`; window._stPolicyState={custom:false,partner:false}; }
+    else{
+      const br=pmExposureBracket(exposure), hb=pmHoldingBucket(holding);
+      const share=pmPolicyShare(window._stPolicy,vehicle,br,hb);
+      const custom=(share===null||share===undefined);
+      window._stPolicyState={custom,partner:true};
+      const rateTxt=loss?'—  (loss: alokasi via funding exposure)':(custom?'CUSTOM — butuh rate bespoke':(share+'%'));
+      const rateColor=loss?'var(--text3)':(custom?'var(--amber,#C07A0E)':'var(--green,#178A5A)');
+      pol.innerHTML=`<div style="background:var(--bg);border-radius:10px;padding:12px 14px;font-size:12.5px">
+        <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Partner Collaboration Policy</div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--text3)">Funding Exposure</span><b>${exposure.toFixed(2).replace(/\.00$/,'')}%</b></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--text3)">Holding Period</span><b>${holding} hari</b></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--text3)">Policy Bucket</span><b>${esc(vehicle)} · ${PM_EXP_DISPLAY[br]||br} · ${hb} hari</b></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-top:1px dashed var(--border);margin-top:3px"><span style="color:var(--text3)">Applicable Partner Profit</span><b style="color:${rateColor}">${rateTxt}</b></div>
+      </div>`;
+    }
+  }
   document.getElementById('stPrev').innerHTML=`<div style="background:var(--bg);border-radius:10px;padding:12px 14px;font-size:13px">
     <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Net Sale Proceeds</span><span class="mono">${fmtRp(net)}</span></div>
     <div style="display:flex;justify-content:space-between;padding:4px 0;color:var(--text3)"><span>− Base Unit Cost</span><span class="mono">${fmtRp(base)}</span></div>
@@ -4924,8 +4985,17 @@ function stPreview(){
 async function confirmSettle(base){
   const price=Number(document.getElementById('stPrice').value)||0, cost=Number(document.getElementById('stCost').value)||0;
   if(price<=0){ showToast('Harga jual harus > 0.'); return; }
-  if(!confirm('Konfirmasi settlement? Snapshot bersifat immutable (koreksi via Reverse).'))return;
-  try{ const {data,error}=await db.rpc('pm_unit_settle_v2',{p_pass:ST_PASS(),p_unit_id:Number(ST_UNIT),p_selling_price:price,p_selling_cost:cost,p_settle_date:document.getElementById('stDate').value||null});
+  const st=window._stPolicyState||{};
+  const willProfit=(price-cost-Number(base||0))>0;
+  if(st.partner && willProfit && st.custom){ showToast('Sel policy Custom — tetapkan Partner Profit % bespoke di Partner Agreement sebelum settle.'); return; }
+  if(!confirm('Konfirmasi settlement? Partner Profit % dari policy akan dibekukan di snapshot (immutable; koreksi via Reverse).'))return;
+  // Route through the policy orchestration RPC: resolve+freeze policy rate, then the
+  // LOCKED D5 engine runs unchanged. Falls back to v2 only if the wrapper is absent.
+  try{
+    let {data,error}=await db.rpc('pm_unit_settle_policy',{p_pass:ST_PASS(),p_unit_id:Number(ST_UNIT),p_selling_price:price,p_selling_cost:cost,p_settle_date:document.getElementById('stDate').value||null});
+    if(error && /function|does not exist|pgrst202|schema cache/i.test((error.message||'')+(error.code||''))){
+      ({data,error}=await db.rpc('pm_unit_settle_v2',{p_pass:ST_PASS(),p_unit_id:Number(ST_UNIT),p_selling_price:price,p_selling_cost:cost,p_settle_date:document.getElementById('stDate').value||null}));
+    }
     if(error)throw error; if(!data||!data.ok){ showToast(''+((data&&data.error)||'Gagal.')); return; }
     showToast('Unit ter-settle.'); await loadUnits(); loadSettle();
   }catch(e){ showToast('Settlement belum aktif di database.'); }
@@ -5273,6 +5343,7 @@ function renderInventoryIntel(){
 let cInvestRoi=null, cInvestDist=null, cInvestTimeline=null;
 
 function renderInvestDash(){
+  if(!document.getElementById('invDashKpi')&&!document.querySelector('#atab-inventori-partner'))return; // retired
   const fundings=allFundings();
   const sold=units.filter(u=>u.status==='terjual');
 
