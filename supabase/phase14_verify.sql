@@ -58,10 +58,10 @@ begin
   select outstanding_external_capital into v_ext from v_external_unit_funding where partner_name='Reivan';
   insert into _d4 values ('TEST partner exposure Reivan (>=30000000)', v_ext::text);
 
-  -- 4c) under-funded: remove partner → gap 70m, status under
+  -- 4c) under-funded: remove partner → perkasa 70m vs base 100m ⇒ gap 30m, status under
   delete from unit_funding where unit_id=v_id and source='partner';
   select funding_gap, funding_status into v_gap, v_status from v_unit_funding where unit_id=v_id;
-  insert into _d4 values ('TEST under gap (70000000)', v_gap::text);
+  insert into _d4 values ('TEST under gap (expect 30000000)', v_gap::text);
   insert into _d4 values ('TEST under status (under)', v_status);
 
   -- 4d) over-funded: add 40m → total 110m, gap -10m, status over
