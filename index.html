@@ -4490,22 +4490,24 @@ const UCE_CATS=['Purchase','Service','Repair','Sparepart','Transport','Document/
 const UCE_ADD_CATS=UCE_CATS.filter(c=>c!=='Purchase');
 
 // ═══════════════════ PERKASA · UNIFIED CREATE (unit + initial funding) ═══════════════════
-// One flow: create the Perkasa unit AND record its Base Unit Cost (acquisition,
-// stored as the single 'Purchase' cost entry — DB-derived, never re-entered) plus
-// Initial Funding (Perkasa/Partner) in a single modal. "Save & Add Another" resets
-// the form for rapid multi-unit entry without reselecting anything.
+// One canonical flow. COST and FUNDING are two separate concepts, never mixed:
+//   Cost:    Purchase Cost (Harga Beli) → Additional Direct Costs → Total Base Unit Cost
+//   Funding: Perkasa Funding → Partner Funding → Total Funding → Funding Gap
+// Purchase is stored as the single 'Purchase' cost entry; Total Base Unit Cost stays
+// DB-derived (v_unit_cost). Partner Funding ≠ profit share. "Save & Add Another"
+// resets the form for rapid multi-unit entry without reselecting anything.
 function ucRecalc(){
-  const base=Number((document.getElementById('ucBase')||{}).value)||0;
+  const purchase=Number((document.getElementById('ucBase')||{}).value)||0;
   const pk=Number((document.getElementById('ucPerkasa')||{}).value)||0;
   const pt=Number((document.getElementById('ucPartnerAmt')||{}).value)||0;
-  const funding=pk+pt, total=base; // Additional=0 at creation → Total = Base
-  const gap=total-funding;
+  const totalCost=purchase;            // Additional Direct Costs = 0 at creation
+  const totalFunding=pk+pt;
+  const gap=totalCost-totalFunding;    // Funding Gap = Total Base Unit Cost − Total Funding
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  set('ucSumBase',fmtRp(base)); set('ucSumFunding',fmtRp(funding));
-  set('ucSumAdd',fmtRp(0)); set('ucSumTotal',fmtRp(total));
+  set('ucSumCost',fmtRp(totalCost)); set('ucSumFunding',fmtRp(totalFunding));
   const g=document.getElementById('ucSumGap');
-  if(g){ g.textContent=(gap===0?'Seimbang':(gap>0?'Kurang dana '+fmtRp(gap):'Lebih dana '+fmtRp(-gap)));
-    g.style.color=gap===0?'var(--green,#178A5A)':(gap>0?'var(--amber,#C07A0E)':'var(--red,#D33A2C)'); }
+  if(g){ g.textContent=(gap===0?'Seimbang':(gap>0?'Kurang '+fmtRp(gap):'Lebih '+fmtRp(-gap)));
+    g.style.color=gap===0?'var(--green,#178A5A)':(gap>0?'var(--amber,#C07A0E)':'var(--blue,#2563C7)'); }
 }
 function openUnitCreate(){
   const ov=document.createElement('div'); ov.id='ucOverlay';
@@ -4514,7 +4516,7 @@ function openUnitCreate(){
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
       <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Tambah Unit · Perkasa</div>
       <button class="btn-sm" onclick="document.getElementById('ucOverlay').remove()">✕</button></div>
-    <div style="font-size:11.5px;color:var(--text3);margin-bottom:14px">Buat unit dan alokasi dana awal dalam satu langkah. Base Unit Cost = harga akuisisi (tersimpan sebagai satu entri biaya, DB-derived).</div>
+    <div style="font-size:11.5px;color:var(--text3);margin-bottom:14px">Buat unit dan alokasi dana awal dalam satu langkah. <b>Biaya</b> dan <b>Pendanaan</b> adalah dua hal berbeda.</div>
 
     <div style="border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:12px">
       <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Unit</div>
@@ -4525,30 +4527,28 @@ function openUnitCreate(){
       </div>
     </div>
 
-    <div style="border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:12px">
-      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Base Unit Cost (Akuisisi)</div>
-      <div class="fg" style="margin:0"><label>Harga Akuisisi Unit (Rp)</label><input id="ucBase" type="number" placeholder="0" oninput="ucRecalc()"></div>
-      <p style="font-size:10.5px;color:var(--text3);margin:6px 0 0">Biaya tambahan (service, sparepart, dll) dicatat terpisah di Cost Ledger.</p>
+    <div style="border:1px solid var(--border2);border-left:3px solid var(--text2,#5A6472);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Biaya Unit · Cost</div>
+      <div class="fg" style="margin:0"><label>Harga Beli / Akuisisi — Purchase Cost (Rp)</label><input id="ucBase" type="number" placeholder="0" oninput="ucRecalc()"></div>
+      <p style="font-size:10.5px;color:var(--text3);margin:6px 0 0">Purchase Cost = biaya <b>akuisisi</b> unit, <b>bukan pendanaan</b>. Biaya Langsung Tambahan (Service, Repair, Sparepart, Transport, Document/Tax, Marketing, Other) dicatat di Cost Ledger dan ikut membentuk Total Base Unit Cost.</p>
     </div>
 
-    <div style="border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:12px">
-      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Initial Funding</div>
+    <div style="border:1px solid var(--border2);border-left:3px solid var(--teal,#0E9F8E);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Pendanaan · Funding</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div class="fg" style="margin:0"><label>Modal Perkasa (Rp)</label><input id="ucPerkasa" type="number" placeholder="0" oninput="ucRecalc()"></div>
+        <div class="fg" style="margin:0"><label>Modal Perkasa — Perkasa Funding (Rp)</label><input id="ucPerkasa" type="number" placeholder="0" oninput="ucRecalc()"></div>
         <div></div>
         <div class="fg" style="margin:0"><label>Nama Partner (opsional)</label><input id="ucPartnerName" placeholder="mis. Reivan"></div>
-        <div class="fg" style="margin:0"><label>Modal Partner (Rp)</label><input id="ucPartnerAmt" type="number" placeholder="0" oninput="ucRecalc()"></div>
+        <div class="fg" style="margin:0"><label>Modal Partner — Partner Funding (Rp)</label><input id="ucPartnerAmt" type="number" placeholder="0" oninput="ucRecalc()"></div>
       </div>
-      <p style="font-size:10.5px;color:var(--text3);margin:6px 0 0">Funding % ≠ Profit Share %. Partner Agreement diatur nanti di Modal → Funding.</p>
+      <p style="font-size:10.5px;color:var(--text3);margin:6px 0 0"><b>Partner Funding ≠ Profit Share.</b> Funding %, Profit Share %, dan Loss Exposure % bersifat independen dan diatur terpisah di Partner Agreement (Modal → Funding).</p>
     </div>
 
-    <div style="background:var(--bg);border-radius:12px;padding:12px 14px;margin-bottom:14px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:12.5px">
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Base Unit Cost</span><b id="ucSumBase">Rp0</b></div>
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Initial Funding</span><b id="ucSumFunding">Rp0</b></div>
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Additional Unit Costs</span><b id="ucSumAdd">Rp0</b></div>
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Total Unit Cost</span><b id="ucSumTotal">Rp0</b></div>
-        <div style="display:flex;justify-content:space-between;grid-column:1/3;border-top:1px dashed var(--border);padding-top:6px;margin-top:2px"><span style="color:var(--text3)">Funding vs Total</span><b id="ucSumGap">Seimbang</b></div>
+    <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center">
+        <div style="min-width:0"><div style="font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:4px">Total Base Unit Cost</div><b id="ucSumCost" style="font-size:clamp(13px,3.4vw,16px);overflow-wrap:anywhere">Rp0</b></div>
+        <div style="min-width:0;border-left:1px solid var(--border);border-right:1px solid var(--border)"><div style="font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:4px">Total Funding</div><b id="ucSumFunding" style="font-size:clamp(13px,3.4vw,16px);overflow-wrap:anywhere">Rp0</b></div>
+        <div style="min-width:0"><div style="font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:4px">Funding Gap</div><b id="ucSumGap" style="font-size:clamp(13px,3.4vw,16px);overflow-wrap:anywhere">Seimbang</b></div>
       </div>
     </div>
 
@@ -4679,7 +4679,7 @@ function openCostLedger(unitId){
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
       <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Unit Cost Ledger · Biaya Tambahan</div>
       <button class="btn-sm" onclick="document.getElementById('uceOverlay').remove()">✕</button></div>
-    <div style="font-size:11.5px;color:var(--text3);margin-bottom:10px">Hanya unit <b>Perkasa aktif/ready</b>. Unit terjual/settled tidak muncul. Base Unit Cost (akuisisi) diatur saat pembuatan unit — bukan di sini.</div>
+    <div style="font-size:11.5px;color:var(--text3);margin-bottom:10px">Hanya unit <b>Perkasa aktif/ready</b>. Unit terjual/settled tidak muncul. <b>Purchase Cost</b> (Harga Beli / Akuisisi) diatur saat pembuatan unit — di sini hanya <b>Additional Direct Costs</b> yang menambah Total Base Unit Cost.</div>
     <div id="uceFilterBar" style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
       <button class="chip active" data-uf="all" onclick="uceSetFilter('all')">Semua</button>
       <button class="chip" data-uf="Mobil" onclick="uceSetFilter('Mobil')">Mobil</button>
@@ -4725,9 +4725,9 @@ async function loadCostEntries(){
   const total=baseCost==null?null:Number(baseCost);
   const addl=total==null?entries.filter(e=>e.category!=='Purchase').reduce((a,e)=>a+Number(e.amount||0),0):(total-base);
   kpi.innerHTML=[
-    kcard('Base Unit Cost',fmtRp(base),'akuisisi (saat pembuatan)','k-green'),
-    kcard('Additional Unit Costs',fmtRp(addl),'biaya langsung tambahan','k-amber'),
-    kcard('Total Unit Cost',total==null?'—':fmtRp(total),'DB-derived (v_unit_cost) ✓','k-blue'),
+    kcard('Purchase Cost',fmtRp(base),'Harga Beli / Akuisisi','k-green'),
+    kcard('Additional Direct Costs',fmtRp(addl),'Biaya Langsung Tambahan','k-amber'),
+    kcard('Total Base Unit Cost',total==null?'—':fmtRp(total),'DB-derived (v_unit_cost) ✓','k-blue'),
   ].join('');
   tb.innerHTML=`<thead><tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th class="num">Nominal</th><th></th></tr></thead><tbody>`+
     (entries.map(e=>`<tr><td>${esc(e.entry_date)}</td><td>${esc(e.category)}</td><td>${esc(e.description||'')}${e.note?`<br><span style="color:var(--text3);font-size:11px">${esc(e.note)}</span>`:''}</td>
@@ -4772,26 +4772,14 @@ function openFunding(unitId){
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
       <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Unit Funding · Perkasa Model</div>
       <button class="btn-sm" onclick="document.getElementById('ufOverlay').remove()">✕</button></div>
-    <div style="font-size:11.5px;color:var(--text3);margin-bottom:12px">Hanya unit model <b>Perkasa</b>. Unit legacy tidak muncul di sini.</div>
+    <div style="font-size:11.5px;color:var(--text3);margin-bottom:12px">Surface pengelolaan &amp; riwayat pendanaan unit <b>Perkasa</b>. Pembuatan unit dilakukan lewat <b>+ Tambah Unit</b>.</div>
     ${perkasa.length?`<div class="fg" style="margin:0 0 12px"><label>Unit</label><select id="ufUnit" onchange="loadFunding()">${opts}</select></div>`
-      :`<div style="padding:14px;background:var(--bg);border-radius:10px;margin-bottom:12px;font-size:13px;color:var(--text2)">Belum ada unit model Perkasa. Buat unit baru (model Perkasa) di fase berikutnya, atau tandai unit sebagai Perkasa lewat Cost Ledger.</div>
-       <div class="fg" style="margin:0 0 10px"><label>Buat Unit Perkasa cepat</label>
-         <div style="display:flex;gap:8px"><input id="ufNewNama" placeholder="Nama unit" style="flex:2;padding:9px 11px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text)">
-         <select id="ufNewJenis" style="flex:1;padding:9px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text)"><option>Mobil</option><option>Motor</option></select>
-         <button class="btn-sm" onclick="createPerkasaUnit()">+ Buat</button></div></div>`}
+      :`<div style="padding:14px;background:var(--bg);border-radius:10px;margin-bottom:12px;font-size:13px;color:var(--text2)">Belum ada unit Perkasa. Gunakan tombol <b>+ Tambah Unit</b> untuk membuat unit beserta Purchase Cost dan pendanaan awal dalam satu langkah.</div>`}
     <div id="ufBody"></div>
   </div>`;
   ov.addEventListener('click',e=>{ if(e.target===ov)ov.remove(); });
   document.body.appendChild(ov);
   if(perkasa.length) loadFunding();
-}
-async function createPerkasaUnit(){
-  const nama=(document.getElementById('ufNewNama')||{}).value?.trim();
-  if(!nama){ showToast('Nama unit wajib.'); return; }
-  const jenis=document.getElementById('ufNewJenis').value;
-  try{ const {error}=await db.from('units').insert({nama,jenis,status:'aktif',tgl:new Date().toISOString().slice(0,10),funding_model:'perkasa'});
-    if(error)throw error; showToast('Unit Perkasa dibuat.'); await loadUnits(); document.getElementById('ufOverlay').remove(); openFunding();
-  }catch(e){ showToast('Gagal (kolom funding_model belum ada?).'); }
 }
 async function loadFunding(){
   const sel=document.getElementById('ufUnit'); if(!sel)return; UF_UNIT=sel.value;
@@ -4807,10 +4795,11 @@ async function loadFunding(){
   const hasPartner=entries.some(e=>e.source==='partner');
   body.innerHTML=`
     <div class="ih-grid" style="margin-bottom:12px">
-      ${kcard('Base Unit Cost',fmtRp(vf.base_unit_cost),'DB-derived (v_unit_cost) ✓','k-blue')}
+      ${kcard('Total Base Unit Cost',fmtRp(vf.base_unit_cost),'DB-derived (v_unit_cost) ✓','k-blue')}
       ${kcard('Total Funding',fmtRp(vf.total_funding),`Perkasa ${fmtRp(vf.perkasa_funding)} · Partner ${fmtRp(vf.partner_funding)}`,'k-teal')}
       ${kcard('Funding Gap',fmtRp(vf.funding_gap),vf.funding_status,'k-'+(vf.funding_status==='funded'?'green':vf.funding_status==='over'?'red':'amber'))}
     </div>
+    <p style="font-size:10.5px;color:var(--text3);margin:0 0 10px"><b>Partner Funding ≠ Profit Share.</b> Funding %, Profit Share %, dan Loss Exposure % independen — diatur di Partner Agreement di bawah.</p>
     <div style="display:grid;grid-template-columns:1fr 1.3fr .9fr auto;gap:8px;align-items:end">
       <div class="fg" style="margin:0"><label>Sumber</label><select id="ufSrc" onchange="document.getElementById('ufPnameWrap').style.display=this.value==='partner'?'block':'none'"><option value="perkasa">Perkasa</option><option value="partner">Partner</option></select></div>
       <div class="fg" style="margin:0" id="ufPnameWrap" ><label>Nama Partner</label><input id="ufPname" placeholder="mis. Reivan"></div>
@@ -4819,7 +4808,7 @@ async function loadFunding(){
     </div>
     <div id="ufPnameHide"></div>
     <div class="table-scroll" style="margin-top:8px"><table class="track-table" id="ufTable"></table></div>
-    <div id="ufAgreement" style="margin-top:14px">${hasPartner?agreementHtml(agr):'<div style="font-size:11.5px;color:var(--text3)">Partner Agreement muncul saat ada Partner funding. Funding % ≠ Profit Share %.</div>'}</div>`;
+    <div id="ufAgreement" style="margin-top:14px">${hasPartner?agreementHtml(agr):'<div style="font-size:11.5px;color:var(--text3)">Partner Agreement muncul saat ada Partner funding. Funding %, Profit Share %, dan Loss Exposure % independen.</div>'}</div>`;
   document.getElementById('ufPnameWrap').style.display='none';
   document.getElementById('ufTable').innerHTML=`<thead><tr><th>Tanggal</th><th>Sumber</th><th>Partner</th><th class="num">Nominal</th><th></th></tr></thead><tbody>`+
     (entries.map(e=>`<tr><td>${esc(e.funded_date)}</td><td>${e.source==='partner'?'Partner':'Perkasa'}</td><td>${esc(e.partner_name||'—')}</td>
@@ -4906,7 +4895,7 @@ async function loadSettle(){
   // Sale form
   body.innerHTML=`
     <div class="ih-grid" style="margin-bottom:10px">
-      ${kcard('Base Unit Cost',fmtRp(vf.base_unit_cost),'v_unit_cost ✓','k-blue')}
+      ${kcard('Total Base Unit Cost',fmtRp(vf.base_unit_cost),'v_unit_cost ✓','k-blue')}
       ${kcard('Total Funding',fmtRp(vf.total_funding),`Perkasa ${fmtRp(vf.perkasa_funding)} · Partner ${fmtRp(vf.partner_funding)}`,'k-teal')}
       ${kcard('Funding Status',vf.funding_status,vf.funding_status==='funded'?'siap dijual':'cek funding','k-'+(vf.funding_status==='funded'?'green':'amber'))}
     </div>
@@ -4948,7 +4937,7 @@ function settledSummary(s){
     ${row('Selling Price',fmtRp(s.selling_price))}
     ${row('Selling Cost',fmtRp(s.selling_cost),{neg:true})}
     ${row('Net Sale Proceeds',fmtRp(s.net_proceeds))}
-    ${row('Base Unit Cost',fmtRp(s.base_unit_cost_snap),{neg:true})}
+    ${row('Total Base Unit Cost',fmtRp(s.base_unit_cost_snap),{neg:true})}
     ${row(loss?'True Unit LOSS':'True Unit Profit',fmtRp(s.true_unit_profit),{rule:true,strong:true,neg:loss})}
     <div style="height:8px"></div>
     <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin:2px 0">Capital Return — bukan profit</div>
