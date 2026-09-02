@@ -593,63 +593,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
 
       <!-- ═══════════ PORTOFOLIO INVESTOR (read-only) ═══════════ -->
-      <div id="sec-investor" class="section">
-        <div class="home-hero">
-          <div class="hh-left">
-            <div class="hh-eyebrow">Portofolio Investasi</div>
-            <div class="hh-greet" id="invGreet">Selamat datang</div>
-            <div class="hh-date" id="invDate">—</div>
-          </div>
-        </div>
-        <div class="kpi-grid" id="invPortKPI" style="margin-bottom:18px"></div>
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">Investasi Saya per Unit</div></div>
-          <div class="table-scroll"><table class="track-table" id="invPortTable"></table></div>
-          <p style="font-size:11px;color:var(--text3);margin-top:10px">Estimasi return dihitung dari skema fee yang disepakati per unit. Modal dikembalikan setelah unit terjual. Angka bersifat estimasi, bukan jaminan.</p>
-        </div>
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">Estimasi Return per Unit</div></div>
-          <div class="chart-wrap" style="height:260px"><canvas id="chartInvPort"></canvas></div>
-        </div>
-      </div>
-
-      <!-- ═══════════ REKAM JEJAK INVESTOR (read-only) ═══════════ -->
-      <div id="sec-investor-track" class="section">
-        <div class="insight-hero">
-          <div class="ih-title">
-            <div>
-              <div class="ih-eyebrow">Rekam Jejak & Simulasi</div>
-              <h2 class="ih-head">Kinerja Historis</h2>
-            </div>
-            <div class="ih-period" id="itPeriod">—</div>
-          </div>
-          <div class="ih-grid" id="itScorecards"></div>
-        </div>
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">Ringkasan</div></div>
-          <div id="itNarrative" style="font-size:14px;line-height:1.7;color:var(--text)"></div>
-        </div>
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">Simulasi Imbal Hasil</div></div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
-            <div class="fg" style="flex:1;min-width:160px;margin-bottom:0">
-              <label>Nominal Investasi (Rp)</label>
-              <input type="number" id="itSimNominal" placeholder="50000000" oninput="renderInvestorTrack()">
-            </div>
-            <div class="fg" style="flex:1;min-width:120px;margin-bottom:0">
-              <label>Perputaran / Tahun</label>
-              <input type="number" id="itSimCycles" placeholder="otomatis" oninput="renderInvestorTrack()">
-            </div>
-          </div>
-          <div class="ih-grid" id="itSimResult"></div>
-          <p style="font-size:11px;color:var(--text3);margin-top:10px" id="itSimNote"></p>
-        </div>
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">Track Record Penjualan</div></div>
-          <div class="table-scroll"><table class="track-table" id="itTrackTable"></table></div>
-        </div>
-      </div>
-
       <div id="sec-input" class="section role-internal">
         <div class="edit-banner" id="editBanner">
           <span>Sedang mengedit unit: <strong id="editUnitName"></strong></span>
@@ -1282,8 +1225,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <button class="btn-ghost" onclick="lockAdmin()">Tutup Panel</button>
 
             <div style="border-top:1px solid var(--border);margin:20px 0 16px"></div>
-            <div class="card-title" style="margin-bottom:6px">Akun Investor</div>
-            <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Buat login untuk investor / partner sharing modal. Mereka hanya melihat portofolio investasinya sendiri — profit & margin bisnis disembunyikan. <b>Penting:</b> pakai username yang sama dengan nama partner di funding (mis. partner "Budi" → username <b>budi</b>) supaya datanya otomatis cocok.</p>
+            <div class="card-title" style="margin-bottom:6px">Akun Login Tambahan</div>
+            <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Buat akun login read-only tambahan. Akun ini hanya melihat data terbatas; profit & margin bisnis disembunyikan.</p>
             <div id="invList" style="margin-bottom:14px"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
               <div class="fg" style="flex:1;min-width:130px;margin-bottom:0">
@@ -1646,8 +1589,6 @@ function showSection(s,fromPop){
   if(s==='analitik'){showSubTab('analitik','atab-kinerja');}
   if(s==='pengaturan'){showSubTab('pengaturan','ptab-settings');}
   if(s==='partner'){showSubTab('partner','prtab-simulator');}
-  if(s==='investor')renderInvestorPortfolio();
-  if(s==='investor-track')renderInvestorTrack();
   // sub-section aliases
   const subMap={kas:'keuangan',inventori:'keuangan',cashflow:'keuangan',laporan:'keuangan',
     insight:'analitik',evaluasi:'analitik','inventory-intel':'analitik','invest-dash':'analitik',
@@ -2605,7 +2546,6 @@ function renderInsight(){
 
   renderHoldingChart(ins.perUnit);
   renderWinRateChart(ins.perUnit);
-  renderRoiBarChart(ins.perUnit);
 }
 
 function renderHoldingChart(perUnit){
@@ -2637,16 +2577,6 @@ function renderWinRateChart(perUnit){
   window._chartWinRate=new Chart(el,{type:'line',data:{labels,datasets:[{label:'Win Rate (%)',data,borderColor:'#178A5A',backgroundColor:'rgba(23,138,90,0.12)',tension:0.3,fill:true,pointRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}}}});
 }
 
-function renderRoiBarChart(perUnit){
-  const el=document.getElementById('chartRoiBar');
-  if(!el)return;
-  const sorted=perUnit.slice().sort((a,b)=>b.roi-a.roi);
-  const labels=sorted.map(x=>x.u.nama);
-  const data=sorted.map(x=>+x.roi.toFixed(1));
-  const colors=data.map(r=>r>=0?'rgba(37,99,201,0.75)':'rgba(211,58,44,0.75)');
-  if(window._chartRoiBar)window._chartRoiBar.destroy();
-  window._chartRoiBar=new Chart(el,{type:'bar',data:{labels,datasets:[{label:'ROI (%)',data,backgroundColor:colors,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>i.parsed.x.toFixed(1)+'%'}}},scales:{x:{ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}},y:{ticks:{font:{size:11}}}}}});
-}
 
 function exportInsightPDF(){
   // Pastikan data sudah tampil & isi header cetak
@@ -2784,11 +2714,6 @@ function renderProduct(){
 // ═══════════════════════════════════════════════════════════
 const PAID_KEY='pm_funding_paid';
 function getFundingPaid(){try{return JSON.parse(localStorage.getItem(PAID_KEY)||'{}');}catch(e){return {};}}
-function setFundingPaid(unitId,investor){
-  const d=getFundingPaid();
-  d[unitId+'__'+investor]=new Date().toISOString().slice(0,10);
-  localStorage.setItem(PAID_KEY,JSON.stringify(d));
-}
 function isFundingPaid(unitId,investor){return !!getFundingPaid()[unitId+'__'+investor];}
 
 function allFundings(){
@@ -3042,7 +2967,8 @@ function attentionUnits(){
       if(!vf || (total===0 && base===0 && rows.length===0)) reasons.push(['Funding belum dicatat','amber']);
       else if(gap>0) reasons.push(['Funding Gap '+fmtRpShort(gap),'amber']);
     }
-    if(hold>90) reasons.push(['Holding '+hold+' hari','red']);
+    // Holding concern uses the established Dead Stock threshold (holdingCategory: >90d = 'dead')
+    if(holdingCategory(hold)==='dead') reasons.push(['Holding '+hold+' hari','red']);
     if(reasons.length) out.push({u,hold,reasons});
   });
   // most urgent first: red reasons, then longest holding
@@ -3093,7 +3019,11 @@ function renderHome(){
   document.getElementById('hhGreet').textContent=greet;
   document.getElementById('hhDate').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
-  if(!ig){ renderInvestorHome(); return; }
+  if(!ig){
+    const kg=document.getElementById('kpiGrid'); if(kg)kg.innerHTML='';
+    const as=document.getElementById('alertStack'); if(as)as.innerHTML='<div class="alert amber"><span class="a-ic"></span><div>Akses investor telah dinonaktifkan. Silakan hubungi admin.</div></div>';
+    return;
+  }
 
   // D6 Command Center — company-scale, DB-derived. Falls back to legacy home if
   // the reporting functions (phase16) are not deployed yet.
@@ -3219,7 +3149,7 @@ function renderCashChart(h){
   if(cCash)cCash.destroy();
   cCash=new Chart(cashCanvas.getContext('2d'),{
     type:'doughnut',
-    data:{labels:['Cash (est.)','Inventory','Piutang','Hutang Investor'],
+    data:{labels:['Cash (est.)','Inventory','Piutang','Hutang Partner'],
       datasets:[{data:[h.cashProxy,h.inventoryVal,0,h.outstanding],
         backgroundColor:['#2D6A1F','#4A7C7C','#185FA5','#A32D2D'],borderWidth:0}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
@@ -3278,121 +3208,10 @@ function renderTopPerformance(h){
   fill('topProfit',byProfit,x=>fmtRpShort(x.np),x=>x.u.jenis+(x.hold!=null?' · '+x.hold+' hari':''));
   fill('topRoi',byFast,x=>x.hold+' hari',x=>x.u.jenis+' · '+fmtRpShort(x.np));
 }
-function renderInvestorSummary(h){
-  const names=new Set(); let active=0,done=0;
-  h.fundings.forEach(f=>{names.add(f.investor); if(f.status==='active')active+=f.funding; else done+=f.funding;});
-  // top investor by total funding
-  const byInv={};
-  h.fundings.forEach(f=>{byInv[f.investor]=(byInv[f.investor]||0)+f.funding;});
-  const top=Object.entries(byInv).sort((a,b)=>b[1]-a[1])[0];
-  const cards=[
-    ['Total Investor',names.size,'partner aktif','k-blue'],
-    ['Funding Aktif',fmtRpShort(active),'di unit berjalan','k-teal'],
-    ['Funding Selesai',fmtRpShort(done),'unit terjual','k-green'],
-    ['Outstanding',fmtRpShort(h.outstanding),'belum dibayar','k-red'],
-    ['Top Investor',top?top[0]:'—',top?fmtRpShort(top[1]):'','k-amber'],
-  ];
-  document.getElementById('investorSummary').innerHTML=cards.map(([l,v,s,c])=>
-    `<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value" style="font-size:18px">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
-}
 
 // ── Tampilan HOME khusus INVESTOR (PHASE 2 & 8) ──
-function renderInvestorHome(){
-  const me=(currentUser||'').toLowerCase();
-  const mine=allFundings().filter(f=>(f.investor||'').toLowerCase().includes(me)||me.includes((f.investor||'').toLowerCase()));
-  const totalActive=mine.filter(f=>f.status==='active').reduce((a,f)=>a+f.funding,0);
-  const totalReturn=mine.reduce((a,f)=>a+f.fee,0);
-  const roi=mine.reduce((a,f)=>a+f.funding,0)>0?totalReturn/mine.reduce((a,f)=>a+f.funding,0)*100:0;
-  const unitAktif=new Set(mine.filter(f=>f.status==='active').map(f=>f.namaUnit)).size;
-  const unitSelesai=new Set(mine.filter(f=>f.status!=='active').map(f=>f.namaUnit)).size;
-  const kpis=[
-    ['Total Modal Aktif',fmtRpShort(totalActive),'sedang berjalan','k-teal'],
-    ['Total Return',fmtRpShort(totalReturn),'estimasi','k-green'],
-    ['ROI Investasi',roi.toFixed(1)+'%','pribadi','k-blue'],
-    ['Unit Aktif',unitAktif,'didanai','k-purple'],
-    ['Unit Selesai',unitSelesai,'sudah terjual','k-amber'],
-    ['Total Funding',fmtRpShort(mine.reduce((a,f)=>a+f.funding,0)),mine.length+' entri','k-blue'],
-  ];
-  document.getElementById('kpiGrid').innerHTML=kpis.map(([l,v,s,c])=>
-    `<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
-  document.getElementById('alertStack').innerHTML=`<div class="alert green"><span class="a-ic"></span><div>Anda login sebagai <b>Investor</b>. Hanya data investasi pribadi Anda yang ditampilkan.</div></div>`;
-  // Portfolio cards in profit trend slot? render as table inside investorSummary
-  document.getElementById('investorSummary').innerHTML=mine.map(f=>
-    `<div class="kpi k-blue"><div class="kpi-label">${f.namaUnit}</div><div class="kpi-value" style="font-size:16px">${fmtRpShort(f.funding)}</div><div class="kpi-sub">Funding ${f.fundingDate} · <span class="fund-status ${f.status}">${f.status==='active'?'Aktif':'Belum dibayar'}</span></div><div class="kpi-sub">Est. return ${fmtRpShort(f.estReturn)}</div></div>`
-  ).join('')||`<div class="empty-state" style="padding:20px">Belum ada funding atas nama Anda.</div>`;
-}
 
 // ═══════════ FUNDING LEDGER RENDER (PHASE 3) ═══════════
-function setFundingFilter(f){
-  fundingFilter=f;
-  document.querySelectorAll('#ftab-ledger .chip[data-fs]').forEach(b=>b.classList.toggle('active',b.dataset.fs===f));
-  renderFunding();
-}
-function renderCapitalOverview(){
-  const el=document.getElementById('capitalOverview'); if(!el)return;
-  if(!isInternal()){ el.innerHTML=''; return; }
-  const c=FIN.command, cap=FIN.fundingCap, util=(FIN.fundingUtil||[]), rec=(FIN.fundingRec||[]), inv=(FIN.investors||[]);
-  if(!c&&!cap){ el.innerHTML=''; return; }
-  const card=(l,v,s,cc)=>`<div class="kpi ${cc}"><div class="kpi-label">${l}</div><div class="kpi-value" style="font-size:18px">${v}</div><div class="kpi-sub">${s}</div></div>`;
-  let kpis='';
-  if(c){
-    kpis=[
-      card('Modal Terkumpul',fmtRpShort(c.capital_funded),'seluruh sumber','k-blue'),
-      card('Modal Berjalan',fmtRpShort(c.capital_deployed),'sedang di unit aktif','k-teal'),
-      card('Modal Tersedia',fmtRpShort(c.capital_available),'siap dikerahkan','k-green'),
-      card('Cadangan Perusahaan',fmtRpShort(c.reserve_balance),'ring-fenced 10%','k-amber'),
-    ].join('');
-  }
-  // Investor lifecycle table (mapped)
-  let invTbl='';
-  if(inv.length){
-    invTbl=`<div class="card"><div class="card-hdr"><div class="card-title">Siklus Modal per Investor ✓</div></div>
-      <div class="table-scroll"><table class="track-table"><thead><tr><th>Investor</th><th class="num">Funded</th><th class="num">Berjalan</th><th class="num">Tersedia</th><th class="num">Kembali</th><th class="num">Laba Realized</th></tr></thead><tbody>
-      ${inv.map(m=>`<tr><td>${m.investor_key}${m.is_mapped?'':' <span style="font-size:10px;color:var(--amber,#9A6300)">(unmapped)</span>'}</td><td class="num">${fmtRp(m.funded)}</td><td class="num">${fmtRp(m.deployed)}</td><td class="num">${fmtRp(m.available)}</td><td class="num">${fmtRp(m.capital_returned)}</td><td class="num">${fmtRp(m.realized_profit)}</td></tr>`).join('')}
-      </tbody></table></div><p style="font-size:11px;color:var(--text3);margin-top:8px">Tersedia = Funded − Berjalan (modal kembali masuk lagi). Cadangan bukan modal investor. Laba realized hanya pada modal yang telah berputar penuh.</p></div>`;
-  }
-  // Funding capacity summary (one-liner, not the full CFO model)
-  let capBox='';
-  if(cap){
-    const tput=Number(cap.throughput_per_month||0);
-    capBox=`<div class="card"><div class="card-hdr"><div class="card-title">Kapasitas Pendanaan ✓</div></div>
-      <div style="font-size:13px;line-height:1.6;color:var(--text2)">Throughput historis ± <b>${tput.toFixed(1)} unit/bulan</b>, rata² tahan <b>${cap.mean_holding} hari</b>, biaya rata² <b>${fmtRpShort(cap.avg_cost_per_unit)}/unit</b>.
-      Karena modal kerja berputar cepat, pendanaan besar mudah menganggur bila throughput tidak naik.
-      ${rec.length?`<div style="margin-top:8px">Rekomendasi pendanaan: ${rec.map(r=>`<b>${r.tier}</b> ${fmtRpShort(r.low)}–${fmtRpShort(r.high)}`).slice(0,3).join(' · ')}</div>`:''}</div></div>`;
-  }
-  el.innerHTML=(kpis?`<div class="kpi-grid" style="margin-bottom:14px">${kpis}</div>`:'')+invTbl+capBox;
-}
-function renderFunding(){
-  if(!document.getElementById('fundingTable'))return; // retired: Modal is now Partner Collaboration
-  renderCapitalOverview();
-  let rows=allFundings();
-  if(!isInternal()){ const me=(currentUser||'').toLowerCase(); rows=rows.filter(f=>(f.investor||'').toLowerCase().includes(me)); }
-  const totalFund=rows.reduce((a,f)=>a+f.funding,0);
-  const totalReturn=rows.reduce((a,f)=>a+f.fee,0);
-  const outstanding=rows.filter(f=>f.status==='pending_payment').reduce((a,f)=>a+f.fee,0);
-  const investors=new Set(rows.map(f=>f.investor)).size;
-  document.getElementById('fundingKpi').innerHTML=[
-    ['Total Funding',fmtRpShort(totalFund),rows.length+' entri','k-blue'],
-    ['Total Investor',investors,'partner','k-teal'],
-    ['Est. Return',fmtRpShort(totalReturn),'fee partner','k-green'],
-    ['Outstanding',fmtRpShort(outstanding),'belum dibayar','k-red'],
-  ].map(([l,v,s,c])=>`<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value" style="font-size:18px">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
-
-  if(fundingFilter!=='all')rows=rows.filter(f=>f.status===fundingFilter);
-  rows.sort((a,b)=>(b.fundingDate||'').localeCompare(a.fundingDate||''));
-  const statusLbl={active:'Aktif',pending_payment:'Belum Dibayar',paid:'Lunas',cancelled:'Batal'};
-  const head=`<thead><tr><th>Investor</th><th>Unit</th><th class="num">Funding</th><th>Skema</th><th class="num">Est. Return</th><th>Tgl Funding</th><th>Status</th></tr></thead>`;
-  const body=rows.map(f=>{
-    const skema=f.feeType==='fixed'?'Manual '+fmtRpShort(f.feeValue)
-      :f.feeType==='percent'?f.feeValue+'% dari modal'
-      :f.feeType==='percent_profit'?f.feeValue+'% dari profit'
-      :'Tanpa fee';
-    const lunasBtn=f.status==='pending_payment'
-      ?`<button class="btn-sm success" style="margin-left:8px;font-size:10px;padding:3px 8px" onclick="tandaiLunas('${f.unit.id}','${f.investor}')">Tandai Lunas</button>`:'';
-    return `<tr><td>${f.investor}</td><td>${f.namaUnit}</td><td class="num">${fmtRp(f.funding)}</td><td>${skema}</td><td class="num">${fmtRp(f.estReturn)}</td><td>${f.fundingDate||'—'}</td><td><span class="fund-status ${f.status}">${statusLbl[f.status]}</span>${lunasBtn}</td></tr>`;
-  }).join('');
-  document.getElementById('fundingTable').innerHTML=head+'<tbody>'+(body||`<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Belum ada data funding. Tambahkan partner saat input unit.</td></tr>`)+'</tbody>';
-}
 
 // D7 scorecard — Position (as-of) + Period metrics from D3–D6 DB-derived sources.
 // Partner Funding is NEVER aggregated into Perkasa capital (separate KPI).
@@ -3417,12 +3236,6 @@ function updateMetrics(){
   set('mDaysSell',avgSell+' hari'); set('mRealized',fmtRpShort(PERKASA_REALIZED));   // v_retained_profit.future_retained
 }
 
-function tandaiLunas(unitId, investor){
-  if(!confirm(`Tandai funding ${investor} sebagai LUNAS? Tindakan ini tidak bisa dibatalkan.`))return;
-  setFundingPaid(unitId, investor);
-  renderFunding();
-  showToast('Funding '+investor+' ditandai lunas');
-}
 
 function showToast(msg){
   const t=document.getElementById('toast');
@@ -3677,194 +3490,15 @@ async function hapusAset(id){
 }
 
 // ══════════ DATA ROOM / PITCH (PHASE 11) ══════════
-function dataRoomStats(){
-  const ins=computeInsights();
-  const rois=ins.perUnit.map(x=>x.roi).filter(r=>isFinite(r));
-  const roiCycle=rois.length?rois.reduce((a,b)=>a+b,0)/rois.length:0;
-  const avgHold=ins.avgHold||0;
-  const cyclesPerYear=avgHold>0?365/avgHold:0;
-  return {ins,roiCycle,avgHold,cyclesPerYear,
-    annualRoi:roiCycle*cyclesPerYear};
-}
 
 // ══════════════════════════════════════════════════════════
 // INVESTOR — PORTOFOLIO (read-only, data pribadi)
 // ══════════════════════════════════════════════════════════
 let cInvPort=null;
-function myFundings(){
-  const me=(currentUser||'').toLowerCase();
-  return allFundings().filter(f=>{
-    const inv=(f.investor||'').toLowerCase();
-    return inv && (inv.includes(me)||me.includes(inv));
-  });
-}
-function renderInvestorPortfolio(){
-  const hr=new Date().getHours();
-  const greet=hr<11?'Selamat pagi':hr<15?'Selamat siang':hr<19?'Selamat sore':'Selamat malam';
-  document.getElementById('invGreet').textContent=greet+', '+(currentUser||'Investor').charAt(0).toUpperCase()+(currentUser||'Investor').slice(1);
-  document.getElementById('invDate').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-
-  const mine=myFundings();
-  const totalModal=mine.reduce((a,f)=>a+f.funding,0);
-  const modalAktif=mine.filter(f=>f.status==='active').reduce((a,f)=>a+f.funding,0);
-  const modalKembali=mine.filter(f=>f.status!=='active').reduce((a,f)=>a+f.funding,0);
-  const totalReturn=mine.reduce((a,f)=>a+f.fee,0);
-  const returnCair=mine.filter(f=>f.status==='paid').reduce((a,f)=>a+f.fee,0);
-  const roi=totalModal>0?(totalReturn/totalModal*100):0;
-  const unitAktif=mine.filter(f=>f.status==='active').length;
-  const unitSelesai=mine.filter(f=>f.status!=='active').length;
-
-  document.getElementById('invPortKPI').innerHTML=[
-    ['Total Modal Ditanam',fmtRpShort(totalModal),mine.length+' unit didanai','k-blue'],
-    ['Modal Aktif',fmtRpShort(modalAktif),unitAktif+' unit berjalan','k-teal'],
-    ['Modal Sudah Kembali',fmtRpShort(modalKembali),unitSelesai+' unit selesai','k-green'],
-    ['Estimasi Total Return',fmtRpShort(totalReturn),'dari fee unit','k-purple'],
-    ['Return Sudah Cair',fmtRpShort(returnCair),'sudah dibayar','k-green'],
-    ['ROI Investasi',roi.toFixed(1)+'%','return / modal','k-amber'],
-  ].map(([l,v,s,c])=>`<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
-
-  const stLabel={active:['Aktif','var(--amber,#C07A0E)'],pending_payment:['Menunggu Pembayaran','var(--red)'],paid:['Lunas','var(--green)']};
-  const head=`<thead><tr><th>Unit</th><th class="num">Tgl Danai</th><th class="num">Modal</th><th>Status</th><th class="num">Est. Return</th></tr></thead>`;
-  const body=mine.length?mine.slice().sort((a,b)=>(b.fundingDate||'').localeCompare(a.fundingDate||'')).map(f=>{
-    const st=stLabel[f.status]||['—','var(--text3)'];
-    return `<tr>
-      <td><b>${f.namaUnit}</b></td>
-      <td class="num" style="color:var(--text3)">${f.fundingDate||'—'}</td>
-      <td class="num">${fmtRp(f.funding)}</td>
-      <td><span style="background:${st[1]}18;color:${st[1]};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">${st[0]}</span></td>
-      <td class="num" style="color:var(--green);font-weight:600">${fmtRp(f.fee)}</td>
-    </tr>`;
-  }).join(''):`<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:24px">Belum ada investasi atas nama Anda.</td></tr>`;
-  document.getElementById('invPortTable').innerHTML=head+'<tbody>'+body+'</tbody>';
-
-  // Chart: estimasi return per unit
-  const labels=mine.map(f=>f.namaUnit);
-  if(cInvPort)cInvPort.destroy();
-  cInvPort=new Chart(document.getElementById('chartInvPort').getContext('2d'),{
-    type:'bar',
-    data:{labels:labels.length?labels:['—'],datasets:[
-      {label:'Modal',data:mine.map(f=>f.funding),backgroundColor:'rgba(37,99,201,0.35)',borderRadius:4},
-      {label:'Est. Return',data:mine.map(f=>f.fee),backgroundColor:'rgba(23,138,90,0.85)',borderRadius:4},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
-      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12,font:{size:11}}},
-        tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtRp(c.parsed.x)}}},
-      scales:{x:{ticks:{callback:v=>'Rp'+(v/1e6).toFixed(0)+'jt'}}}}
-  });
-}
 
 // ══════════════════════════════════════════════════════════
 // INVESTOR — REKAM JEJAK & SIMULASI (read-only)
 // ══════════════════════════════════════════════════════════
-function renderInvestorTrack(){
-  const st=dataRoomStats(), ins=st.ins;
-  const fmtMonth=mk=>{ if(!mk)return '—'; const[y,m]=mk.split('-'); return BULAN[parseInt(m)-1]+' '+y; };
-  document.getElementById('itPeriod').textContent=ins.sold.length?(fmtMonth(ins.firstMonth)+' – '+fmtMonth(ins.lastMonth)):'Belum ada penjualan';
-
-  const cards=[
-    ['ROI / Siklus',st.roiCycle.toFixed(1)+'%','rata-rata per unit terjual'],
-    ['Estimasi ROI Tahunan',st.annualRoi.toFixed(0)+'%','ROI siklus × perputaran'],
-    ['Win Rate',ins.winRate.toFixed(0)+'%','unit menghasilkan profit'],
-    ['Avg Holding',st.avgHold.toFixed(0)+' hari','modal → cair'],
-    ['Perputaran/Tahun',(st.cyclesPerYear||0).toFixed(1)+'×','estimasi'],
-    ['Unit Terjual',ins.sold.length,'rekam jejak'],
-  ];
-  document.getElementById('itScorecards').innerHTML=cards.map(([l,v,sub])=>
-    `<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${sub}</div></div>`).join('');
-
-  const cyc=st.cyclesPerYear>0?st.cyclesPerYear.toFixed(1):'—';
-  document.getElementById('itNarrative').innerHTML=
-    `<p style="margin:0 0 10px">Perkasa Motors menjalankan model jual-beli kendaraan dengan perputaran modal cepat. Dari <b>${ins.sold.length} transaksi</b> yang sudah terealisasi, modal menghasilkan rata-rata <b>ROI ${st.roiCycle.toFixed(1)}% per siklus</b> dengan masa tahan rata-rata <b>${st.avgHold.toFixed(0)} hari</b>.</p>
-     <p style="margin:0 0 10px">Dengan holding sependek itu, modal dapat berputar sekitar <b>${cyc}× per tahun</b>, sehingga potensi ROI tahunan mencapai <b>~${st.annualRoi.toFixed(0)}%</b>.</p>
-     <p style="margin:0;color:var(--text2);font-size:13px">Imbal hasil diberikan sebagai bagi hasil / fee tetap per unit yang disepakati di awal; modal dikembalikan setelah unit terjual. Angka bersifat estimasi historis, bukan jaminan.</p>`;
-
-  // Simulasi
-  const nominal=parseFloat(document.getElementById('itSimNominal').value)||50000000;
-  const cyclesIn=parseFloat(document.getElementById('itSimCycles').value);
-  const cycles=(cyclesIn>0)?cyclesIn:Math.max(1,st.cyclesPerYear);
-  const perCycle=nominal*st.roiCycle/100;
-  const annual=perCycle*cycles;
-  const total=nominal+annual;
-  document.getElementById('itSimResult').innerHTML=[
-    ['Return / Siklus',fmtRpShort(perCycle),st.roiCycle.toFixed(1)+'% × modal'],
-    ['Perputaran / Tahun',(cycles||0).toFixed(1)+'×','holding '+st.avgHold.toFixed(0)+' hari'],
-    ['Est. Return Tahunan',fmtRpShort(annual),'~'+(st.roiCycle*cycles).toFixed(0)+'% p.a.'],
-    ['Total Modal + Return',fmtRpShort(total),'akhir '+cycles.toFixed(0)+' siklus'],
-  ].map(([l,v,sub])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${sub}</div></div>`).join('');
-  document.getElementById('itSimNote').textContent='Basis: ROI historis '+st.roiCycle.toFixed(1)+'% per siklus. Estimasi, bukan jaminan.';
-
-  const rows=ins.perUnit.slice().sort((a,b)=>(saleDateOf(b.u)||'').localeCompare(saleDateOf(a.u)||''));
-  const head=`<thead><tr><th>Unit</th><th>Jenis</th><th class="num">ROI</th><th class="num">Holding</th></tr></thead>`;
-  const body=rows.map(x=>`<tr><td>${x.u.nama}</td><td>${x.u.jenis||'—'}</td><td class="num"><span class="roi-badge">${x.roi.toFixed(1)}%</span></td><td class="num">${x.hold!==null?x.hold+' hr':'—'}</td></tr>`).join('')
-    ||`<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">Belum ada unit terjual.</td></tr>`;
-  document.getElementById('itTrackTable').innerHTML=head+'<tbody>'+body+'</tbody>';
-}
-function renderDataRoom(){
-  if(!document.getElementById('drBrand'))return; // retired investor Data Room
-  const s=getSettings();
-  document.getElementById('drBrand').textContent=s.brand||'Perkasa Motors';
-  const st=dataRoomStats(), ins=st.ins;
-  const fmtMonth=mk=>{ if(!mk)return '—'; const[y,m]=mk.split('-'); return BULAN[parseInt(m)-1]+' '+y; };
-  document.getElementById('drPeriod').textContent=ins.sold.length?(fmtMonth(ins.firstMonth)+' – '+fmtMonth(ins.lastMonth)):'Belum ada penjualan';
-
-  const cards=[
-    ['ROI / Siklus',st.roiCycle.toFixed(1)+'%','rata-rata per unit terjual'],
-    ['Estimasi ROI Tahunan',st.annualRoi.toFixed(0)+'%','ROI siklus × perputaran'],
-    ['Win Rate',ins.winRate.toFixed(0)+'%','unit profit'],
-    ['Avg Holding',st.avgHold.toFixed(0)+' hari','modal → cair'],
-    ['Sell-Through',ins.sellThrough.toFixed(0)+'%','unit terjual / total'],
-    ['Unit Terjual',ins.sold.length,'rekam jejak'],
-  ];
-  document.getElementById('drScorecards').innerHTML=cards.map(([l,v,sub])=>
-    `<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${sub}</div></div>`).join('');
-
-  const cyc=st.cyclesPerYear>0?st.cyclesPerYear.toFixed(1):'—';
-  document.getElementById('drNarrative').innerHTML=
-    `<p style="margin:0 0 10px"><b>${s.brand||'Perkasa Motors'}</b> menjalankan model jual-beli kendaraan dengan perputaran modal cepat. Dari <b>${ins.sold.length} transaksi</b> yang sudah terealisasi, modal inti menghasilkan rata-rata <b>ROI ${st.roiCycle.toFixed(1)}% per siklus</b> dengan masa tahan rata-rata <b>${st.avgHold.toFixed(0)} hari</b>.</p>
-     <p style="margin:0 0 10px">Dengan holding sependek itu, modal dapat berputar sekitar <b>${cyc}× per tahun</b>, sehingga potensi ROI tahunan teranualisasi mencapai <b>~${st.annualRoi.toFixed(0)}%</b>. Tingkat keberhasilan (unit yang menghasilkan profit) berada di <b>${ins.winRate.toFixed(0)}%</b>.</p>
-     <p style="margin:0;color:var(--text2);font-size:13px">Imbal hasil investor diberikan dalam bentuk bagi hasil / fee tetap per unit yang disepakati di awal, dan modal dikembalikan setelah unit terjual. Transparansi penuh tersedia di laporan ini.</p>`;
-
-  if(!document.getElementById('simNominal').value)document.getElementById('simNominal').value=50000000;
-  renderSimulator();
-
-  // track table (reuse insight perUnit, sorted by sale date desc)
-  const rows=ins.perUnit.slice().sort((a,b)=>(saleDateOf(b.u)||'').localeCompare(saleDateOf(a.u)||''));
-  const head=`<thead><tr><th>Unit</th><th>Jenis</th><th class="num">Modal Inti</th><th class="num">Profit</th><th class="num">ROI</th><th class="num">Holding</th></tr></thead>`;
-  const body=rows.map(x=>`<tr><td>${x.u.nama}</td><td>${x.u.jenis||'—'}</td><td class="num">${fmtRpShort(x.mi)}</td><td class="num">${fmtRpShort(x.profit)}</td><td class="num"><span class="roi-badge">${x.roi.toFixed(1)}%</span></td><td class="num">${x.hold!==null?x.hold+' hr':'—'}</td></tr>`).join('')
-    ||`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">Belum ada unit terjual.</td></tr>`;
-  document.getElementById('drTrackTable').innerHTML=head+'<tbody>'+body+'</tbody>';
-}
-function renderSimulator(){
-  const st=dataRoomStats();
-  const nominal=parseFloat(document.getElementById('simNominal').value)||0;
-  const cyclesIn=parseFloat(document.getElementById('simCycles').value);
-  const cycles=(cyclesIn>0)?cyclesIn:Math.max(1,st.cyclesPerYear);
-  const modeEl=document.getElementById('simMode');
-  const feeEl=document.getElementById('simFee');
-  const mode=modeEl?modeEl.value:'roi';
-  const customFee=feeEl?parseFloat(feeEl.value)||0:0;
-  const roiPct=mode==='custom'&&customFee>0?customFee:st.roiCycle;
-  const perCycle=nominal*roiPct/100;
-  const annual=perCycle*cycles;
-  const total=nominal+annual;
-  const label=mode==='custom'&&customFee>0?customFee.toFixed(1)+'% fee/transaksi':st.roiCycle.toFixed(1)+'% ROI historis';
-  const cards=[
-    ['Return / Siklus',fmtRpShort(perCycle),''+roiPct.toFixed(1)+'% × modal · '+label],
-    ['Perputaran / Tahun',(cycles||0).toFixed(1)+'×','holding '+st.avgHold.toFixed(0)+' hari'],
-    ['Est. Return Tahunan',fmtRpShort(annual),'~'+(roiPct*cycles).toFixed(0)+'% p.a.'],
-    ['Total Modal + Return',fmtRpShort(total),'akhir '+cycles.toFixed(0)+' siklus'],
-  ];
-  document.getElementById('simResult').innerHTML=cards.map(([l,v,sub])=>
-    `<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${sub}</div></div>`).join('');
-  document.getElementById('simNote').textContent='Fee '+label+'. Angka di atas adalah estimasi, bukan jaminan.';
-}
-function exportDataRoomPDF(){
-  const s=getSettings();
-  document.getElementById('drPrintHeader').innerHTML=`<h1 style="font-family:'DM Serif Display',serif">${s.brand||'Perkasa Motors'}</h1><p>Investment Memo · Dicetak ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</p>`;
-  document.body.classList.add('printing-dataroom');
-  window.print();
-  setTimeout(()=>document.body.classList.remove('printing-dataroom'),500);
-}
 
 // ══════════ AKUN INVESTOR (admin) ══════════
 function renderInvestorList(list){
@@ -3885,7 +3519,7 @@ async function addInvestor(){
   setLoading(false);
   if(!error&&data&&data.ok){
     document.getElementById('invUser').value='';document.getElementById('invPass').value='';
-    showToast('Investor '+data.username+' ditambahkan');
+    showToast('Akun '+data.username+' ditambahkan');
     refreshInvestorList();
   }else showToast(''+((data&&data.error)||'Gagal menambah'));
 }
@@ -5269,7 +4903,7 @@ async function renderLaporan(){
     plRow('TOTAL PENDAPATAN',pendapatanJual+modalPartnerIn,'total')+
     plRow('BEBAN','','header')+
     plRow('HPP (Harga Pokok Kendaraan)',hpp,'normal',true)+
-    plRow('Fee Partner/Investor',feePartner,'normal',true)+
+    plRow('Fee Partner',feePartner,'normal',true)+
     plRow('Pengeluaran Operasional',opsKeluar,'normal',true)+
     plRow('TOTAL BEBAN',hpp+feePartner+opsKeluar,'total')+
     plRow('LABA KOTOR',labaKotor,labaKotor>=0?'profit':'loss')+
@@ -5294,7 +4928,7 @@ async function renderLaporan(){
     bsRow('Piutang Partner (Aktif)',outstanding,'normal',true)+
     bsRow('TOTAL ASET',totalAset,'total')+
     bsRow('LIABILITAS','','header')+
-    bsRow('Hutang ke Investor/Partner',outstanding,'normal',true)+
+    bsRow('Hutang ke Partner',outstanding,'normal',true)+
     bsRow('TOTAL LIABILITAS',outstanding,'total')+
     bsRow('EKUITAS','','header')+
     bsRow('Laba Bersih Kumulatif',totalProfit,'normal',true)+
@@ -5414,105 +5048,6 @@ function renderInventoryIntel(){
 // ══════════════════════════════════════════════════════════
 let cInvestRoi=null, cInvestDist=null, cInvestTimeline=null;
 
-function renderInvestDash(){
-  return; // D8: investor dashboard retired (Partner data now lives under Modal - Partner Collaboration)
-  const fundings=allFundings();
-  const sold=units.filter(u=>u.status==='terjual');
-
-  // Aggregate per partner
-  const partnerMap={};
-  fundings.forEach(f=>{
-    const p=f.partner||'—';
-    if(!partnerMap[p])partnerMap[p]={name:p,totalModal:0,totalFee:0,totalReturn:0,unitCount:0,activeModal:0};
-    partnerMap[p].totalModal+=f.funding;
-    partnerMap[p].totalFee+=f.fee;
-    if(f.status==='active')partnerMap[p].activeModal+=f.funding;
-    else partnerMap[p].totalReturn+=f.funding+f.fee;
-    partnerMap[p].unitCount++;
-  });
-  const partners=Object.values(partnerMap);
-  const totalModal=partners.reduce((a,p)=>a+p.totalModal,0);
-  const totalFee=partners.reduce((a,p)=>a+p.totalFee,0);
-  const totalReturn=partners.reduce((a,p)=>a+p.totalReturn,0);
-  const activeModal=partners.reduce((a,p)=>a+p.activeModal,0);
-
-  // KPI
-  document.getElementById('investKPI').innerHTML=[
-    ['Total Modal Partner',fmtRpShort(totalModal),partners.length+' partner/investor','k-blue'],
-    ['Total Fee Dibayar',fmtRpShort(totalFee),'profit sharing','k-green'],
-    ['Total Sudah Kembali',fmtRpShort(totalReturn),'pokok + fee','k-teal'],
-    ['Modal Masih Aktif',fmtRpShort(activeModal),'di unit belum terjual','k-amber'],
-    ['Avg ROI Partner',totalModal>0?(totalFee/totalModal*100).toFixed(1)+'%':'—','fee/modal','k-purple'],
-    ['Unit Didanai',fundings.length,'transaksi funding','k-blue'],
-  ].map(([l,v,s,c])=>`<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
-
-  // ROI per partner bar chart
-  const partnerNames=partners.map(p=>p.name);
-  const partnerRois=partners.map(p=>p.totalModal>0?parseFloat((p.totalFee/p.totalModal*100).toFixed(1)):0);
-  if(cInvestRoi)cInvestRoi.destroy();
-  cInvestRoi=new Chart(document.getElementById('chartInvestRoi').getContext('2d'),{
-    type:'bar',
-    data:{labels:partnerNames,datasets:[{label:'ROI (%)',data:partnerRois,backgroundColor:'rgba(37,99,201,0.75)',borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{y:{ticks:{callback:v=>v+'%'},title:{display:true,text:'ROI (%)'}},x:{ticks:{font:{size:11}}}}}
-  });
-
-  // Distribution donut
-  if(cInvestDist)cInvestDist.destroy();
-  const COLORS=['#2563C9','#178A5A','#C07A0E','#D33A2C','#7A5C9E','#4A7C7C','#C05720','#1A8CA3'];
-  cInvestDist=new Chart(document.getElementById('chartInvestDist').getContext('2d'),{
-    type:'doughnut',
-    data:{labels:partnerNames,datasets:[{data:partners.map(p=>p.totalModal),backgroundColor:COLORS,borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
-      plugins:{legend:{position:'right',labels:{boxWidth:12,padding:10,font:{size:11}}},
-        tooltip:{callbacks:{label:c=>`${c.label}: ${fmtRpShort(c.raw)}`}}}}
-  });
-
-  // Timeline — profit distribution per month
-  const byMonth={};
-  sold.forEach(u=>{
-    const mk=monthKey(saleDateOf(u)); if(!mk)return;
-    if(!byMonth[mk])byMonth[mk]={fee:0,kasBisnis:0,bagi:0};
-    byMonth[mk].fee+=(+u.totalFee||0);
-    byMonth[mk].kasBisnis+=(+u.kasBisnis||0);
-    byMonth[mk].bagi+=(+u.bagiPanji||0)+(+u.bagiPandu||0);
-  });
-  const mkeys=Object.keys(byMonth).sort();
-  const fmtM=mk=>{const[y,m]=mk.split('-');return BULAN[parseInt(m)-1]+"'"+(y.slice(2));};
-  if(cInvestTimeline)cInvestTimeline.destroy();
-  cInvestTimeline=new Chart(document.getElementById('chartInvestTimeline').getContext('2d'),{
-    data:{labels:mkeys.length?mkeys.map(fmtM):['—'],datasets:[
-      {type:'bar',label:'Fee Partner',data:mkeys.map(k=>byMonth[k].fee),backgroundColor:'rgba(37,99,201,0.7)',borderRadius:3},
-      {type:'bar',label:'Kas Bisnis',data:mkeys.map(k=>byMonth[k].kasBisnis),backgroundColor:'rgba(23,138,90,0.7)',borderRadius:3},
-      {type:'bar',label:'Bagi Hasil',data:mkeys.map(k=>byMonth[k].bagi),backgroundColor:'rgba(122,92,158,0.7)',borderRadius:3},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10,font:{size:11}}}},
-      scales:{x:{stacked:true,ticks:{font:{size:10}}},y:{stacked:true,ticks:{callback:v=>'Rp'+(v/1e6).toFixed(0)+'jt'}}}}
-  });
-
-  // Performance table per partner
-  const thead=`<thead><tr style="background:var(--surface2)">
-    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase">Partner</th>
-    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">Total Modal</th>
-    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">Fee Diterima</th>
-    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">ROI</th>
-    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">Unit</th>
-    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">Modal Aktif</th>
-  </tr></thead>`;
-  const tbody=partners.length?partners.slice().sort((a,b)=>b.totalModal-a.totalModal).map(p=>{
-    const roi=p.totalModal>0?(p.totalFee/p.totalModal*100):0;
-    return `<tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:9px 14px;font-weight:600">${p.name}</td>
-      <td style="padding:9px 14px;text-align:right">${fmtRp(p.totalModal)}</td>
-      <td style="padding:9px 14px;text-align:right;color:var(--green)">${fmtRp(p.totalFee)}</td>
-      <td style="padding:9px 14px;text-align:right"><span class="roi-badge">${roi.toFixed(1)}%</span></td>
-      <td style="padding:9px 14px;text-align:right">${p.unitCount}</td>
-      <td style="padding:9px 14px;text-align:right;color:var(--text3)">${fmtRp(p.activeModal)}</td>
-    </tr>`;
-  }).join(''):`<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3)">Belum ada data funding partner.</td></tr>`;
-  document.getElementById('investTable').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
-}
 
 // Register service worker (PWA)
 if('serviceWorker' in navigator){
