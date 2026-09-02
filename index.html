@@ -487,11 +487,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="content">
       <div class="metrics" id="globalMetrics">
         <div class="mc c1"><div class="mc-label">Total Unit</div><div class="mc-value" id="mTotal">—</div><div class="mc-sub">unit tercatat</div></div>
-        <div class="mc c4b"><div class="mc-label">Unit Ready</div><div class="mc-value" id="mReady">—</div><div class="mc-sub">belum terjual</div></div>
-        <div class="mc c4"><div class="mc-label">Unit Terjual</div><div class="mc-value" id="mTerjual">—</div><div class="mc-sub">sudah selesai</div></div>
-        <div class="mc c5"><div class="mc-label">Modal Berjalan</div><div class="mc-value" id="mBerjalan">—</div><div class="mc-sub">di unit ready</div></div>
-        <div class="mc c2"><div class="mc-label">Total Modal</div><div class="mc-value" id="mModal">—</div><div class="mc-sub">semua unit</div></div>
-        <div class="mc c3 role-internal"><div class="mc-label">Total Profit Bersih</div><div class="mc-value" id="mUntung">—</div><div class="mc-sub">dari unit terjual</div></div>
+        <div class="mc c4b"><div class="mc-label">Unit Aktif</div><div class="mc-value" id="mReady">—</div><div class="mc-sub">belum terjual · as-of</div></div>
+        <div class="mc c4"><div class="mc-label">Unit Terjual</div><div class="mc-value" id="mTerjual">—</div><div class="mc-sub">total terjual · as-of</div></div>
+        <div class="mc c5 role-internal"><div class="mc-label">Perkasa Capital Berjalan</div><div class="mc-value" id="mPerkasaCap">—</div><div class="mc-sub">funding perkasa aktif · as-of</div></div>
+        <div class="mc c2 role-internal"><div class="mc-label">Partner Funding Berjalan</div><div class="mc-value" id="mPartnerCap">—</div><div class="mc-sub">funding partner aktif · as-of</div></div>
+        <div class="mc c3 role-internal"><div class="mc-label">Avg. Holding Aktif</div><div class="mc-value" id="mAvgHold">—</div><div class="mc-sub">rata-rata hari · as-of</div></div>
+      </div>
+      <div class="metrics" id="unitMetrics2" style="margin-top:-8px">
+        <div class="mc role-internal"><div class="mc-label">Total Base Unit Cost Aktif</div><div class="mc-value" id="mBaseAktif" style="font-size:18px">—</div><div class="mc-sub">as-of · v_unit_cost</div></div>
+        <div class="mc role-internal"><div class="mc-label">Funding Gap</div><div class="mc-value" id="mGap" style="font-size:18px">—</div><div class="mc-sub">as-of · v_unit_funding</div></div>
+        <div class="mc role-internal"><div class="mc-label">Avg. Days to Sell</div><div class="mc-value" id="mDaysSell" style="font-size:18px">—</div><div class="mc-sub">period · settled</div></div>
+        <div class="mc role-internal"><div class="mc-label">Realized Perkasa Profit</div><div class="mc-value" id="mRealized" style="font-size:18px">—</div><div class="mc-sub">v_retained_profit</div></div>
       </div>
 
       <!-- ═══════════ HOME / EXECUTIVE SUMMARY ═══════════ -->
@@ -1617,6 +1623,7 @@ async function loadUnits(){
     const {data,error}=await db.from('units').select('*').order('id',{ascending:true});
     if(error)throw error;
     units=(data||[]).map(transformUnit);
+    await loadUnitFunding();
     updateMetrics(); setSyncStatus('ok');
   }catch(e){ setSyncStatus('error'); showToast('Gagal memuat data. Cek koneksi.'); }
   await loadFin();
@@ -2112,6 +2119,53 @@ function agingBadge(u){
   return `<span class="aging-badge a${t}">${d} hari · ${lbl}</span>`;
 }
 function isLegacyUnit(u){return (u.fundingModel||'legacy')==='legacy';}
+// D7 — DB-derived funding caches (D3–D6 sources; never legacy investor fields).
+let UNIT_FUNDING={};       // unit_id -> v_unit_funding row (base_unit_cost, perkasa/partner/total, gap, status)
+let UNIT_FUNDING_ROWS={};  // unit_id -> [unit_funding rows] (per-partner breakdown)
+let UNIT_SETTLES={};       // unit_id -> v_unit_settlement row (settled snapshot)
+let PERKASA_REALIZED=0;    // v_retained_profit.future_retained (realized Perkasa profit)
+async function loadUnitFunding(){
+  UNIT_FUNDING={}; UNIT_FUNDING_ROWS={}; UNIT_SETTLES={}; PERKASA_REALIZED=0;
+  try{
+    const vf=await db.from('v_unit_funding').select('*'); (vf.data||[]).forEach(r=>{UNIT_FUNDING[r.unit_id]=r;});
+    const fr=await db.from('unit_funding').select('*').order('funded_date'); (fr.data||[]).forEach(r=>{(UNIT_FUNDING_ROWS[r.unit_id]=UNIT_FUNDING_ROWS[r.unit_id]||[]).push(r);});
+    const st=await db.from('v_unit_settlement').select('*'); (st.data||[]).forEach(r=>{UNIT_SETTLES[r.unit_id]=r;});
+    const rp=await db.from('v_retained_profit').select('future_retained').single(); PERKASA_REALIZED=rp&&rp.data?Number(rp.data.future_retained||0):0;
+  }catch(e){ /* D-series views absent on a fresh DB → renderers fall back to 'Funding belum dicatat' */ }
+}
+const pctTxt=n=>Number(n||0).toFixed(2).replace(/\.00$/,'');
+// Perkasa funding block — EXCLUSIVELY from v_unit_funding / unit_funding. No Panji/Pandu.
+function perkasaFundingBlock(u){
+  const vf=UNIT_FUNDING[u.id]; const rows=(UNIT_FUNDING_ROWS[u.id]||[]);
+  const total=vf?Number(vf.total_funding||0):0, base=vf?Number(vf.base_unit_cost||0):0;
+  if(!vf || (total===0 && base===0 && rows.length===0)){
+    return `<div style="padding:10px 12px;background:var(--bg);border-radius:8px;color:var(--text3);font-size:13px;margin-bottom:12px">Funding belum dicatat</div>`;
+  }
+  const perkasa=Number(vf.perkasa_funding||0);
+  const partnerRows=rows.filter(r=>r.source==='partner' && Number(r.amount||0)>0);
+  const exp=v=>total>0?pctTxt(v/total*100):'0';
+  const blocks=[`<div class="mbox p1"><div class="mbox-label">Modal Perkasa</div><div class="mbox-value">${fmtRp(perkasa)}</div><div class="mbox-pct">${total>0?exp(perkasa):'100'}% funding exposure</div></div>`];
+  partnerRows.forEach(pr=>blocks.push(`<div class="mbox p2"><div class="mbox-label">Modal Partner — ${esc(pr.partner_name||'Partner')}</div><div class="mbox-value">${fmtRp(pr.amount)}</div><div class="mbox-pct">${exp(Number(pr.amount||0))}% funding exposure · bukan profit share</div></div>`));
+  const st=UNIT_SETTLES[u.id];
+  let outcome='';
+  if(u.status==='terjual' && st){
+    outcome=`<div class="unit-stats" style="margin-top:8px">
+      <div><span class="sl">Harga Jual: </span><span class="sv">${fmtRp(st.selling_price)}</span></div>
+      <div><span class="sl">${st.is_loss?'True Unit LOSS':'True Unit Profit'}: </span><span class="sv ${st.is_loss?'rugi':'untung'}">${fmtRp(st.true_unit_profit)}</span></div>
+      ${Number(st.partner_fee||0)>0?`<div><span class="sl">Partner Profit: </span><span class="sv">${fmtRp(st.partner_fee)}</span></div>`:''}
+      <div><span class="sl">Perkasa Retained: </span><span class="sv ${Number(st.perkasa_retained_profit||0)>=0?'untung':'rugi'}">${fmtRp(st.perkasa_retained_profit)}</span></div>
+    </div>`;
+  }else{
+    outcome=`<div class="unit-stats" style="margin-top:8px"><div><span class="sl">Holding: </span><span class="sv">${holdingDays(u)} hari</span></div></div>`;
+  }
+  return `<div class="unit-modals" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">${blocks.join('')}</div>
+    <div class="unit-stats" style="margin-top:8px">
+      <div><span class="sl">Total Base Unit Cost: </span><span class="sv">${fmtRp(base)}</span></div>
+      <div><span class="sl">Total Funding: </span><span class="sv">${fmtRp(total)}</span></div>
+      <div><span class="sl">Funding Gap: </span><span class="sv">${fmtRp(vf.funding_gap)}</span></div>
+      <div><span class="sl">Funding Status: </span><span class="sv">${esc(vf.funding_status||'—')}</span></div>
+    </div>${outcome}`;
+}
 function renderUnits(){
   const el=document.getElementById('unitList');
   // Legacy create entry only when open legacy units still exist
@@ -2168,12 +2222,13 @@ function renderUnits(){
           ${ig?`<button class="btn-sm danger" onclick="hapusUnit(${u.id})">Hapus</button>`:''}
         </div>
       </div>
-      ${ig?`<div class="unit-modals">
+      ${ig&&!isLegacyUnit(u)?perkasaFundingBlock(u):''}
+      ${ig&&isLegacyUnit(u)?`<div class="unit-modals">
         <div class="mbox p1"><div class="mbox-label">Modal Panji</div><div class="mbox-value">${fmtRp(u.panji.total)}</div><div class="mbox-pct">${(+u.pctPanji).toFixed(2)}% porsi bagi hasil</div></div>
         <div class="mbox p2"><div class="mbox-label">Modal Pandu</div><div class="mbox-value">${fmtRp(u.pandu.total)}</div><div class="mbox-pct">${(+u.pctPandu).toFixed(2)}% porsi bagi hasil</div></div>
       </div>`:''}
-      ${ig&&hasPartner?`<div style="margin-bottom:12px">${partnerChips}</div>`:''}
-      <div class="unit-stats">
+      ${ig&&isLegacyUnit(u)&&hasPartner?`<div style="margin-bottom:12px">${partnerChips}</div>`:''}
+      ${ig&&!isLegacyUnit(u)?'':`<div class="unit-stats">
         ${ig?`<div><span class="sl">Total Modal: </span><span class="sv">${fmtRp(u.totalModal)}</span></div>`:''}
         ${ig&&sold?`
           <div><span class="sl">Harga Jual: </span><span class="sv">${fmtRp(u.hargaJual)}</span></div>
@@ -2188,7 +2243,7 @@ function renderUnits(){
            ${ig&&+u.hargaBeli>0?`<div><span class="sl">Harga Beli: </span><span class="sv">${fmtRp(u.hargaBeli)}</span></div>`:''}
            ${ig&&+u.targetJual>0?`<div><span class="sl">Target Jual: </span><span class="sv">${fmtRp(u.targetJual)}</span></div>`:''}
            ${ig&&+u.targetProfit>0?`<div><span class="sl">Target Profit: </span><span class="sv untung">${fmtRp(u.targetProfit)}</span></div>`:''}`}
-      </div>
+      </div>`}
     </div>`;
   }).join('');
 }
@@ -3297,17 +3352,27 @@ function renderFunding(){
   document.getElementById('fundingTable').innerHTML=head+'<tbody>'+(body||`<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Belum ada data funding. Tambahkan partner saat input unit.</td></tr>`)+'</tbody>';
 }
 
+// D7 scorecard — Position (as-of) + Period metrics from D3–D6 DB-derived sources.
+// Partner Funding is NEVER aggregated into Perkasa capital (separate KPI).
 function updateMetrics(){
-  const tj=units.filter(u=>u.status==='terjual');
-  const aktif=units.filter(u=>u.status!=='terjual');
-  const totalUntung=tj.reduce((a,u)=>{const kotor=+u.hargaJual-+u.totalModal;const bersih=(u.keuntunganBersih!==''&&u.keuntunganBersih!==undefined)?+u.keuntunganBersih:kotor-(+u.totalFee||0);return a+bersih;},0);
-  const modalBerjalan=aktif.reduce((a,u)=>a+(+u.totalModal),0);
-  document.getElementById('mTotal').textContent=units.length;
-  document.getElementById('mReady').textContent=aktif.length;
-  document.getElementById('mBerjalan').textContent=fmtRpShort(modalBerjalan);
-  document.getElementById('mModal').textContent=fmtRpShort(units.reduce((a,u)=>a+(+u.totalModal),0));
-  document.getElementById('mUntung').textContent=fmtRpShort(totalUntung);
-  document.getElementById('mTerjual').textContent=tj.length;
+  const active=units.filter(u=>u.status!=='terjual');
+  const sold=units.filter(u=>u.status==='terjual');
+  const today=new Date();
+  const daysSince=d=>{const t=d?new Date(d):today;return Math.max(0,Math.round((today-t)/86400000));};
+  let perkasaCap=0, partnerCap=0, baseAktif=0, gap=0;                 // as-of, active perkasa only
+  active.forEach(u=>{ if(isLegacyUnit(u))return; const vf=UNIT_FUNDING[u.id]; if(!vf)return;
+    perkasaCap+=Number(vf.perkasa_funding||0);
+    partnerCap+=Number(vf.partner_funding||0);                        // kept separate; never added to perkasaCap
+    baseAktif+=Number(vf.base_unit_cost||0);
+    gap+=Number(vf.funding_gap||0); });
+  const avgHold=active.length?Math.round(active.reduce((a,u)=>a+daysSince(u.tgl),0)/active.length):0;
+  const sellDays=sold.map(u=>{const sd=(UNIT_SETTLES[u.id]&&UNIT_SETTLES[u.id].settle_date)||u.tglJual; if(!sd||!u.tgl)return null; return Math.max(0,Math.round((new Date(sd)-new Date(u.tgl))/86400000));}).filter(x=>x!=null);
+  const avgSell=sellDays.length?Math.round(sellDays.reduce((a,b)=>a+b,0)/sellDays.length):0;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('mTotal',units.length); set('mReady',active.length); set('mTerjual',sold.length);
+  set('mPerkasaCap',fmtRpShort(perkasaCap)); set('mPartnerCap',fmtRpShort(partnerCap)); set('mAvgHold',avgHold+' hari');
+  set('mBaseAktif',fmtRpShort(baseAktif)); set('mGap',fmtRpShort(gap));
+  set('mDaysSell',avgSell+' hari'); set('mRealized',fmtRpShort(PERKASA_REALIZED));   // v_retained_profit.future_retained
 }
 
 function tandaiLunas(unitId, investor){
