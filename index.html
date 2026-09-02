@@ -967,12 +967,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <div class="fg" style="flex:1;min-width:120px;margin-bottom:10px">
               <label>Kategori</label>
               <select id="asetKategori" style="padding:10px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;background:var(--surface);color:var(--text)">
-                <option>Kamera & Foto</option>
-                <option>Peralatan Bengkel</option>
-                <option>Elektronik</option>
-                <option>Furnitur & Kantor</option>
                 <option>Kendaraan Operasional</option>
+                <option>Kamera & Foto</option>
+                <option>Laptop & Komputer</option>
+                <option>Elektronik</option>
+                <option>Peralatan Bengkel</option>
+                <option>Furnitur & Kantor</option>
                 <option>Lainnya</option>
+              </select>
+            </div>
+            <div class="fg" style="flex:1;min-width:110px;margin-bottom:10px">
+              <label>Status</label>
+              <select id="asetStatus" style="padding:10px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:14px;font-family:'DM Sans',sans-serif;width:100%;background:var(--surface);color:var(--text)">
+                <option value="active">Aktif</option>
+                <option value="disposed">Disposed</option>
+                <option value="sold">Terjual</option>
               </select>
             </div>
             <div class="fg" style="flex:1;min-width:130px;margin-bottom:10px">
@@ -1025,15 +1034,31 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
   <div id="ktab-laporan" class="stab-panel">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:20px">
-          <select id="laporanPeriod" onchange="renderLaporan()" style="padding:8px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;background:var(--surface);color:var(--text)">
+          <select id="laporanPeriod" onchange="onLaporanPeriodChange()" style="padding:8px 12px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;background:var(--surface);color:var(--text)">
             <option value="this_month">Bulan Ini</option>
-            <option value="3_months">3 Bulan Terakhir</option>
-            <option value="6_months">6 Bulan Terakhir</option>
+            <option value="last_month">Bulan Lalu</option>
+            <option value="q1">Q1 (Jan–Mar)</option>
+            <option value="q2">Q2 (Apr–Jun)</option>
+            <option value="q3">Q3 (Jul–Sep)</option>
+            <option value="q4">Q4 (Okt–Des)</option>
             <option value="this_year" selected>Tahun Ini</option>
-            <option value="all">Semua Waktu</option>
+            <option value="last_year">Tahun Lalu</option>
+            <option value="custom">Custom (From/To)</option>
           </select>
+          <span id="lapCustomWrap" style="display:none;gap:6px;align-items:center">
+            <label style="font-size:12px;color:var(--text3)">Dari</label><input type="date" id="lapFrom" onchange="renderLaporan()" style="padding:7px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text);font-size:13px">
+            <label style="font-size:12px;color:var(--text3)">Sampai</label><input type="date" id="lapTo" onchange="renderLaporan()" style="padding:7px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text);font-size:13px">
+          </span>
           <span id="laporanPeriodLabel" style="font-size:13px;color:var(--text3)"></span>
           <button onclick="printLaporan()" style="margin-left:auto;padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-size:13px;cursor:pointer">⬇ Export PDF</button>
+        </div>
+        <div class="card"><div class="card-hdr"><div class="card-title">Kinerja Periode (Period Metrics)</div><span id="lapPeriodBadge" style="font-size:12px;color:var(--text3);margin-left:auto"></span></div>
+          <div class="table-scroll"><table class="track-table" id="lapPeriodTable"></table></div>
+          <p style="font-size:11px;color:var(--text3);margin-top:8px">Angka periode = arus/flow selama rentang tanggal. Sumber: penjualan, settlement, cashflow, dan alokasi reserve/operating.</p>
+        </div>
+        <div class="card"><div class="card-hdr"><div class="card-title">Posisi Saat Ini (As-of / Position)</div></div>
+          <div class="kpi-grid" id="lapPositionGrid"></div>
+          <p style="font-size:11px;color:var(--text3);margin-top:8px">Angka posisi = saldo titik-waktu (as-of). Tidak dijumlahkan sebagai profit periode.</p>
         </div>
         <div id="validatedPnlCard"></div>
         <div class="no-print" style="margin:6px 0 4px">
@@ -3471,25 +3496,28 @@ async function renderInventori(){
   const totalSkrg=(aset||[]).reduce((a,x)=>a+(+x.nilai_skrg||0),0);
   const depresiasi=totalBeli-totalSkrg;
 
+  const active=(aset||[]).filter(x=>(x.status||'active')==='active');
   document.getElementById('invKPIGrid').innerHTML=[
-    ['Jumlah Aset',(aset||[]).length+' item','non-kendaraan'],
-    ['Total Nilai Beli',fmtRpShort(totalBeli),'harga perolehan'],
-    ['Nilai Saat Ini',fmtRpShort(totalSkrg),'estimasi pasar'],
-    ['Depresiasi',fmtRpShort(depresiasi),totalBeli>0?(depresiasi/totalBeli*100).toFixed(0)+'%':'—'],
+    ['Aset Aktif',active.length+' item','dimiliki perusahaan'],
+    ['Total Nilai Beli (Aktif)',fmtRpShort(active.reduce((a,x)=>a+(+x.nilai_beli||0),0)),'harga perolehan'],
+    ['Nilai Saat Ini (Aktif)',fmtRpShort(active.reduce((a,x)=>a+(+x.nilai_skrg||0),0)),'book value'],
+    ['Total Aset Tercatat',(aset||[]).length+' item',fmtRpShort(totalBeli)+' semua'],
   ].map(([l,v,s])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${s}</div></div>`).join('');
 
-  const thead=`<thead><tr><th>Nama Aset</th><th>Kategori</th><th class="num">Tgl Beli</th><th class="num">Nilai Beli</th><th class="num">Nilai Skrg</th><th class="num">Catatan</th><th></th></tr></thead>`;
+  const stBadge=st=>{const m={active:['Aktif','var(--green,#178A5A)'],disposed:['Disposed','var(--text3)'],sold:['Terjual','var(--blue,#2563C7)']}[st||'active']||['Aktif','var(--green)'];return `<span style="font-size:11px;background:${m[1]}22;color:${m[1]};padding:2px 8px;border-radius:20px">${m[0]}</span>`;};
+  const thead=`<thead><tr><th>Nama Aset</th><th>Kategori</th><th>Status</th><th class="num">Tgl Beli</th><th class="num">Nilai Beli</th><th class="num">Nilai Skrg</th><th class="num">Catatan</th><th></th></tr></thead>`;
   const tbody=(aset&&aset.length)
     ?aset.map(x=>`<tr>
-        <td><b>${x.nama}</b></td>
-        <td><span style="font-size:11px;background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:20px">${x.kategori||'—'}</span></td>
+        <td><b>${esc(x.nama)}</b></td>
+        <td><span style="font-size:11px;background:var(--accent-bg);color:var(--accent);padding:2px 8px;border-radius:20px">${esc(x.kategori||'—')}</span></td>
+        <td>${stBadge(x.status)}</td>
         <td class="num">${x.tgl||'—'}</td>
         <td class="num">${fmtRpShort(+x.nilai_beli||0)}</td>
         <td class="num" style="font-weight:600">${fmtRpShort(+x.nilai_skrg||0)}</td>
-        <td style="font-size:12px;color:var(--text3)">${x.catatan||'—'}</td>
+        <td style="font-size:12px;color:var(--text3)">${esc(x.catatan||'—')}</td>
         <td><button class="btn-sm danger" onclick="hapusAset(${x.id})">Hapus</button></td>
       </tr>`).join('')
-    :`<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Belum ada aset dicatat.</td></tr>`;
+    :`<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">Belum ada aset dicatat.</td></tr>`;
   document.getElementById('asetTable').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
 
   if(!document.getElementById('asetTgl').value)
@@ -3502,6 +3530,7 @@ async function tambahAset(){
   if(!nama||!nilaiBeli){showToast('Nama dan nilai beli wajib diisi');return;}
   const {error}=await db.from('aset_inventori').insert({
     nama, kategori:document.getElementById('asetKategori').value,
+    status:(document.getElementById('asetStatus')||{value:'active'}).value,
     nilai_beli:nilaiBeli, nilai_skrg:parseFloat(document.getElementById('asetNilaiSkrg').value)||nilaiBeli,
     tgl:document.getElementById('asetTgl').value||new Date().toISOString().slice(0,10),
     catatan:document.getElementById('asetCatatan').value.trim()
@@ -4857,16 +4886,97 @@ async function renderCashflow(){
 // ══════════════════════════════════════════════════════════
 // LAPORAN KEUANGAN — P&L + BALANCE SHEET
 // ══════════════════════════════════════════════════════════
-async function renderLaporan(){
-  const period=document.getElementById('laporanPeriod').value;
-  const now=new Date();
+// D9 — Period metrics (flow) from D6 parameterized functions + Position metrics
+// (as-of balances) kept strictly separate. Reserve/operating derived from realized
+// positive profit per unit (10%/90%) using fn_unit_performance for period alignment.
+async function renderLaporanD9(from,to){
+  const pt=document.getElementById('lapPeriodTable'), pg=document.getElementById('lapPositionGrid');
+  const badge=document.getElementById('lapPeriodBadge'); if(badge)badge.textContent=(from&&to)?from+' → '+to:'';
+  if(!pt)return;
+  if(!from||!to){ pt.innerHTML='<tr><td style="padding:14px;color:var(--text3)">Pilih rentang tanggal.</td></tr>'; if(pg)pg.innerHTML=''; return; }
+  let pnl=null, cf=null, rot=null, perf=[];
+  try{
+    const [a,b,c,d]=await Promise.all([
+      db.rpc('fn_pnl',{p_from:from,p_to:to}).then(r=>r.data).catch(()=>null),
+      db.rpc('fn_cashflow',{p_from:from,p_to:to}).then(r=>r.data).catch(()=>null),
+      db.rpc('fn_capital_rotation',{p_from:from,p_to:to}).then(r=>r.data).catch(()=>null),
+      db.rpc('fn_unit_performance',{p_from:from,p_to:to}).then(r=>r.data).catch(()=>[]),
+    ]);
+    pnl=a; cf=b; rot=c; perf=d||[];
+  }catch(e){}
+  if(!pnl){ pt.innerHTML='<tr><td style="padding:14px;color:var(--text3)">Fungsi laporan periode belum aktif.</td></tr>'; }
+  else{
+    const N=k=>Number(pnl[k]||0);
+    // Reserve allocation = 10% of POSITIVE realized profit per unit in the period.
+    const reserveAlloc=(perf||[]).reduce((a,u)=>{const r=Number(u.retained_profit||0);return a+(r>0?Math.round(r*0.10):0);},0);
+    const realized=N('unit_retained');
+    const operatingPool=realized-reserveAlloc;
+    const cin = cf?(Number(cf.inflow_sales||0)+Number(cf.inflow_debt_draw||0)):null;
+    const cout= cf?(Number(cf.outflow_opex||0)+Number(cf.outflow_debt||0)+Number(cf.outflow_payroll||0)+Number(cf.outflow_deploy||0)+Number(cf.outflow_partner_settle||0)):null;
+    const capRot = rot?Number(rot.deployed||0):null, capRet = rot?Number(rot.returned||0):null;
+    const row=(l,v,o={})=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 12px;${o.strong?'font-weight:700':''}${o.ind?';padding-left:26px':''}">${l}</td><td class="num" style="padding:8px 12px;${o.strong?'font-weight:700;':''}color:${o.col||'var(--text)'}">${v==null?'—':fmtRp(v)}</td></tr>`;
+    pt.innerHTML=`<tbody>
+      ${row('Sales Revenue',N('revenue'),{strong:true})}
+      ${row('Base Unit Cost',N('base_cost'),{ind:true})}
+      ${row('Realized Unit Profit',realized,{strong:true,col:realized>=0?'var(--green)':'var(--red)'})}
+      ${row('Cash Reserve Allocation (10%)',reserveAlloc,{ind:true,col:'var(--amber,#C07A0E)'})}
+      ${row('Operating Profit Pool (90%)',operatingPool,{ind:true,col:'var(--green,#178A5A)'})}
+      ${row('Payroll',-Math.abs(N('payroll')),{ind:true})}
+      ${row('Operating Expenses',-Math.abs(N('opex')),{ind:true})}
+      ${row('Net Business Profit',N('period_net'),{strong:true,col:N('period_net')>=0?'var(--green)':'var(--red)'})}
+      <tr><td colspan="2" style="padding:6px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)">Cashflow &amp; Capital Rotation</td></tr>
+      ${row('Cash In',cin)}
+      ${row('Cash Out',cout==null?null:-Math.abs(cout))}
+      ${row('Capital Deployed (period)',capRot,{ind:true})}
+      ${row('Capital Returned (period)',capRet,{ind:true})}
+    </tbody>`;
+  }
+  // Position (as-of) — never summed into period profit
+  let pos=null, fin=null, ext=0, assets=0;
+  try{
+    pos=(await db.from('v_cash_position').select('*').single()).data;
+    fin=(await db.from('v_financing').select('debt_outstanding_principal').single()).data;
+    const ex=await db.from('v_external_unit_funding').select('outstanding_external_capital'); ext=(ex.data||[]).reduce((a,x)=>a+Number(x.outstanding_external_capital||0),0);
+    const as=await db.from('aset_inventori').select('nilai_skrg,status'); assets=(as.data||[]).filter(x=>(x.status||'active')==='active').reduce((a,x)=>a+Number(x.nilai_skrg||0),0);
+  }catch(e){}
+  if(pg){
+    const total=pos?Number(pos.actual_cash||0):null, res=pos?Number(pos.reserve||0):null;
+    pg.innerHTML=[
+      ['Operating Cash',(total!=null&&res!=null)?fmtRpShort(total-res):'—','k-teal'],
+      ['Cash Reserve',res!=null?fmtRpShort(res):'—','k-amber'],
+      ['Total Cash',total!=null?fmtRpShort(total):'—','k-green'],
+      ['Capital Deployed',pos?fmtRpShort(pos.deployed_capital):'—','k-blue'],
+      ['Partner Funding',fmtRpShort(ext),'k-purple'],
+      ['Debt Outstanding',fin?fmtRpShort(fin.debt_outstanding_principal):'—','k-red'],
+      ['Asset Value',fmtRpShort(assets),'k-blue'],
+    ].map(([l,v,c])=>`<div class="kpi ${c}"><div class="kpi-label">${l}</div><div class="kpi-value" style="font-size:16px">${v}</div></div>`).join('');
+  }
+}
+function onLaporanPeriodChange(){
+  const cust=document.getElementById('laporanPeriod').value==='custom';
+  document.getElementById('lapCustomWrap').style.display=cust?'inline-flex':'none';
+  renderLaporan();
+}
+function lapRange(){
+  const period=document.getElementById('laporanPeriod').value; const now=new Date();
+  const y=now.getFullYear(); const iso=d=>d.toISOString().slice(0,10);
+  const mFirst=(yy,mm)=>iso(new Date(yy,mm,1)); const mLast=(yy,mm)=>iso(new Date(yy,mm+1,0));
   let from='',to='';
-  if(period==='this_month'){from=now.toISOString().slice(0,7)+'-01';to=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().slice(0,10);}
-  else if(period==='3_months'){const d=new Date(now);d.setMonth(d.getMonth()-3);from=d.toISOString().slice(0,10);to=now.toISOString().slice(0,10);}
-  else if(period==='6_months'){const d=new Date(now);d.setMonth(d.getMonth()-6);from=d.toISOString().slice(0,10);to=now.toISOString().slice(0,10);}
-  else if(period==='this_year'){from=now.getFullYear()+'-01-01';to=now.getFullYear()+'-12-31';}
-  const label=from?from+' s/d '+to:'Semua Waktu';
-  document.getElementById('laporanPeriodLabel').textContent=label;
+  if(period==='this_month'){from=mFirst(y,now.getMonth());to=mLast(y,now.getMonth());}
+  else if(period==='last_month'){const d=new Date(y,now.getMonth()-1,1);from=mFirst(d.getFullYear(),d.getMonth());to=mLast(d.getFullYear(),d.getMonth());}
+  else if(period==='q1'){from=mFirst(y,0);to=mLast(y,2);}
+  else if(period==='q2'){from=mFirst(y,3);to=mLast(y,5);}
+  else if(period==='q3'){from=mFirst(y,6);to=mLast(y,8);}
+  else if(period==='q4'){from=mFirst(y,9);to=mLast(y,11);}
+  else if(period==='this_year'){from=y+'-01-01';to=y+'-12-31';}
+  else if(period==='last_year'){from=(y-1)+'-01-01';to=(y-1)+'-12-31';}
+  else if(period==='custom'){from=(document.getElementById('lapFrom')||{}).value||'';to=(document.getElementById('lapTo')||{}).value||'';}
+  return {from,to,label:(from&&to)?from+' s/d '+to:'(pilih rentang)'};
+}
+async function renderLaporan(){
+  const rng=lapRange(); const from=rng.from, to=rng.to; const now=new Date();
+  document.getElementById('laporanPeriodLabel').textContent=rng.label;
+  await renderLaporanD9(from,to);   // D9 period + position report (source of truth: D6 fns + position views)
 
   // ── Validated all-time P&L (source of truth: v_pnl + v_pnl_by_class) ──
   const vp=FIN.pnl, vpc=FIN.pnlClass, vpCard=document.getElementById('validatedPnlCard');
@@ -4900,7 +5010,8 @@ async function renderLaporan(){
   }
 
   const inRange=d=>!d?false:(!from||d>=from)&&(!to||d<=to);
-  const soldInPeriod=units.filter(u=>u.status==='terjual'&&inRange(u.tglJual||u.tgl));
+  // Legacy detail below covers LEGACY units only; perkasa is reported in the D9 period table.
+  const soldInPeriod=units.filter(u=>u.status==='terjual'&&isLegacyUnit(u)&&inRange(u.tglJual||u.tgl));
 
   const {data:keluarData}=await db.from('kas_keluar').select('*');
   const keluar=(keluarData||[]).filter(x=>inRange(x.tgl));
