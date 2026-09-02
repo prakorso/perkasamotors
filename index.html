@@ -494,10 +494,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="mc c3 role-internal"><div class="mc-label">Avg. Holding Aktif</div><div class="mc-value" id="mAvgHold">—</div><div class="mc-sub">rata-rata hari · as-of</div></div>
       </div>
       <div class="metrics" id="unitMetrics2" style="margin-top:-8px">
-        <div class="mc role-internal"><div class="mc-label">Total Base Unit Cost Aktif</div><div class="mc-value" id="mBaseAktif" style="font-size:18px">—</div><div class="mc-sub">as-of · v_unit_cost</div></div>
-        <div class="mc role-internal"><div class="mc-label">Funding Gap</div><div class="mc-value" id="mGap" style="font-size:18px">—</div><div class="mc-sub">as-of · v_unit_funding</div></div>
+        <div class="mc role-internal"><div class="mc-label">Total Base Unit Cost Aktif</div><div class="mc-value" id="mBaseAktif" style="font-size:18px">—</div><div class="mc-sub">biaya dasar unit aktif · as-of</div></div>
+        <div class="mc role-internal"><div class="mc-label">Funding Gap</div><div class="mc-value" id="mGap" style="font-size:18px">—</div><div class="mc-sub">gap pendanaan unit aktif · as-of</div></div>
         <div class="mc role-internal"><div class="mc-label">Avg. Days to Sell</div><div class="mc-value" id="mDaysSell" style="font-size:18px">—</div><div class="mc-sub">period · settled</div></div>
-        <div class="mc role-internal"><div class="mc-label">Realized Perkasa Profit</div><div class="mc-value" id="mRealized" style="font-size:18px">—</div><div class="mc-sub">v_retained_profit</div></div>
+        <div class="mc role-internal"><div class="mc-label">Realized Perkasa Profit</div><div class="mc-value" id="mRealized" style="font-size:18px">—</div><div class="mc-sub">laba perkasa terealisasi</div></div>
       </div>
 
       <!-- ═══════════ HOME / EXECUTIVE SUMMARY ═══════════ -->
@@ -575,7 +575,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <div class="top-list" id="topProfit"></div>
           </div>
           <div class="card">
-            <div class="card-hdr"><div class="card-title">Top Performance — ROI</div></div>
+            <div class="card-hdr"><div class="card-title">Top Performance — Tercepat Terjual</div></div>
             <div class="top-list" id="topRoi"></div>
           </div>
         </div>
@@ -805,8 +805,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="insight-hero">
           <div class="ih-title">
             <div>
-              <div class="ih-eyebrow">Ringkasan Investor</div>
-              <h2 class="ih-head">Performa Bisnis</h2>
+              <div class="ih-eyebrow">Ringkasan Perusahaan</div>
+              <h2 class="ih-head">Kinerja Operasional</h2>
             </div>
             <div class="ih-period" id="ihPeriod">—</div>
           </div>
@@ -829,7 +829,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="table-scroll">
             <table class="track-table" id="trackTable"></table>
           </div>
-          <p style="font-size:11px;color:var(--text3);margin-top:10px">ROI dihitung atas modal inti (Panji+Pandu), profit setelah fee partner. Holding = lama hari dari masuk sampai terjual.</p>
+          <p style="font-size:11px;color:var(--text3);margin-top:10px">Profit = laba bersih setelah fee. Holding = lama hari dari masuk sampai terjual.</p>
         </div>
 
         <div class="no-print" style="text-align:center;margin:6px 0 14px">
@@ -850,11 +850,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <p style="font-size:11px;color:var(--text3);margin-top:8px">Persentase unit yang menghasilkan profit positif per kuartal. Distribusi holding period lengkap tersedia di tab Inventori &amp; Partner.</p>
         </div>
 
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">ROI per Unit (semua transaksi)</div></div>
-          <div class="chart-wrap" style="height:280px"><canvas id="chartRoiBar" role="img" aria-label="ROI bar chart per unit"></canvas></div>
-          <p style="font-size:11px;color:var(--text3);margin-top:8px">ROI atas modal inti per unit terjual, diurutkan dari tertinggi.</p>
-        </div>
         <div class="filter-bar">
           <span class="filter-label">Jenis:</span>
           <button class="chip active" data-es="all" onclick="setEvalSegment('all')">Semua</button>
@@ -887,10 +882,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <div class="card-hdr"><div class="card-title">Distribusi Holding Period (Unit Terjual)</div></div>
             <div class="chart-wrap" style="height:260px"><canvas id="chartInvHolding"></canvas></div>
           </div>
-          <div class="card">
-            <div class="card-hdr"><div class="card-title">ROI vs Holding Period</div></div>
-            <div class="chart-wrap" style="height:260px"><canvas id="chartInvRoi"></canvas></div>
-          </div>
         </div>
         <div class="card">
           <div class="card-hdr">
@@ -902,26 +893,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="card">
           <div class="card-hdr"><div class="card-title">Analisis per Jenis Kendaraan</div></div>
           <div id="invCatGrid" class="segment-grid"></div>
-        </div>
-        <div class="card-hdr" style="margin-top:26px"><div class="card-title" style="font-size:16px">Pendanaan Partner / Investor</div></div>
-        <div class="kpi-grid" id="investKPI" style="margin-bottom:18px"></div>
-        <div class="two-col">
-          <div class="card">
-            <div class="card-hdr"><div class="card-title">ROI per Partner/Investor</div></div>
-            <div class="chart-wrap" style="height:280px"><canvas id="chartInvestRoi"></canvas></div>
-          </div>
-          <div class="card">
-            <div class="card-hdr"><div class="card-title">Distribusi Modal per Partner</div></div>
-            <div class="chart-wrap" style="height:280px"><canvas id="chartInvestDist"></canvas></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">Profit Distribution Timeline (per Bulan)</div></div>
-          <div class="chart-wrap" style="height:260px"><canvas id="chartInvestTimeline"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-hdr"><div class="card-title">Investment Performance per Partner</div></div>
-          <div class="table-scroll"><table class="track-table" id="investTable"></table></div>
         </div>
   </div>
       </div>
@@ -2134,6 +2105,29 @@ async function loadUnitFunding(){
   }catch(e){ /* D-series views absent on a fresh DB → renderers fall back to 'Funding belum dicatat' */ }
 }
 const pctTxt=n=>Number(n||0).toFixed(2).replace(/\.00$/,'');
+// D8 — clean per-jenis operational stats (no ROI). Realized profit: legacy net for
+// legacy units, DB-derived Perkasa retained for perkasa units. Partner funding never mixed in.
+function perJenisStats(j){
+  const all=units.filter(u=>(u.jenis||'')===j);
+  const active=all.filter(u=>u.status!=='terjual');
+  const sold=all.filter(u=>u.status==='terjual');
+  const today=new Date(); const dd=(a,b)=>Math.max(0,Math.round((a-b)/86400000));
+  const avgHoldAktif=active.length?Math.round(active.reduce((s,u)=>s+dd(today,new Date(u.tgl)),0)/active.length):null;
+  const sellDays=sold.map(u=>{const sd=(UNIT_SETTLES[u.id]&&UNIT_SETTLES[u.id].settle_date)||u.tglJual;return (sd&&u.tgl)?dd(new Date(sd),new Date(u.tgl)):null;}).filter(x=>x!=null);
+  const avgDaysSell=sellDays.length?Math.round(sellDays.reduce((a,b)=>a+b,0)/sellDays.length):null;
+  const realized=sold.reduce((s,u)=>{ if(isLegacyUnit(u))return s+(+u.keuntunganBersih||0); const st=UNIT_SETTLES[u.id]; return s+(st?Number(st.perkasa_retained_profit||0):0); },0);
+  return {aktif:active.length,terjual:sold.length,avgHoldAktif,avgDaysSell,realized};
+}
+function perJenisCard(j){ const s=perJenisStats(j);
+  return `<div class="seg-card"><div class="seg-title">${esc(j)}</div>
+    <div class="seg-stat"><span>Aktif</span><b>${s.aktif}</b></div>
+    <div class="seg-stat"><span>Terjual</span><b>${s.terjual}</b></div>
+    <div class="seg-stat"><span>Avg. Holding</span><b>${s.avgHoldAktif!=null?s.avgHoldAktif+' hari':'—'}</b></div>
+    <div class="seg-stat"><span>Avg. Days to Sell</span><b>${s.avgDaysSell!=null?s.avgDaysSell+' hari':'—'}</b></div>
+    <div class="seg-stat"><span>Realized Profit</span><b style="color:var(--green)">${fmtRpShort(s.realized)}</b></div>
+  </div>`;
+}
+function perJenisGridHtml(){ return perJenisCard('Mobil')+perJenisCard('Motor'); }
 // Perkasa funding block — EXCLUSIVELY from v_unit_funding / unit_funding. No Panji/Pandu.
 function perkasaFundingBlock(u){
   const vf=UNIT_FUNDING[u.id]; const rows=(UNIT_FUNDING_ROWS[u.id]||[]);
@@ -2538,7 +2532,7 @@ function renderInsight(){
   const cards=[
     ['Profit Terealisasi',fmtRpShort(ins.totalProfit),ins.sold.length+' unit terjual'],
     ['Profit / Bulan',fmtRpShort(ins.runRate),'run-rate '+ins.monthsCount+' bulan'],
-    ['ROI / Transaksi',ins.roiAgg.toFixed(1)+'%','atas modal inti'],
+    ['Realized Perkasa Profit',fmtRpShort(PERKASA_REALIZED),'laba perkasa terealisasi'],
     ['Sell-Through',ins.sellThrough.toFixed(0)+'%',ins.sold.length+'/'+units.length+' unit'],
     ['Win Rate',ins.winRate.toFixed(0)+'%','unit untung'],
     ['Avg Holding',ins.avgHold.toFixed(1)+' hari','masuk → terjual']
@@ -2585,25 +2579,18 @@ function renderInsight(){
     type:'bar',
     data:{labels:['Motor','Mobil'],datasets:[{label:'Profit',data:[ins.motor.total,ins.mobil.total],backgroundColor:['#BA7517','#185FA5'],borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
-      tooltip:{callbacks:{label:i=>'Profit: '+fmtRp(i.parsed.y),afterLabel:i=>{const s=i.dataIndex===0?ins.motor:ins.mobil;return 'ROI '+s.roi.toFixed(1)+'% · '+s.count+' unit · '+s.avgHold.toFixed(1)+' hari';}}}},
+      tooltip:{callbacks:{label:i=>'Profit: '+fmtRp(i.parsed.y),afterLabel:i=>{const s=i.dataIndex===0?ins.motor:ins.mobil;return s.count+' unit · '+s.avgHold.toFixed(1)+' hari';}}}},
       scales:{x:{ticks:{font:{size:12}}},y:{ticks:{callback:v=>'Rp'+(v/1e6).toFixed(0)+'jt'}}}}
   });
 
-  // Segment cards
-  const segCard=(s,cls,ic,name)=>`<div class="seg-card ${cls}">
-    <div class="seg-name"><span class="seg-ic">${ic}</span>${name}</div>
-    <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.04em">ROI per transaksi</div>
-    <div class="seg-roi">${s.roi.toFixed(1)}%</div>
-    <div style="margin-top:10px">
-      ${[['Total profit',fmtRp(s.total)],['Profit/unit',fmtRp(s.perUnit)],['Unit terjual',s.count+' / '+s.totalUnits],['Avg holding',s.avgHold.toFixed(1)+' hari']].map(([l,v])=>`<div class="seg-row"><span class="sr-l">${l}</span><span class="sr-v">${v}</span></div>`).join('')}
-    </div></div>`;
-  document.getElementById('segmentCards').innerHTML=segCard(ins.motor,'motor','','Motor')+segCard(ins.mobil,'mobil','','Mobil');
+  // Segment cards handled by perJenisGridHtml()
+  document.getElementById('segmentCards').innerHTML=perJenisGridHtml();
 
   // Track record table (urut terbaru jual dulu, dengan filter segmen)
   let trackPool=ins.perUnit.slice();
   if(trackSegment!=='all') trackPool=trackPool.filter(x=>x.u.jenis===trackSegment);
   const rows=trackPool.sort((a,b)=>(saleDateOf(b.u)||'').localeCompare(saleDateOf(a.u)||''));
-  const head=`<thead><tr><th>Unit</th><th>Jenis</th><th class="num">Modal Inti</th><th class="num">Harga Jual</th><th class="num">Profit</th><th class="num">ROI</th><th class="num">Holding</th></tr></thead>`;
+  const head=`<thead><tr><th>Unit</th><th>Jenis</th><th class="num">Modal Inti</th><th class="num">Harga Jual</th><th class="num">Profit</th><th class="num">Holding</th></tr></thead>`;
   const body=rows.map(x=>{
     const nm=x.u.nama+(x.u.plat?` · ${x.u.plat}`:(x.u.tahun?` · ${x.u.tahun}`:''));
     return `<tr>
@@ -2611,11 +2598,10 @@ function renderInsight(){
       <td class="num">${fmtRp(x.mi)}</td>
       <td class="num">${fmtRp(x.u.hargaJual)}</td>
       <td class="num ${x.profit>=0?'pos':'neg'}">${fmtRp(x.profit)}</td>
-      <td class="num"><span class="roi-badge">${x.roi.toFixed(1)}%</span></td>
       <td class="num">${x.hold!==null?x.hold+' hr':'—'}</td>
     </tr>`;
   }).join('');
-  document.getElementById('trackTable').innerHTML=head+'<tbody>'+(body||`<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Belum ada unit terjual.</td></tr>`)+'</tbody>';
+  document.getElementById('trackTable').innerHTML=head+'<tbody>'+(body||`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">Belum ada unit terjual.</td></tr>`)+'</tbody>';
 
   renderHoldingChart(ins.perUnit);
   renderWinRateChart(ins.perUnit);
@@ -2698,11 +2684,11 @@ function renderEvaluasi(){
   document.getElementById('evalGrid').innerHTML=`
     <div class="eval-person">
       <div class="ep-hdr"><div class="ep-av blue">PJ</div><div class="ep-name">Panji</div></div>
-      ${[['Modal saat ini (unit ready)',fmtRp(pAktif)],['Total modal disetor',fmtRp(pM)],['Total bagi profit',fmtRp(pU)],['Total return estimasi',fmtRp(pM+pU)]].map(([l,v])=>`<div class="ep-row"><span>${l}</span><span>${v}</span></div>`).join('')}
+      ${[['Modal saat ini (unit ready)',fmtRp(pAktif)],['Total modal disetor',fmtRp(pM)],['Total bagi profit',fmtRp(pU)],['Total (modal + bagi profit)',fmtRp(pM+pU)]].map(([l,v])=>`<div class="ep-row"><span>${l}</span><span>${v}</span></div>`).join('')}
     </div>
     <div class="eval-person">
       <div class="ep-hdr"><div class="ep-av amber">PD</div><div class="ep-name">Pandu</div></div>
-      ${[['Modal saat ini (unit ready)',fmtRp(dAktif)],['Total modal disetor',fmtRp(dM)],['Total bagi profit',fmtRp(dU)],['Total return estimasi',fmtRp(dM+dU)]].map(([l,v])=>`<div class="ep-row"><span>${l}</span><span>${v}</span></div>`).join('')}
+      ${[['Modal saat ini (unit ready)',fmtRp(dAktif)],['Total modal disetor',fmtRp(dM)],['Total bagi profit',fmtRp(dU)],['Total (modal + bagi profit)',fmtRp(dM+dU)]].map(([l,v])=>`<div class="ep-row"><span>${l}</span><span>${v}</span></div>`).join('')}
     </div>`;
 
   renderYearly();
@@ -3007,9 +2993,17 @@ async function renderCommandCenter(){
       <div class="card"><div class="card-hdr"><div class="card-title">Likuiditas: Available vs Deployed (as-of)</div></div><div class="chart-wrap" style="height:200px"><canvas id="ccCap"></canvas></div></div>
     </div>
 
-    <!-- ATTENTION UNITS -->
-    <div class="card"><div class="card-hdr"><div class="card-title">Unit Perlu Perhatian · ${lbl[CC_PERIOD]}</div></div>
-      <div class="table-scroll"><table class="track-table" id="ccUnitTable"></table></div></div>
+    <!-- ATTENTION UNITS (active/ready needing action only) -->
+    <div class="card"><div class="card-hdr"><div class="card-title">Unit Perlu Perhatian</div>
+        <div style="display:flex;gap:6px;margin-left:auto">
+          <button class="chip active" data-af="all" onclick="setAttnFilter('all')">Semua</button>
+          <button class="chip" data-af="Mobil" onclick="setAttnFilter('Mobil')">Mobil</button>
+          <button class="chip" data-af="Motor" onclick="setAttnFilter('Motor')">Motor</button>
+        </div>
+      </div>
+      <div id="attnList"></div>
+      <div id="attnPager" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:10px"></div>
+    </div>
 
     <!-- DECISIONS/ALERTS -->
     <div class="card"><div class="card-hdr"><div class="card-title">Perlu Perhatian / Keputusan</div></div>
@@ -3022,15 +3016,63 @@ async function renderCommandCenter(){
     data:{labels:['Available Cash','Deployed Capital'],datasets:[{data:[Math.max(0,Number(pos.available_cash)),Number(pos.deployed_capital)],backgroundColor:['#178A5A','#7A5C9E'],borderRadius:6}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtRp(c.parsed.x)}}},scales:{x:{ticks:{callback:v=>'Rp'+(v/1e6).toFixed(0)+'jt'}}}}});
   ccProfitTrend();
-  // attention-ranked unit table (loss first, then lowest true_profit)
-  const rows=(perf||[]).slice().sort((a,b)=>(b.is_loss-a.is_loss)||(Number(a.true_profit)-Number(b.true_profit)));
-  document.getElementById('ccUnitTable').innerHTML=`<thead><tr><th>Unit</th><th>Model</th><th class="num">Base Cost</th><th class="num">Funding</th><th class="num">Sale</th><th class="num">True Profit</th><th>Status</th></tr></thead><tbody>`+
-    (rows.map(u=>`<tr><td>${esc(u.nama)}</td><td>${u.source==='future'?'Perkasa':'Legacy'}</td>
-      <td class="num">${fmtRp(u.base_cost)}</td><td class="num">${fmtRp(Number(u.perkasa_funding||0)+Number(u.partner_funding||0))}</td>
-      <td class="num">${fmtRp(u.revenue)}</td>
-      <td class="num" style="color:${Number(u.true_profit)>=0?'var(--green)':'var(--red)'}">${fmtRp(u.true_profit)}</td>
-      <td>${u.is_loss?'<span style="color:var(--red);font-weight:600">Loss</span>':'OK'}</td></tr>`).join('')||`<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--text3)">Tidak ada unit pada periode ini.</td></tr>`)+'</tbody>';
+  ATTN_PAGE=1; renderAttentionUnits();
   return true;
+}
+
+// D8 — Homepage "Unit Perlu Perhatian": active/ready units that genuinely need action.
+// Reasons: Funding Gap (perkasa under-funded), Funding belum dicatat (perkasa, no funding),
+// or Holding Concern (active > 90 days). Sold/settled units are excluded entirely.
+let ATTN_FILTER='all', ATTN_PAGE=1; const ATTN_PER=10;
+function setAttnFilter(f){ ATTN_FILTER=f; ATTN_PAGE=1;
+  document.querySelectorAll('.chip[data-af]').forEach(c=>c.classList.toggle('active',c.dataset.af===f));
+  renderAttentionUnits(); }
+function attentionUnits(){
+  const active=(units||[]).filter(u=>u.status!=='terjual');   // exclude sold
+  const today=new Date();
+  const out=[];
+  active.forEach(u=>{
+    if(ATTN_FILTER!=='all' && (u.jenis||'')!==ATTN_FILTER) return;
+    const hold=u.tgl?Math.max(0,Math.round((today-new Date(u.tgl))/86400000)):0;
+    const reasons=[];
+    if(!isLegacyUnit(u)){
+      const vf=UNIT_FUNDING[u.id];
+      const rows=(UNIT_FUNDING_ROWS[u.id]||[]);
+      const total=vf?Number(vf.total_funding||0):0, base=vf?Number(vf.base_unit_cost||0):0, gap=vf?Number(vf.funding_gap||0):0;
+      if(!vf || (total===0 && base===0 && rows.length===0)) reasons.push(['Funding belum dicatat','amber']);
+      else if(gap>0) reasons.push(['Funding Gap '+fmtRpShort(gap),'amber']);
+    }
+    if(hold>90) reasons.push(['Holding '+hold+' hari','red']);
+    if(reasons.length) out.push({u,hold,reasons});
+  });
+  // most urgent first: red reasons, then longest holding
+  return out.sort((a,b)=>{
+    const ar=a.reasons.some(r=>r[1]==='red')?1:0, br=b.reasons.some(r=>r[1]==='red')?1:0;
+    return (br-ar)||(b.hold-a.hold);
+  });
+}
+function renderAttentionUnits(){
+  const listEl=document.getElementById('attnList'), pagerEl=document.getElementById('attnPager');
+  if(!listEl)return;
+  const all=attentionUnits();
+  if(!all.length){ listEl.innerHTML='<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px">Semua unit aktif dalam kondisi normal.</div>'; if(pagerEl)pagerEl.innerHTML=''; return; }
+  const pages=Math.ceil(all.length/ATTN_PER);
+  if(ATTN_PAGE>pages)ATTN_PAGE=pages;
+  const slice=all.slice((ATTN_PAGE-1)*ATTN_PER, ATTN_PAGE*ATTN_PER);
+  listEl.innerHTML=`<div class="table-scroll"><table class="track-table"><thead><tr><th>Unit</th><th>Jenis</th><th>Model</th><th class="num">Holding</th><th>Perlu Aksi</th></tr></thead><tbody>`+
+    slice.map(({u,hold,reasons})=>`<tr>
+      <td>${esc(u.nama)}</td><td>${esc(u.jenis||'—')}</td>
+      <td>${isLegacyUnit(u)?'<span class="badge" style="background:var(--surface2);color:var(--text3);border:1px solid var(--border)">Legacy</span>':'Perkasa'}</td>
+      <td class="num">${hold} hari</td>
+      <td>${reasons.map(([t,lv])=>`<span class="badge" style="background:${lv==='red'?'var(--red)':'var(--amber,#C07A0E)'};color:#fff;margin-right:4px">${esc(t)}</span>`).join('')}</td>
+    </tr>`).join('')+'</tbody></table></div>';
+  if(pagerEl){
+    if(pages<=1){ pagerEl.innerHTML=''; }
+    else pagerEl.innerHTML=Array.from({length:pages},(_,i)=>{
+      const lo=i*ATTN_PER+1, hi=Math.min((i+1)*ATTN_PER,all.length);
+      return `<button class="chip${i+1===ATTN_PAGE?' active':''}" onclick="ATTN_PAGE=${i+1};renderAttentionUnits()">${lo}–${hi}</button>`;
+    }).join('');
+  }
 }
 
 async function ccProfitTrend(){
@@ -3228,13 +3270,13 @@ function renderTopPerformance(h){
   const modalIntiOf=u=>(+u.totalModal)-(+u.modalPartner||0);
   const perUnit=h.sold.map(u=>{const np=netProfitOf(u);const mi=modalIntiOf(u);return {u,np,roi:mi>0?np/mi*100:0,hold:daysBetween(u.tgl,saleDateOf(u))};});
   const byProfit=perUnit.slice().sort((a,b)=>b.np-a.np).slice(0,3);
-  const byRoi=perUnit.slice().sort((a,b)=>b.roi-a.roi).slice(0,3);
+  const byFast=perUnit.filter(x=>x.hold!=null).slice().sort((a,b)=>a.hold-b.hold).slice(0,3);
   const fill=(el,arr,valFn,metaFn)=>{
     const html=arr.map((x,i)=>`<div class="top-row"><div class="top-rank">${i+1}</div><div class="top-name">${x.u.nama}<div class="top-meta">${metaFn(x)}</div></div><div class="top-val">${valFn(x)}</div></div>`).join('');
     document.getElementById(el).innerHTML=html||`<div class="empty-state" style="padding:20px">Belum ada unit terjual.</div>`;
   };
-  fill('topProfit',byProfit,x=>fmtRpShort(x.np),x=>x.u.jenis+' · ROI '+x.roi.toFixed(0)+'%');
-  fill('topRoi',byRoi,x=>x.roi.toFixed(1)+'%',x=>x.u.jenis+' · '+fmtRpShort(x.np));
+  fill('topProfit',byProfit,x=>fmtRpShort(x.np),x=>x.u.jenis+(x.hold!=null?' · '+x.hold+' hari':''));
+  fill('topRoi',byFast,x=>x.hold+' hari',x=>x.u.jenis+' · '+fmtRpShort(x.np));
 }
 function renderInvestorSummary(h){
   const names=new Set(); let active=0,done=0;
@@ -4623,7 +4665,7 @@ function openPerkasaEdit(id){
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
       <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">Edit Unit · Perkasa</div>
       <button class="btn-sm" onclick="document.getElementById('peOverlay').remove()">✕</button></div>
-    <div style="font-size:11.5px;color:var(--text3);margin-bottom:14px">Unit model Perkasa. Base Unit Cost & funding dikelola lewat Cost Ledger / Funding (DB-derived).</div>
+    <div style="font-size:11.5px;color:var(--text3);margin-bottom:14px">Unit model Perkasa. Base Unit Cost & pendanaan dikelola lewat Cost Ledger / Funding.</div>
     <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px">
       <div class="fg" style="margin:0"><label>Nama Unit</label><input id="peNama" value="${esc(u.nama)}"></div>
       <div class="fg" style="margin:0"><label>Jenis</label><select id="peJenis"><option${u.jenis==='Mobil'?' selected':''}>Mobil</option><option${u.jenis==='Motor'?' selected':''}>Motor</option></select></div>
@@ -4734,7 +4776,7 @@ async function loadCostEntries(){
   kpi.innerHTML=[
     kcard('Purchase Cost',fmtRp(base),'Harga Beli / Akuisisi','k-green'),
     kcard('Additional Direct Costs',fmtRp(addl),'Biaya Langsung Tambahan','k-amber'),
-    kcard('Total Base Unit Cost',total==null?'—':fmtRp(total),'DB-derived (v_unit_cost) ✓','k-blue'),
+    kcard('Total Base Unit Cost',total==null?'—':fmtRp(total),'biaya dasar unit (terverifikasi)','k-blue'),
   ].join('');
   tb.innerHTML=`<thead><tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th class="num">Nominal</th><th></th></tr></thead><tbody>`+
     (entries.map(e=>`<tr><td>${esc(e.entry_date)}</td><td>${esc(e.category)}</td><td>${esc(e.description||'')}${e.note?`<br><span style="color:var(--text3);font-size:11px">${esc(e.note)}</span>`:''}</td>
@@ -4802,7 +4844,7 @@ async function loadFunding(){
   const hasPartner=entries.some(e=>e.source==='partner');
   body.innerHTML=`
     <div class="ih-grid" style="margin-bottom:12px">
-      ${kcard('Total Base Unit Cost',fmtRp(vf.base_unit_cost),'DB-derived (v_unit_cost) ✓','k-blue')}
+      ${kcard('Total Base Unit Cost',fmtRp(vf.base_unit_cost),'biaya dasar unit (terverifikasi)','k-blue')}
       ${kcard('Total Funding',fmtRp(vf.total_funding),`Perkasa ${fmtRp(vf.perkasa_funding)} · Partner ${fmtRp(vf.partner_funding)}`,'k-teal')}
       ${kcard('Funding Gap',fmtRp(vf.funding_gap),vf.funding_status,'k-'+(vf.funding_status==='funded'?'green':vf.funding_status==='over'?'red':'amber'))}
     </div>
@@ -4994,7 +5036,7 @@ async function loadSettle(){
   // Sale form
   body.innerHTML=`
     <div class="ih-grid" style="margin-bottom:10px">
-      ${kcard('Total Base Unit Cost',fmtRp(vf.base_unit_cost),'v_unit_cost ✓','k-blue')}
+      ${kcard('Total Base Unit Cost',fmtRp(vf.base_unit_cost),'biaya dasar unit (terverifikasi)','k-blue')}
       ${kcard('Total Funding',fmtRp(vf.total_funding),`Perkasa ${fmtRp(vf.perkasa_funding)} · Partner ${fmtRp(vf.partner_funding)}`,'k-teal')}
       ${kcard('Funding Status',vf.funding_status,vf.funding_status==='funded'?'siap dijual':'cek funding','k-'+(vf.funding_status==='funded'?'green':'amber'))}
     </div>
@@ -5191,7 +5233,7 @@ async function renderLaporan(){
           ${L('Retensi cadangan (10%, apropriasi)',-Math.abs(vp.reserve_retention_appropriation||0),false,1)}
         </tbody></table></div>${split}</div>${govNote}`;
     } else {
-      vpCard.innerHTML=`<div class="card" style="border-color:var(--amber,#9A6300)"><div style="padding:6px 2px;font-size:12.5px;color:var(--text2)">Laporan tervalidasi (view <b>v_pnl</b>) belum aktif. Menampilkan perhitungan operasional lama. Jalankan SQL Phase 5–8 di Supabase untuk mengaktifkan angka sumber-tunggal.</div></div>`;
+      vpCard.innerHTML=`<div class="card" style="border-color:var(--amber,#9A6300)"><div style="padding:6px 2px;font-size:12.5px;color:var(--text2)">Laporan tervalidasi belum aktif. Menampilkan perhitungan operasional sementara.</div></div>`;
     }
   }
 
@@ -5332,22 +5374,6 @@ function renderInventoryIntel(){
       scales:{x:{title:{display:true,text:'Hari Holding'}},y:{title:{display:true,text:'Jumlah Unit'},ticks:{stepSize:1}}}}
   });
 
-  // ROI vs Holding scatter (sold)
-  const scatterData=sold.filter(u=>{const h=holdingDays(u);const mi=(+u.totalModal||0)-(+u.modalPartner||0);return h!==null&&mi>0;}).map(u=>{
-    const h=holdingDays(u);
-    const mi=(+u.totalModal||0)-(+u.modalPartner||0);
-    const roi=((+u.keuntunganBersih||0)/mi*100);
-    return {x:h,y:parseFloat(roi.toFixed(1)),label:u.nama};
-  });
-  if(cInvRoi)cInvRoi.destroy();
-  cInvRoi=new Chart(document.getElementById('chartInvRoi').getContext('2d'),{
-    type:'scatter',
-    data:{datasets:[{label:'Unit Terjual',data:scatterData,backgroundColor:'rgba(37,99,201,0.6)',pointRadius:5}]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const d=c.raw;return `${d.label}: ROI ${d.y}%, ${d.x}h`;}}}},
-      scales:{x:{title:{display:true,text:'Holding (Hari)'}},y:{title:{display:true,text:'ROI (%)'},ticks:{callback:v=>v+'%'}}}}
-  });
-
   // Velocity table — active units filtered
   let filtered=active;
   if(invIntelFilter==='fast')filtered=active.filter(u=>holdingCategory(holdingDays(u))==='fast');
@@ -5364,42 +5390,23 @@ function renderInventoryIntel(){
     <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase">Kategori</th>
     <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">Modal</th>
     <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">Target Profit</th>
-    <th style="padding:9px 14px;font-size:11px;font-weight:600;text-transform:uppercase;text-align:right">ROI Target</th>
   </tr></thead>`;
   const body=filtered.map(u=>{
     const h=holdingDays(u); const cat=holdingCategory(h);
-    const col=catColor[cat]; const mi=(+u.totalModal||0)-(+u.modalPartner||0);
-    const roi=mi>0?((+u.targetProfit||0)/mi*100):0;
+    const col=catColor[cat];
     return `<tr style="border-bottom:1px solid var(--border)">
       <td style="padding:9px 14px;font-weight:500">${u.nama}</td>
       <td style="padding:9px 14px;color:var(--text2)">${u.jenis||'—'}</td>
       <td style="padding:9px 14px;text-align:right;color:var(--text3)">${h!==null?h+' hr':'—'}</td>
       <td style="padding:9px 14px"><span style="background:${col}18;color:${col};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">${catLabel[cat]}</span></td>
-      <td style="padding:9px 14px;text-align:right">${fmtRp(+u.totalModal||0)}</td>
+      <td style="padding:9px 14px;text-align:right">${fmtRp(isLegacyUnit(u)?(+u.totalModal||0):(UNIT_FUNDING[u.id]?Number(UNIT_FUNDING[u.id].base_unit_cost||0):0))}</td>
       <td style="padding:9px 14px;text-align:right;color:var(--green)">${+u.targetProfit>0?fmtRp(+u.targetProfit):'—'}</td>
-      <td style="padding:9px 14px;text-align:right"><span class="roi-badge">${roi>0?roi.toFixed(1)+'%':'—'}</span></td>
     </tr>`;
-  }).join('')||`<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text3)">Tidak ada unit.</td></tr>`;
+  }).join('')||`<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3)">Tidak ada unit.</td></tr>`;
   document.getElementById('invIntelTable').innerHTML=head+'<tbody>'+body+'</tbody>';
 
-  // Category analysis by jenis
-  const jenisList=[...new Set(units.map(u=>u.jenis||'Lainnya'))];
-  document.getElementById('invCatGrid').innerHTML=jenisList.map(j=>{
-    const all=units.filter(u=>u.jenis===j);
-    const s=all.filter(u=>u.status==='terjual');
-    const a=all.filter(u=>u.status!=='terjual');
-    const avgH=s.length?Math.round(s.reduce((acc,u)=>{const h=holdingDays(u);return acc+(h||0);},0)/s.length):null;
-    const totalProfit=s.reduce((acc,u)=>acc+(+u.keuntunganBersih||0),0);
-    const avgRoi=s.length?s.reduce((acc,u)=>{const mi=(+u.totalModal||0)-(+u.modalPartner||0);return acc+(mi>0?(+u.keuntunganBersih||0)/mi*100:0);},0)/s.length:0;
-    return `<div class="seg-card"><div class="seg-title">${j}</div>
-      <div class="seg-stat"><span>Total</span><b>${all.length} unit</b></div>
-      <div class="seg-stat"><span>Terjual</span><b>${s.length}</b></div>
-      <div class="seg-stat"><span>Aktif</span><b>${a.length}</b></div>
-      <div class="seg-stat"><span>Avg Holding</span><b>${avgH!==null?avgH+' hr':'—'}</b></div>
-      <div class="seg-stat"><span>Total Profit</span><b style="color:var(--green)">${fmtRpShort(totalProfit)}</b></div>
-      <div class="seg-stat"><span>Avg ROI</span><b>${avgRoi.toFixed(1)}%</b></div>
-    </div>`;
-  }).join('');
+  // Category analysis by jenis — clean operational cards (Mobil / Motor), no ROI.
+  document.getElementById('invCatGrid').innerHTML=perJenisGridHtml();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -5408,7 +5415,7 @@ function renderInventoryIntel(){
 let cInvestRoi=null, cInvestDist=null, cInvestTimeline=null;
 
 function renderInvestDash(){
-  if(!document.getElementById('invDashKpi')&&!document.querySelector('#atab-inventori-partner'))return; // retired
+  return; // D8: investor dashboard retired (Partner data now lives under Modal - Partner Collaboration)
   const fundings=allFundings();
   const sold=units.filter(u=>u.status==='terjual');
 
