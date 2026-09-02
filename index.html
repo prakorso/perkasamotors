@@ -916,7 +916,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
         <div class="card">
           <div class="card-hdr">
-            <div class="card-title">Riwayat Kas Bisnis (dari unit terjual)</div>
+            <div class="card-title">Alokasi Realized Profit (per unit terjual)</div>
             <div style="font-size:12px;color:var(--text3)">Klik Edit untuk koreksi nominal kas per unit</div>
           </div>
           <div id="kasEditForm" style="display:none;margin-bottom:14px;padding:14px;background:var(--bg);border-radius:var(--r)">
@@ -3312,43 +3312,71 @@ async function saveAdminConfig(){
 }
 
 // ══════════ KAS BISNIS ══════════
+// D9 — realized profit allocation per sold unit. Perkasa units use the D5
+// settlement source of truth (perkasa_retained_profit); legacy units keep the
+// legacy keuntungan_bersih/kas_bisnis math UNCHANGED. Reserve = 10% of POSITIVE
+// realized profit; Operating pool = the remaining 90%. Loss ⇒ reserve 0.
+const D9_RESERVE_RATE=0.10;
 function kasFromUnits(){
-  // Semua unit terjual yang TIDAK dikecualikan (dihapus dari daftar kas)
   return units.filter(u=>u.status==='terjual'&&!u.kasExcluded).map(u=>{
+    if(!isLegacyUnit(u)){
+      const st=UNIT_SETTLES[u.id];
+      const realized=st?Number(st.perkasa_retained_profit||0):0;          // settlement source of truth
+      const reserve=realized>0?Math.round(realized*D9_RESERVE_RATE):0;     // real 10% reserve
+      const operating=realized-reserve;                                    // 90% operating pool
+      return {id:u.id, unit:u.nama, tgl:(st&&st.settle_date)||u.tglJual||u.tgl, model:'perkasa',
+              realized, reserve, operating, kas:reserve, bersih:realized};
+    }
+    // legacy — preserved exactly
     const bersih=(u.keuntunganBersih!==''&&u.keuntunganBersih!==undefined)?+u.keuntunganBersih:(+u.hargaJual-+u.totalModal)-(+u.totalFee||0);
-    const kas=(u.kasBisnis!==undefined&&u.kasBisnis!==null)?+u.kasBisnis:bersih*0.10;
-    return {id:u.id, unit:u.nama, tgl:u.tglJual||u.tgl, kas, bersih};
+    const reserve=(u.kasBisnis!==undefined&&u.kasBisnis!==null)?+u.kasBisnis:bersih*0.10;
+    return {id:u.id, unit:u.nama, tgl:u.tglJual||u.tgl, model:'legacy',
+            realized:bersih, reserve, operating:bersih-reserve, kas:reserve, bersih};
   });
 }
 
 async function renderKas(){
-  const masukAuto=kasFromUnits();
-  const totalMasuk=masukAuto.reduce((a,x)=>a+x.kas,0);
+  const alloc=kasFromUnits();
+  const totalRealized=alloc.reduce((a,x)=>a+x.realized,0);
+  const totalReserve=alloc.reduce((a,x)=>a+x.reserve,0);
+  const totalOperating=alloc.reduce((a,x)=>a+x.operating,0);
   const {data:keluarData}=await db.from('kas_keluar').select('*').order('tgl',{ascending:false});
   const keluar=keluarData||[];
   const totalKeluar=keluar.reduce((a,x)=>a+(+x.nominal||0),0);
-  const saldo=totalMasuk-totalKeluar;
+  // Cash split from the single source of truth (v_cash_position): Total = Operating + Reserve.
+  let cp=null; try{ const r=await db.from('v_cash_position').select('*').single(); cp=r.data; }catch(e){}
+  const totalCash = cp?Number(cp.actual_cash||0):null;
+  const reserveCash = cp?Number(cp.reserve||0):null;
+  const operatingCash = (totalCash!=null&&reserveCash!=null)?(totalCash-reserveCash):null;
+  const availCash = cp?Number(cp.available_cash||0):null;
 
   document.getElementById('kasKPIGrid').innerHTML=[
-    ['Total Kas Masuk',fmtRpShort(totalMasuk),masukAuto.length+' unit terjual'],
-    ['Total Pengeluaran',fmtRpShort(totalKeluar),keluar.length+' entri'],
-    ['Saldo Kas Bisnis',fmtRpShort(saldo),saldo>=0?'tersedia':'defisit'],
+    ['Operating Cash', operatingCash!=null?fmtRpShort(operatingCash):'—','kas operasional (Total − Reserve)'],
+    ['Cash Reserve', reserveCash!=null?fmtRpShort(reserveCash):fmtRpShort(totalReserve),'buffer disisihkan (restricted)'],
+    ['Total Cash', totalCash!=null?fmtRpShort(totalCash):'—','Operating + Reserve'],
+    ['Available (Safe) Cash', availCash!=null?fmtRpShort(availCash):'—','setelah kewajiban jatuh tempo'],
   ].map(([l,v,s])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${s}</div></div>`).join('');
 
-  const thead=`<thead><tr><th>Unit</th><th class="num">Tanggal Jual</th><th class="num">Profit Bersih</th><th class="num">Kas Bisnis</th><th class="num">Aksi</th></tr></thead>`;
-  const tbody=masukAuto.length
-    ?masukAuto.map(x=>`<tr>
-        <td>${x.unit}</td>
+  const thead=`<thead><tr><th>Unit</th><th>Model</th><th class="num">Tanggal Jual</th><th class="num">Realized Profit</th><th class="num">Reserve 10%</th><th class="num">Operating 90%</th><th class="num">Aksi</th></tr></thead>`;
+  const tbody=alloc.length
+    ?alloc.map(x=>`<tr>
+        <td>${esc(x.unit)}</td>
+        <td>${x.model==='perkasa'?'Perkasa':'<span style="color:var(--text3)">Legacy</span>'}</td>
         <td class="num">${x.tgl||'—'}</td>
-        <td class="num">${fmtRpShort(x.bersih)}</td>
-        <td class="num" style="font-weight:600;color:var(--blue)">${fmtRp(x.kas)}</td>
-        <td class="num" style="white-space:nowrap">
+        <td class="num">${fmtRp(x.realized)}</td>
+        <td class="num" style="color:var(--amber,#C07A0E)">${fmtRp(x.reserve)}</td>
+        <td class="num" style="font-weight:600;color:var(--green,#178A5A)">${fmtRp(x.operating)}</td>
+        <td class="num" style="white-space:nowrap">${x.model==='legacy'?`
           <button class="btn-sm edit" onclick="editKasUnit(${x.id})">Edit</button>
-          <button class="btn-sm danger" style="margin-left:6px" onclick="hapusKasUnit(${x.id})">Hapus</button>
+          <button class="btn-sm danger" style="margin-left:6px" onclick="hapusKasUnit(${x.id})">Hapus</button>`:'<span style="color:var(--text3);font-size:11px">otomatis dari settlement</span>'}
         </td>
       </tr>`).join('')
-    :`<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:16px">Belum ada kas dari penjualan.</td></tr>`;
-  document.getElementById('kasTable').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
+    :`<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:16px">Belum ada penjualan.</td></tr>`;
+  document.getElementById('kasTable').innerHTML=thead+'<tbody>'+tbody+`</tbody><tfoot><tr style="border-top:2px solid var(--border);font-weight:700">
+    <td colspan="3">Total (${alloc.length} unit)</td>
+    <td class="num">${fmtRp(totalRealized)}</td>
+    <td class="num" style="color:var(--amber,#C07A0E)">${fmtRp(totalReserve)}</td>
+    <td class="num" style="color:var(--green,#178A5A)">${fmtRp(totalOperating)}</td><td></td></tr></tfoot>`;
 
   // Pengeluaran
   const c=document.getElementById('kasKeluarList');
