@@ -3396,11 +3396,16 @@ async function renderKas(){
   const reserveCash = cp?Number(cp.reserve||0):null;
   const operatingCash = (totalCash!=null&&reserveCash!=null)?(totalCash-reserveCash):null;
   const availCash = cp?Number(cp.available_cash||0):null;
+  const provisional = cp?(cp.is_provisional!==false):true;
+  // D10 interim: `actual_cash` is a DERIVED Perkasa liquidity metric, NOT a reconciled
+  // company-wide bank balance. Labeled "Operating Liquidity Position" (not "Total Cash").
+  // A true company-wide Total Cash Position is deferred to D11 (needs verified baseline).
+  const provPill=provisional?' <span style="font-size:9px;font-weight:700;color:#C07A0E;border:1px solid #C07A0E;border-radius:6px;padding:0 4px;vertical-align:middle">PROVISIONAL</span>':'';
 
   document.getElementById('kasKPIGrid').innerHTML=[
-    ['Operating Cash', operatingCash!=null?fmtRpShort(operatingCash):'—','kas operasional (Total − Reserve)'],
+    ['Operating Cash Position', operatingCash!=null?fmtRpShort(operatingCash):'—','likuiditas tak-terestriksi (Posisi − Reserve)'],
     ['Cash Reserve', reserveCash!=null?fmtRpShort(reserveCash):fmtRpShort(totalReserve),'buffer disisihkan (restricted)'],
-    ['Total Cash', totalCash!=null?fmtRpShort(totalCash):'—','Operating + Reserve'],
+    ['Operating Liquidity Position'+provPill, totalCash!=null?fmtRpShort(totalCash):'—','Derived liquidity since 18 Aug 2026 baseline · not a reconciled bank balance'],
     ['Available (Safe) Cash', availCash!=null?fmtRpShort(availCash):'—','setelah kewajiban jatuh tempo'],
   ].map(([l,v,s])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${s}</div></div>`).join('');
 
@@ -3447,12 +3452,12 @@ async function renderKasFinancingSources(){
   el.innerHTML=`<div class="card" style="padding:14px 16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <div class="card-title" style="margin:0">Sumber Pembiayaan & Kewajiban</div>
-      <span style="font-size:10.5px;color:var(--text3)">klasifikasi · BUKAN bagian dari Total Cash</span>
+      <span style="font-size:10.5px;color:var(--text3)">klasifikasi · BUKAN bagian dari Operating Liquidity Position</span>
     </div>
     ${line('Founder / Participant Capital', founderCap, 'kumulatif kontribusi · as-of', 'var(--text)')}
     ${line('Partner Funding', partnerFunding, 'funding partner di unit aktif · as-of', 'var(--purple,#7A5C9E)')}
     ${line('Debt Outstanding', debtPrincipal, debtTotal!=null&&debtTotal!==debtPrincipal?`principal · total termasuk bunga ${fmtRp(debtTotal)}`:'principal', 'var(--red)')}
-    <div style="font-size:10.5px;color:var(--text3);margin-top:8px">Ini adalah sumber & kewajiban pembiayaan, bukan saldo kas tambahan. <b>Total Cash = Operating Cash + Cash Reserve</b> saja.</div>
+    <div style="font-size:10.5px;color:var(--text3);margin-top:8px">Ini adalah sumber & kewajiban pembiayaan, bukan saldo kas tambahan. <b>Operating Liquidity Position = Operating Cash Position + Cash Reserve</b> saja (metrik turunan, bukan saldo bank tereklonsiliasi).</div>
   </div>`;
 }
 // ── Edit nominal kas per unit (mengubah units.kas_bisnis) ──
@@ -5044,9 +5049,9 @@ async function renderLaporanD9(from,to){
   if(pg){
     const total=pos?Number(pos.actual_cash||0):null, res=pos?Number(pos.reserve||0):null;
     pg.innerHTML=[
-      ['Operating Cash',(total!=null&&res!=null)?fmtRpShort(total-res):'—','k-teal'],
+      ['Operating Cash Position',(total!=null&&res!=null)?fmtRpShort(total-res):'—','k-teal'],
       ['Cash Reserve',res!=null?fmtRpShort(res):'—','k-amber'],
-      ['Total Cash',total!=null?fmtRpShort(total):'—','k-green'],
+      ['Operating Liquidity Position',total!=null?fmtRpShort(total):'—','k-green'],
       ['Capital Deployed',pos?fmtRpShort(pos.deployed_capital):'—','k-blue'],
       ['Founder / Participant Capital',fmtRpShort(founder),'k-purple'],
       ['Partner Funding',fmtRpShort(ext),'k-purple'],
