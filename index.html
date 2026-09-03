@@ -946,6 +946,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="table-scroll">
             <table class="track-table" id="kasTable"></table>
           </div>
+          <div id="kasReserveRecon" style="margin-top:10px"></div>
         </div>
 
         <div class="card">
@@ -3430,10 +3431,25 @@ async function renderKas(){
       </tr>`).join('')
     :`<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:16px">Belum ada penjualan.</td></tr>`;
   document.getElementById('kasTable').innerHTML=thead+'<tbody>'+tbody+`</tbody><tfoot><tr style="border-top:2px solid var(--border);font-weight:700">
-    <td colspan="3">Total (${alloc.length} unit)</td>
+    <td colspan="3">Total Alokasi Historis (${alloc.length} unit)</td>
     <td class="num">${fmtRp(totalRealized)}</td>
     <td class="num" style="color:var(--amber,#C07A0E)">${fmtRp(totalReserve)}</td>
     <td class="num" style="color:var(--green,#178A5A)">${fmtRp(totalOperating)}</td><td></td></tr></tfoot>`;
+
+  // ── D10 FIX 1: reconcile historical allocation vs ACTUAL restricted cash ──
+  // Allocation table = historical allocation records (incl. legacy kas_bisnis rows
+  // never posted to reserve_ledger). Cash Reserve Aktual = v_reserve_summary truth.
+  const recon=document.getElementById('kasReserveRecon');
+  if(recon){
+    const actualRestricted = reserveCash!=null?reserveCash:null;
+    const selisih = (actualRestricted!=null)?(totalReserve-actualRestricted):null;
+    recon.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:18px;align-items:baseline;padding:10px 12px;background:var(--bg);border-radius:var(--r)">
+      <div><div style="font-size:10.5px;color:var(--text3)">Total Alokasi Historis</div><div class="mono" style="font-weight:700">${fmtRp(totalReserve)}</div></div>
+      <div><div style="font-size:10.5px;color:var(--text3)">Cash Reserve Aktual <span style="color:var(--text3)">(restricted)</span></div><div class="mono" style="font-weight:700;color:var(--amber,#C07A0E)">${actualRestricted!=null?fmtRp(actualRestricted):'—'}</div></div>
+      ${selisih&&selisih!==0?`<div><div style="font-size:10.5px;color:var(--text3)">Selisih</div><div class="mono" style="font-weight:700;color:var(--red)">${fmtRp(selisih)}</div></div>`:''}
+      <div style="flex:1;min-width:220px;font-size:10.5px;color:var(--text3)">${selisih&&selisih!==0?`Selisih ${fmtRp(selisih)} berasal dari alokasi legacy yang belum diposting sebagai restricted cash. `:''}Total Alokasi Historis adalah catatan alokasi, <b>bukan</b> saldo restricted cash. Cash Reserve aktual bersumber dari v_reserve_summary / reserve_ledger.</div>
+    </div>`;
+  }
 
   // Pengeluaran
   const c=document.getElementById('kasKeluarList');
