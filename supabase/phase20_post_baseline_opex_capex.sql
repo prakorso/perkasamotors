@@ -43,13 +43,17 @@ with anchor as (
     coalesce((select sum(scheduled_amount) from debt_payments where status<>'paid' and due_date <= (current_date + coalesce((select value::integer from app_config where key='obligation_horizon_days'),30))),0::numeric) as debt_due,
     coalesce((select sum(computed_amount) from payroll_obligations where status<>'paid' and due_date <= (current_date + coalesce((select value::integer from app_config where key='obligation_horizon_days'),30))),0::numeric) as payroll_due
 )
+-- NOTE: CREATE OR REPLACE VIEW can only APPEND columns, never insert mid-list, so
+-- the pre-existing column order is preserved verbatim and opex_paid/capex_paid are
+-- appended at the END.
 select baseline_date, opening_cash, reserve, opening_verified, other_committed,
-  debt_drawdowns, debt_paid, payroll_paid, opex_paid, capex_paid,
+  debt_drawdowns, debt_paid, payroll_paid,
   horizon_days, debt_due, payroll_due,
   opening_cash + debt_drawdowns - debt_paid - payroll_paid - opex_paid - capex_paid as actual_cash,
   opening_cash + debt_drawdowns - debt_paid - payroll_paid - opex_paid - capex_paid
     - reserve - debt_due - payroll_due - other_committed as safe_cash,
-  opening_verified <> 'true' as is_provisional
+  opening_verified <> 'true' as is_provisional,
+  opex_paid, capex_paid
 from base;
 
 create or replace view v_cash_position as
@@ -66,12 +70,13 @@ with base as (
   select coalesce(sum(perkasa_retained_profit),0::numeric) as realized
   from unit_settlement where status='settled'
 )
+-- Pre-existing column order preserved; opex_paid/capex_paid appended at END.
 select b.opening_cash, b.reserve, b.debt_due, b.payroll_due, b.other_committed, b.is_provisional,
-  b.opex_paid, b.capex_paid,
   d.deployed as deployed_capital,
   b.opening_cash + b.debt_drawdowns - b.debt_paid - b.payroll_paid - b.opex_paid - b.capex_paid - d.deployed + s.realized as actual_cash,
   b.opening_cash + b.debt_drawdowns - b.debt_paid - b.payroll_paid - b.opex_paid - b.capex_paid - d.deployed + s.realized
-    - b.reserve - b.debt_due - b.payroll_due - b.other_committed as available_cash
+    - b.reserve - b.debt_due - b.payroll_due - b.other_committed as available_cash,
+  b.opex_paid, b.capex_paid
 from base b, dep d, setl s;
 
 grant select on v_cash_pool, v_cash_position to anon, authenticated;
