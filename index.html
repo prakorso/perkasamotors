@@ -912,7 +912,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
   </div>
   <div id="ktab-kas" class="stab-panel active">
-        <div class="ih-grid" id="kasKPIGrid" style="margin-bottom:18px"></div>
+        <div class="ih-grid" id="kasKPIGrid" style="margin-bottom:12px"></div>
+        <div id="kasFinancingSources" style="margin-bottom:18px"></div>
 
         <div class="card">
           <div class="card-hdr">
@@ -927,6 +928,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               <button class="btn-sm" style="height:40px" onclick="simpanKasEdit()">Update</button>
               <button class="btn-sm" style="height:40px" onclick="document.getElementById('kasEditForm').style.display='none'">Batal</button>
             </div>
+          </div>
+          <div id="reserveAllocForm" style="display:none;margin-bottom:14px;padding:14px;background:var(--bg);border-radius:var(--r)">
+            <input type="hidden" id="raUnitId">
+            <div style="font-weight:600;font-size:14px;margin-bottom:2px">Alokasi Realized Profit — <span id="raUnitName"></span></div>
+            <div style="font-size:11.5px;color:var(--text3);margin-bottom:10px">Hanya mengubah split Reserve vs Operating Profit Pool. Tidak mengubah settlement, True Unit Profit, Base Cost, harga jual, atau capital return.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+              <div class="fg" style="flex:1;min-width:120px;margin-bottom:0"><label>Realized Profit (Rp)</label><input type="text" id="raRealized" readonly></div>
+              <div class="fg" style="flex:1;min-width:120px;margin-bottom:0"><label>Reserve (Rp)</label><input type="number" id="raReserve" min="0" oninput="raRecalc()"></div>
+              <div class="fg" style="flex:1;min-width:120px;margin-bottom:0"><label>Operating Profit Pool (Rp)</label><input type="text" id="raOperating" readonly></div>
+              <div class="fg" style="flex:2;min-width:160px;margin-bottom:0"><label>Alasan (opsional)</label><input type="text" id="raReason" placeholder="mis. koreksi kebijakan reserve"></div>
+              <button class="btn-sm" style="height:40px" onclick="simpanReserveAlloc()">Simpan</button>
+              <button class="btn-sm" style="height:40px" onclick="document.getElementById('reserveAllocForm').style.display='none'">Batal</button>
+            </div>
+            <div id="raHint" style="font-size:11px;color:var(--red);margin-top:6px"></div>
           </div>
           <div class="table-scroll">
             <table class="track-table" id="kasTable"></table>
@@ -2061,13 +2076,18 @@ let UNIT_FUNDING={};       // unit_id -> v_unit_funding row (base_unit_cost, per
 let UNIT_FUNDING_ROWS={};  // unit_id -> [unit_funding rows] (per-partner breakdown)
 let UNIT_SETTLES={};       // unit_id -> v_unit_settlement row (settled snapshot)
 let PERKASA_REALIZED=0;    // v_retained_profit.future_retained (realized Perkasa profit)
+let PERKASA_RESERVE={};    // unit_id -> actual restricted reserve (ledger; reflects D10 override)
+let RESERVE_OVERRIDES={};  // unit_id -> reserve_allocation_override row (manual split audit)
 async function loadUnitFunding(){
-  UNIT_FUNDING={}; UNIT_FUNDING_ROWS={}; UNIT_SETTLES={}; PERKASA_REALIZED=0;
+  UNIT_FUNDING={}; UNIT_FUNDING_ROWS={}; UNIT_SETTLES={}; PERKASA_REALIZED=0; PERKASA_RESERVE={}; RESERVE_OVERRIDES={};
   try{
     const vf=await db.from('v_unit_funding').select('*'); (vf.data||[]).forEach(r=>{UNIT_FUNDING[r.unit_id]=r;});
     const fr=await db.from('unit_funding').select('*').order('funded_date'); (fr.data||[]).forEach(r=>{(UNIT_FUNDING_ROWS[r.unit_id]=UNIT_FUNDING_ROWS[r.unit_id]||[]).push(r);});
     const st=await db.from('v_unit_settlement').select('*'); (st.data||[]).forEach(r=>{UNIT_SETTLES[r.unit_id]=r;});
     const rp=await db.from('v_retained_profit').select('future_retained').single(); PERKASA_REALIZED=rp&&rp.data?Number(rp.data.future_retained||0):0;
+    // D10: actual restricted reserve per perkasa unit (source of truth for the split; reflects manual override)
+    const rl=await db.from('reserve_ledger').select('unit_id,nominal,tipe').eq('tipe','perkasa_reserve'); (rl.data||[]).forEach(r=>{if(r.unit_id!=null)PERKASA_RESERVE[r.unit_id]=Number(r.nominal||0);});
+    try{ const ro=await db.from('reserve_allocation_override').select('*'); (ro.data||[]).forEach(r=>{RESERVE_OVERRIDES[r.unit_id]=r;}); }catch(_e){/* table absent pre-D10 */}
   }catch(e){ /* D-series views absent on a fresh DB → renderers fall back to 'Funding belum dicatat' */ }
 }
 const pctTxt=n=>Number(n||0).toFixed(2).replace(/\.00$/,'');
@@ -3346,11 +3366,13 @@ function kasFromUnits(){
   return units.filter(u=>u.status==='terjual'&&!u.kasExcluded).map(u=>{
     if(!isLegacyUnit(u)){
       const st=UNIT_SETTLES[u.id];
-      const realized=st?Number(st.perkasa_retained_profit||0):0;          // settlement source of truth
-      const reserve=realized>0?Math.round(realized*D9_RESERVE_RATE):0;     // real 10% reserve
-      const operating=realized-reserve;                                    // 90% operating pool
+      const realized=st?Number(st.perkasa_retained_profit||0):0;          // settlement source of truth (untouched)
+      // reserve = actual restricted ledger (reflects D10 manual split); fallback to policy 10%
+      const defReserve=realized>0?Math.round(realized*D9_RESERVE_RATE):0;
+      const reserve=(u.id in PERKASA_RESERVE)?PERKASA_RESERVE[u.id]:defReserve;
+      const operating=realized-reserve;                                    // Reserve + Operating = Realized
       return {id:u.id, unit:u.nama, tgl:(st&&st.settle_date)||u.tglJual||u.tgl, model:'perkasa',
-              realized, reserve, operating, kas:reserve, bersih:realized};
+              realized, reserve, operating, kas:reserve, bersih:realized, overridden:!!RESERVE_OVERRIDES[u.id]};
     }
     // legacy — preserved exactly
     const bersih=(u.keuntunganBersih!==''&&u.keuntunganBersih!==undefined)?+u.keuntunganBersih:(+u.hargaJual-+u.totalModal)-(+u.totalFee||0);
@@ -3382,18 +3404,23 @@ async function renderKas(){
     ['Available (Safe) Cash', availCash!=null?fmtRpShort(availCash):'—','setelah kewajiban jatuh tempo'],
   ].map(([l,v,s])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${s}</div></div>`).join('');
 
-  const thead=`<thead><tr><th>Unit</th><th>Model</th><th class="num">Tanggal Jual</th><th class="num">Realized Profit</th><th class="num">Reserve 10%</th><th class="num">Operating 90%</th><th class="num">Aksi</th></tr></thead>`;
+  // ── D10: Financing sources & obligations — classification only, NOT added to Total Cash ──
+  await renderKasFinancingSources();
+
+  const thead=`<thead><tr><th>Unit</th><th>Model</th><th class="num">Tanggal Jual</th><th class="num">Realized Profit</th><th class="num">Cash Reserve</th><th class="num">Operating Profit Pool</th><th class="num">Aksi</th></tr></thead>`;
   const tbody=alloc.length
     ?alloc.map(x=>`<tr>
         <td>${esc(x.unit)}</td>
         <td>${x.model==='perkasa'?'Perkasa':'<span style="color:var(--text3)">Legacy</span>'}</td>
         <td class="num">${x.tgl||'—'}</td>
         <td class="num">${fmtRp(x.realized)}</td>
-        <td class="num" style="color:var(--amber,#C07A0E)">${fmtRp(x.reserve)}</td>
+        <td class="num" style="color:var(--amber,#C07A0E)">${fmtRp(x.reserve)}${x.overridden?' <span title="Split reserve/operating disesuaikan manual" style="font-size:10px;color:var(--text3)">✎</span>':''}</td>
         <td class="num" style="font-weight:600;color:var(--green,#178A5A)">${fmtRp(x.operating)}</td>
         <td class="num" style="white-space:nowrap">${x.model==='legacy'?`
           <button class="btn-sm edit" onclick="editKasUnit(${x.id})">Edit</button>
-          <button class="btn-sm danger" style="margin-left:6px" onclick="hapusKasUnit(${x.id})">Hapus</button>`:'<span style="color:var(--text3);font-size:11px">otomatis dari settlement</span>'}
+          <button class="btn-sm danger" style="margin-left:6px" onclick="hapusKasUnit(${x.id})">Hapus</button>`:`
+          <button class="btn-sm edit" onclick="editReserveAlloc(${x.id})">Edit alokasi</button>${x.overridden?`
+          <button class="btn-sm" style="margin-left:6px" onclick="resetReserveAlloc(${x.id})">Reset 10%</button>`:''}`}
         </td>
       </tr>`).join('')
     :`<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:16px">Belum ada penjualan.</td></tr>`;
@@ -3406,6 +3433,27 @@ async function renderKas(){
   // Pengeluaran
   const c=document.getElementById('kasKeluarList');
   c.innerHTML=keluar.length?keluar.map(x=>kasKeluarRow(x)).join(''):`<div style="font-size:13px;color:var(--text3)">Belum ada pengeluaran dicatat.</div>`;
+}
+// ── D10: financing sources & obligations (classification only — never added to Total Cash) ──
+async function renderKasFinancingSources(){
+  const el=document.getElementById('kasFinancingSources'); if(!el)return;
+  let debtPrincipal=null, debtTotal=null, partnerFunding=null, founderCap=null;
+  try{ const f=(await db.from('v_financing').select('debt_outstanding_principal,debt_outstanding_total').single()).data; if(f){debtPrincipal=Number(f.debt_outstanding_principal||0);debtTotal=Number(f.debt_outstanding_total||0);} }catch(e){}
+  try{ const p=(await db.from('v_external_unit_funding').select('outstanding_external_capital')).data||[]; partnerFunding=p.reduce((a,x)=>a+Number(x.outstanding_external_capital||0),0); }catch(e){}
+  try{ const c=(await db.from('capital_accounts').select('role,funded')).data||[]; founderCap=c.filter(x=>x.role==='founder').reduce((a,x)=>a+Number(x.funded||0),0); }catch(e){}
+  const line=(label,val,sub,color)=>`<div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 2px;border-bottom:1px dashed var(--border)">
+      <div><span style="font-size:13px">${label}</span>${sub?` <span style="font-size:10.5px;color:var(--text3)">${sub}</span>`:''}</div>
+      <span class="mono" style="font-weight:700;color:${color||'var(--text)'}">${val==null?'—':fmtRp(val)}</span></div>`;
+  el.innerHTML=`<div class="card" style="padding:14px 16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div class="card-title" style="margin:0">Sumber Pembiayaan & Kewajiban</div>
+      <span style="font-size:10.5px;color:var(--text3)">klasifikasi · BUKAN bagian dari Total Cash</span>
+    </div>
+    ${line('Founder / Participant Capital', founderCap, 'kumulatif kontribusi · as-of', 'var(--text)')}
+    ${line('Partner Funding', partnerFunding, 'funding partner di unit aktif · as-of', 'var(--purple,#7A5C9E)')}
+    ${line('Debt Outstanding', debtPrincipal, debtTotal!=null&&debtTotal!==debtPrincipal?`principal · total termasuk bunga ${fmtRp(debtTotal)}`:'principal', 'var(--red)')}
+    <div style="font-size:10.5px;color:var(--text3);margin-top:8px">Ini adalah sumber & kewajiban pembiayaan, bukan saldo kas tambahan. <b>Total Cash = Operating Cash + Cash Reserve</b> saja.</div>
+  </div>`;
 }
 // ── Edit nominal kas per unit (mengubah units.kas_bisnis) ──
 function editKasUnit(unitId){
@@ -3427,6 +3475,55 @@ async function simpanKasEdit(){
   document.getElementById('kasEditForm').style.display='none';
   setSyncStatus('ok');
   await loadUnits(); renderKas(); showToast('Kas diperbarui');
+}
+// ── D10: edit Reserve/Operating split for a PERKASA unit (settlement untouched) ──
+function editReserveAlloc(unitId){
+  const row=kasFromUnits().find(x=>x.id===unitId); if(!row)return;
+  if(row.realized<=0){ showToast('Realized profit tidak positif — reserve = 0'); return; }
+  document.getElementById('raUnitId').value=unitId;
+  document.getElementById('raUnitName').textContent=row.unit;
+  document.getElementById('raRealized').value=fmtRp(row.realized);
+  document.getElementById('raRealized').dataset.val=row.realized;
+  document.getElementById('raReserve').value=Math.round(row.reserve);
+  document.getElementById('raReason').value=(RESERVE_OVERRIDES[unitId]&&RESERVE_OVERRIDES[unitId].reason)||'';
+  document.getElementById('raHint').textContent='';
+  raRecalc();
+  document.getElementById('reserveAllocForm').style.display='block';
+  document.getElementById('raReserve').focus();
+}
+function raRecalc(){
+  const realized=Number(document.getElementById('raRealized').dataset.val||0);
+  let res=parseFloat(document.getElementById('raReserve').value);
+  const hint=document.getElementById('raHint');
+  if(isNaN(res)){ document.getElementById('raOperating').value='—'; hint.textContent=''; return; }
+  if(res<0){ hint.textContent='Reserve tidak boleh negatif.'; }
+  else if(res>realized){ hint.textContent='Reserve tidak boleh melebihi Realized Profit.'; }
+  else { hint.textContent=''; }
+  document.getElementById('raOperating').value=fmtRp(Math.max(0,realized-res));
+}
+async function simpanReserveAlloc(){
+  const id=parseInt(document.getElementById('raUnitId').value);
+  const realized=Number(document.getElementById('raRealized').dataset.val||0);
+  const res=parseFloat(document.getElementById('raReserve').value);
+  if(isNaN(res)){ showToast('Reserve wajib diisi'); return; }
+  if(res<0||res>realized){ showToast('Nilai reserve tidak valid'); return; }
+  const reason=document.getElementById('raReason').value.trim();
+  setSyncStatus('syncing');
+  const {data,error}=await db.rpc('pm_set_reserve_override',{p_unit:id,p_reserve:Math.round(res),p_reason:reason||null});
+  if(error||(data&&data.ok===false)){ setSyncStatus('error'); showToast((data&&data.error)||'Gagal menyimpan alokasi'); return; }
+  logAudit('KAS','reserve_alloc',id,`reserve → ${fmtRp(Math.round(res))} (operating ${fmtRp(realized-Math.round(res))})${reason?' · '+reason:''}`);
+  document.getElementById('reserveAllocForm').style.display='none';
+  setSyncStatus('ok');
+  await loadUnits(); renderKas(); showToast('Alokasi reserve diperbarui');
+}
+async function resetReserveAlloc(unitId){
+  if(!confirm('Kembalikan alokasi ke kebijakan default 10% reserve / 90% operating?'))return;
+  setSyncStatus('syncing');
+  const {data,error}=await db.rpc('pm_clear_reserve_override',{p_unit:unitId});
+  if(error||(data&&data.ok===false)){ setSyncStatus('error'); showToast('Gagal reset'); return; }
+  logAudit('KAS','reserve_alloc',unitId,'reset ke default 10%');
+  setSyncStatus('ok');
+  await loadUnits(); renderKas(); showToast('Alokasi dikembalikan ke 10%');
 }
 async function hapusKasUnit(unitId){
   const u=units.find(x=>x.id===unitId); if(!u)return;
@@ -4907,8 +5004,12 @@ async function renderLaporanD9(from,to){
   if(!pnl){ pt.innerHTML='<tr><td style="padding:14px;color:var(--text3)">Fungsi laporan periode belum aktif.</td></tr>'; }
   else{
     const N=k=>Number(pnl[k]||0);
-    // Reserve allocation = 10% of POSITIVE realized profit per unit in the period.
-    const reserveAlloc=(perf||[]).reduce((a,u)=>{const r=Number(u.retained_profit||0);return a+(r>0?Math.round(r*0.10):0);},0);
+    // Cash Reserve Allocation = actual restricted reserve per perkasa unit in the period
+    // (honors D10 manual override via PERKASA_RESERVE ledger map); fallback to policy 10%.
+    const reserveAlloc=(perf||[]).reduce((a,u)=>{const r=Number(u.retained_profit||0);
+      if(r<=0)return a;
+      const actual=(u.unit_id!=null&&(u.unit_id in PERKASA_RESERVE))?PERKASA_RESERVE[u.unit_id]:Math.round(r*0.10);
+      return a+actual;},0);
     const realized=N('unit_retained');
     const operatingPool=realized-reserveAlloc;
     const cin = cf?(Number(cf.inflow_sales||0)+Number(cf.inflow_debt_draw||0)):null;
@@ -4919,8 +5020,8 @@ async function renderLaporanD9(from,to){
       ${row('Sales Revenue',N('revenue'),{strong:true})}
       ${row('Base Unit Cost',N('base_cost'),{ind:true})}
       ${row('Realized Unit Profit',realized,{strong:true,col:realized>=0?'var(--green)':'var(--red)'})}
-      ${row('Cash Reserve Allocation (10%)',reserveAlloc,{ind:true,col:'var(--amber,#C07A0E)'})}
-      ${row('Operating Profit Pool (90%)',operatingPool,{ind:true,col:'var(--green,#178A5A)'})}
+      ${row('Cash Reserve Allocation',reserveAlloc,{ind:true,col:'var(--amber,#C07A0E)'})}
+      ${row('Operating Profit Pool',operatingPool,{ind:true,col:'var(--green,#178A5A)'})}
       ${row('Payroll',-Math.abs(N('payroll')),{ind:true})}
       ${row('Operating Expenses',-Math.abs(N('opex')),{ind:true})}
       ${row('Net Business Profit',N('period_net'),{strong:true,col:N('period_net')>=0?'var(--green)':'var(--red)'})}
@@ -4932,12 +5033,13 @@ async function renderLaporanD9(from,to){
     </tbody>`;
   }
   // Position (as-of) — never summed into period profit
-  let pos=null, fin=null, ext=0, assets=0;
+  let pos=null, fin=null, ext=0, assets=0, founder=0;
   try{
     pos=(await db.from('v_cash_position').select('*').single()).data;
     fin=(await db.from('v_financing').select('debt_outstanding_principal').single()).data;
     const ex=await db.from('v_external_unit_funding').select('outstanding_external_capital'); ext=(ex.data||[]).reduce((a,x)=>a+Number(x.outstanding_external_capital||0),0);
     const as=await db.from('aset_inventori').select('nilai_skrg,status'); assets=(as.data||[]).filter(x=>(x.status||'active')==='active').reduce((a,x)=>a+Number(x.nilai_skrg||0),0);
+    const ca=await db.from('capital_accounts').select('role,funded'); founder=(ca.data||[]).filter(x=>x.role==='founder').reduce((a,x)=>a+Number(x.funded||0),0);
   }catch(e){}
   if(pg){
     const total=pos?Number(pos.actual_cash||0):null, res=pos?Number(pos.reserve||0):null;
@@ -4946,6 +5048,7 @@ async function renderLaporanD9(from,to){
       ['Cash Reserve',res!=null?fmtRpShort(res):'—','k-amber'],
       ['Total Cash',total!=null?fmtRpShort(total):'—','k-green'],
       ['Capital Deployed',pos?fmtRpShort(pos.deployed_capital):'—','k-blue'],
+      ['Founder / Participant Capital',fmtRpShort(founder),'k-purple'],
       ['Partner Funding',fmtRpShort(ext),'k-purple'],
       ['Debt Outstanding',fin?fmtRpShort(fin.debt_outstanding_principal):'—','k-red'],
       ['Asset Value',fmtRpShort(assets),'k-blue'],
