@@ -707,7 +707,41 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <!-- ═══════════ FUNDING LEDGER ═══════════ -->
       <!-- ═══════════ FUNDING LEDGER ═══════════ -->
       <div id="sec-funding" class="section">
-        <div class="section-hint">Partner Collaboration — pendanaan partner opsional per unit. Bukan produk investasi/ROI. Partner Profit % ditentukan otomatis dari Partner Collaboration Policy saat settlement.</div>
+        <div class="section-hint">Manajemen pembiayaan perusahaan. Founder/Participant Capital, Debt/Credit, Partner Funding, dan Operating Liquidity adalah klasifikasi terpisah — <b>tidak</b> dijumlahkan menjadi satu "capital pool".</div>
+
+        <!-- A · MODAL PERUSAHAAN (Founder / Participant Capital) -->
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">A · Modal Perusahaan — Founder / Participant Capital</div>
+            <button class="btn-sm edit" style="margin-left:auto" onclick="bukaFounderForm()">+ Tambah Kontribusi Modal</button>
+          </div>
+          <p style="font-size:11px;color:var(--text3);margin:0 0 10px">Modal ekuitas founder/participant. <b>Bukan</b> revenue, profit, debt, partner funding, operating cash, atau per-unit funding. Sumber: v_founder_capital (ledger transaksi). Terpisah dari data legacy cumulative (capital_accounts/capital_allocations).</p>
+          <div id="founderCapForm" style="display:none;margin-bottom:12px;padding:14px;background:var(--bg);border-radius:var(--r)">
+            <input type="hidden" id="fcId">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+              <div class="fg" style="flex:1;min-width:120px;margin-bottom:0"><label>Participant</label><input type="text" id="fcParticipant" placeholder="mis. Panji" list="fcNames"><datalist id="fcNames"></datalist></div>
+              <div class="fg" style="flex:1;min-width:120px;margin-bottom:0"><label>Tipe</label><select id="fcTipe"><option value="contribution">Contribution / Modal Masuk</option><option value="return">Return / Penarikan Modal</option><option value="adjustment">Adjustment</option></select></div>
+              <div class="fg" style="flex:1;min-width:120px;margin-bottom:0"><label>Nominal (Rp)</label><input type="number" id="fcAmount" placeholder="0"></div>
+              <div class="fg" style="flex:1;min-width:120px;margin-bottom:0"><label>Tanggal</label><input type="date" id="fcTgl"></div>
+              <div class="fg" style="flex:2;min-width:150px;margin-bottom:0"><label>Catatan</label><input type="text" id="fcNotes" placeholder="opsional"></div>
+              <button class="btn-sm" style="height:40px" onclick="simpanFounderCap()">Simpan</button>
+              <button class="btn-sm" style="height:40px" onclick="document.getElementById('founderCapForm').style.display='none'">Batal</button>
+            </div>
+            <div style="font-size:10.5px;color:var(--text3);margin-top:6px">Adjustment boleh bernilai negatif (koreksi turun). Return = penarikan modal (bukan OPEX/payroll).</div>
+          </div>
+          <div class="ih-grid" id="founderCapKpi" style="margin-bottom:12px"></div>
+          <div class="table-scroll"><table class="track-table" id="founderCapTable"></table></div>
+        </div>
+
+        <!-- B · DEBT / CREDIT -->
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">B · Debt / Credit</div></div>
+          <p style="font-size:11px;color:var(--text3);margin:0 0 10px">Pembiayaan utang — terpisah dari founder capital. Sumber: v_debt_summary / v_financing (read-only di sini).</p>
+          <div class="ih-grid" id="modalDebtKpi" style="margin-bottom:10px"></div>
+          <div class="table-scroll"><table class="track-table" id="modalDebtTable"></table></div>
+        </div>
+
+        <!-- C · PARTNER FUNDING (existing) -->
+        <div class="section-hint" style="margin-top:6px">C · Partner Funding — pendanaan partner opsional per unit. Bukan produk investasi/ROI. Partner Profit % ditentukan otomatis dari Partner Collaboration Policy saat settlement.</div>
         <div class="kpi-grid" id="pcKpi"></div>
         <div class="card">
           <div class="card-hdr"><div class="card-title">Partner Collaboration Policy</div>
@@ -723,6 +757,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="card-hdr"><div class="card-title">Partner Funding Overview</div></div>
           <div class="table-scroll"><table class="track-table" id="pcOverviewTable"></table></div>
           <p style="font-size:11px;color:var(--text3);margin-top:10px">Funding Exposure %, Partner Profit %, dan Loss Exposure % independen. Partner Profit % pada unit settled dibekukan di snapshot.</p>
+        </div>
+
+        <!-- D · OPERATING LIQUIDITY -->
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">D · Operating Liquidity</div></div>
+          <p style="font-size:11px;color:var(--text3);margin:0 0 10px">Metrik likuiditas operasional — <b>bukan</b> founder capital, bukan debt, bukan partner funding. Sumber: v_cash_position (derived). Klasifikasi terpisah, tidak dijumlahkan dengan sumber pembiayaan lain.</p>
+          <div class="ih-grid" id="modalLiquidityKpi"></div>
         </div>
       </div>
 
@@ -1586,7 +1627,7 @@ async function loadUnits(){
   const sec=document.querySelector('.section.active');
   if(sec&&sec.id==='sec-home')renderHome();
   if(sec&&sec.id==='sec-unit')renderUnits();
-  if(sec&&sec.id==='sec-funding')renderPartnerCollab();
+  if(sec&&sec.id==='sec-funding')renderModalPage();
   if(sec&&sec.id==='sec-evaluasi')renderEvaluasi();
 }
 
@@ -1625,7 +1666,7 @@ function showSection(s,fromPop){
   if(!fromPop){ try{ history.pushState({sec:s},''); }catch(e){} }
   if(s==='home')renderHome();
   if(s==='unit')renderUnits();
-  if(s==='funding')renderPartnerCollab();
+  if(s==='funding')renderModalPage();
   if(s==='keuangan'){showSubTab('keuangan','ktab-kas');}
   if(s==='analitik'){showSubTab('analitik','atab-kinerja');}
   if(s==='pengaturan'){showSubTab('pengaturan','ptab-settings');}
@@ -4553,9 +4594,14 @@ function openCostLedger(unitId){
       <div class="fg" style="margin:0"><label>Nominal (Rp)</label><input id="uceAmt" type="number" placeholder="0"></div>
       <div class="fg" style="margin:0"><label>Tanggal</label><input id="uceDate" type="date"></div>
     </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <div class="fg" style="margin:0"><label>Dibayar oleh (opsional)</label><select id="ucePaidSource"><option value="">— belum diklasifikasikan —</option><option value="company">Company / Perkasa (operating cash)</option><option value="partner">Partner</option><option value="other">Lainnya</option></select></div>
+      <div class="fg" style="margin:0"><label>Status bayar (opsional)</label><select id="ucePayStatus"><option value="">—</option><option value="paid">Paid</option><option value="unpaid">Unpaid</option></select></div>
+    </div>
     <div style="display:flex;gap:8px;margin-top:8px"><input id="uceNote" class="fg" style="flex:1;margin:0;padding:9px 11px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text)" placeholder="Catatan (opsional)">
       <button class="confirm" onclick="addCostEntry()">+ Tambah Biaya</button></div>
     <p style="font-size:11px;color:var(--text3);margin:8px 0 4px">Hanya biaya langsung tambahan unit. <b>Jangan</b> masukkan akuisisi (Base Unit Cost), payroll, kantor, software, atau overhead perusahaan.</p>
+    <p style="font-size:10.5px;color:var(--text3);margin:0 0 4px"><b>Cost ≠ Cash ≠ Funding.</b> Biaya = biaya ekonomi unit (masuk Base Unit Cost). Ini <b>tidak</b> otomatis menjadi cash outlay atau Perkasa Funding. <b>Funding Gap = Base Unit Cost − Total Funding</b> (definisi tetap). Atribusi "dibayar oleh" bersifat opsional untuk konsumsi cash-ledger D11 nanti.</p>
     <div class="table-scroll" style="margin-top:6px"><table class="track-table" id="uceTable"></table></div>
   </div>`;
   ov.addEventListener('click',e=>{ if(e.target===ov)ov.remove(); });
@@ -4587,8 +4633,9 @@ async function loadCostEntries(){
     kcard('Additional Direct Costs',fmtRp(addl),'Biaya Langsung Tambahan','k-amber'),
     kcard('Total Base Unit Cost',total==null?'—':fmtRp(total),'biaya dasar unit (terverifikasi)','k-blue'),
   ].join('');
+  const attrBadge=e=>{ if(!e.paid_source&&!e.payment_status)return ''; const src={company:'Company/Perkasa',partner:'Partner',other:'Lainnya'}[e.paid_source]||''; const st=e.payment_status?(e.payment_status==='paid'?'Paid':'Unpaid'):''; return `<br><span style="color:var(--text3);font-size:10.5px">${[src,st].filter(Boolean).join(' · ')}</span>`; };
   tb.innerHTML=`<thead><tr><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th class="num">Nominal</th><th></th></tr></thead><tbody>`+
-    (entries.map(e=>`<tr><td>${esc(e.entry_date)}</td><td>${esc(e.category)}</td><td>${esc(e.description||'')}${e.note?`<br><span style="color:var(--text3);font-size:11px">${esc(e.note)}</span>`:''}</td>
+    (entries.map(e=>`<tr><td>${esc(e.entry_date)}</td><td>${esc(e.category)}</td><td>${esc(e.description||'')}${e.note?`<br><span style="color:var(--text3);font-size:11px">${esc(e.note)}</span>`:''}${attrBadge(e)}</td>
       <td class="num">${fmtRp(e.amount)}</td>
       <td><button class="btn-sm" onclick="delCostEntry(${e.id})"></button></td></tr>`).join('')
       ||`<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text3)">Belum ada biaya. Tambahkan di atas.</td></tr>`)+'</tbody>';
@@ -4603,9 +4650,28 @@ async function addCostEntry(){
     description:document.getElementById('uceDesc').value.trim(), amount:amt,
     entry_date:document.getElementById('uceDate').value||new Date().toISOString().slice(0,10),
     note:document.getElementById('uceNote').value.trim() };
-  try{ const {error}=await db.from('unit_cost_entries').insert(row); if(error)throw error;
+  // Optional attribution (phase22 columns). Included only when provided; if the
+  // columns aren't live yet, retry without them so the core cost entry still saves.
+  const ps=(document.getElementById('ucePaidSource')||{}).value||'';
+  const pst=(document.getElementById('ucePayStatus')||{}).value||'';
+  const attr={}; if(ps)attr.paid_source=ps; if(pst)attr.payment_status=pst;
+  if(pst==='paid')attr.paid_date=row.entry_date;
+  const hasAttr=Object.keys(attr).length>0;
+  try{
+    const {error}=await db.from('unit_cost_entries').insert({...row,...attr});
+    if(error){
+      // If attribution columns aren't live yet, do NOT silently strip the user's
+      // attribution — refuse and tell them, preserving the form input.
+      if(hasAttr && /column|paid_source|payment_status|paid_date|schema cache|pgrst204/i.test((error.message||'')+' '+(error.code||''))){
+        showToast('Modul atribusi pembayaran biaya (phase22) belum aktif — biaya TIDAK disimpan agar atribusi tidak hilang. Aktifkan phase22 atau kosongkan "dibayar oleh"/status.');
+        return;
+      }
+      throw error;
+    }
     showToast('Biaya ditambahkan.');
     document.getElementById('uceDesc').value=''; document.getElementById('uceAmt').value=''; document.getElementById('uceNote').value='';
+    const psEl=document.getElementById('ucePaidSource'); if(psEl)psEl.value='';
+    const pstEl=document.getElementById('ucePayStatus'); if(pstEl)pstEl.value='';
     loadCostEntries();
   }catch(e){ showToast('Cost Ledger belum aktif di database.'); }
 }
@@ -4739,6 +4805,137 @@ function pmPolicyShare(matrix,vehicle,bracket,holding){
 const PM_BRACKETS=['<10%','10-20%','20-30%','30-40%','40-50%','>50%'];
 const PM_HOLDINGS=['<30','31-60','61-90','91-120','121-180'];
 const PM_HOLD_DISPLAY={'<30':'<30 hari','31-60':'31–60','61-90':'61–90','91-120':'91–120','121-180':'121–180'};
+
+// ═══════════════════ MODAL PAGE (D-Fx1/2) — financing management, sections A–D ═══════════════════
+// Founder Capital, Debt, Partner Funding, Operating Liquidity are SEPARATE classifications.
+// No "Total Capital Pool" — the four are never summed together.
+async function renderModalPage(){
+  await Promise.all([
+    renderFounderCapital().catch(()=>{}),
+    renderModalDebt().catch(()=>{}),
+    renderPartnerCollab().catch(()=>{}),
+    renderModalLiquidity().catch(()=>{}),
+  ]);
+}
+// A · Founder / Participant Capital (source of truth: v_founder_capital)
+async function renderFounderCapital(){
+  const kpi=document.getElementById('founderCapKpi'), tbl=document.getElementById('founderCapTable');
+  let bal=[], rows=[];
+  try{ bal=(await db.from('v_founder_capital').select('*')).data||[]; }catch(e){ bal=null; }
+  try{ rows=(await db.from('founder_capital_ledger').select('*').order('tgl',{ascending:false})).data||[]; }catch(e){ rows=null; }
+  // datalist of participants
+  const dl=document.getElementById('fcNames'); if(dl)dl.innerHTML=(bal||[]).map(b=>`<option value="${esc(b.participant)}">`).join('');
+  if(bal===null||rows===null){
+    if(kpi)kpi.innerHTML=`<div class="ih-card"><div class="ihc-label">Founder Capital</div><div class="ihc-value">—</div><div class="ihc-sub">${moduleMsg('founder_capital_ledger','Founder Capital')}</div></div>`;
+    if(tbl)tbl.innerHTML=''; return;
+  }
+  const total=bal.reduce((a,b)=>a+Number(b.balance||0),0);
+  if(kpi){
+    kpi.innerHTML=[
+      ...bal.sort((a,b)=>Number(b.balance)-Number(a.balance)).map(b=>[esc(b.participant),fmtRpShort(b.balance),'saldo modal (running balance)']),
+      ['Total Founder Capital',fmtRpShort(total),'ekuitas founder — bukan cash/debt'],
+    ].map(([l,v,s])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${s}</div></div>`).join('');
+  }
+  if(tbl){
+    const thead=`<thead><tr><th>Tanggal</th><th>Participant</th><th>Tipe</th><th class="num">Nominal</th><th>Catatan</th><th class="num">Aksi</th></tr></thead>`;
+    const tp={contribution:'Contribution',return:'Return',adjustment:'Adjustment'};
+    const body=rows.length?rows.map(r=>`<tr>
+      <td class="num">${r.tgl||'—'}</td><td>${esc(r.participant)}</td>
+      <td>${tp[r.tipe]||r.tipe}</td>
+      <td class="num" style="color:${r.tipe==='return'?'var(--red)':'var(--green,#178A5A)'}">${r.tipe==='return'?'− ':''}${fmtRp(Math.abs(Number(r.amount||0)))}</td>
+      <td style="font-size:12px;color:var(--text3)">${esc(r.notes||'')}</td>
+      <td class="num">${/(^|\b)(reversal|void)\b/i.test(r.notes||'')?'<span style="color:var(--text3);font-size:11px">—</span>':`<button class="btn-sm" onclick="reverseFounderCap(${r.id})">Reverse</button>`}</td></tr>`).join('')
+      :`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">Belum ada transaksi modal.</td></tr>`;
+    tbl.innerHTML=thead+'<tbody>'+body+'</tbody>';
+  }
+}
+function bukaFounderForm(){
+  document.getElementById('fcId').value='';
+  document.getElementById('fcParticipant').value='';
+  document.getElementById('fcTipe').value='contribution';
+  document.getElementById('fcAmount').value='';
+  document.getElementById('fcTgl').value=new Date().toISOString().slice(0,10);
+  document.getElementById('fcNotes').value='';
+  document.getElementById('founderCapForm').style.display='block';
+  document.getElementById('fcParticipant').focus();
+}
+async function simpanFounderCap(){
+  const participant=document.getElementById('fcParticipant').value.trim();
+  const tipe=document.getElementById('fcTipe').value;
+  const amount=parseFloat(document.getElementById('fcAmount').value);
+  const tgl=document.getElementById('fcTgl').value||new Date().toISOString().slice(0,10);
+  const notes=document.getElementById('fcNotes').value.trim();
+  if(!participant){showToast('Participant wajib diisi');return;}
+  if(isNaN(amount)){showToast('Nominal wajib diisi');return;}
+  if(tipe!=='adjustment'&&amount<0){showToast('Contribution/Return tidak boleh negatif');return;}
+  setSyncStatus('syncing');
+  // optional link to existing capital_accounts row by name (does not alter legacy funded/allocations)
+  let account_id=null; try{ const a=(await db.from('capital_accounts').select('id,name').eq('name',participant).limit(1)).data; if(a&&a[0])account_id=a[0].id; }catch(e){}
+  const {error}=await db.from('founder_capital_ledger').insert({account_id,participant,amount,tipe,tgl,notes});
+  if(error){setSyncStatus('error');showToast('Gagal menyimpan (migration phase21 sudah diapply?)');return;}
+  logAudit('MODAL','founder_capital',participant,`${tipe} ${fmtRp(amount)}`);
+  document.getElementById('founderCapForm').style.display='none';
+  setSyncStatus('ok'); renderFounderCapital(); showToast('Modal tersimpan');
+}
+// Append-only: never delete a financial event. Reverse = append a compensating
+// record and preserve the original (auditable). Uses only existing tipe values.
+async function reverseFounderCap(id){
+  let orig=null; try{ orig=(await db.from('founder_capital_ledger').select('*').eq('id',id).limit(1)).data?.[0]; }catch(e){}
+  if(!orig){ showToast('Transaksi tidak ditemukan'); return; }
+  if(/(^|\b)(reversal|void)\b/i.test(orig.notes||'')){ showToast('Transaksi reversal tidak dapat di-reverse'); return; }
+  if(!confirm(`Reverse transaksi ini? Transaksi asli tetap disimpan dan dibuat record pembalik.\n\n${orig.participant} · ${orig.tipe} · ${fmtRp(Math.abs(Number(orig.amount||0)))}`))return;
+  // Compensating entry: contribution↔return (same magnitude); adjustment→adjustment with negated amount.
+  let rev;
+  if(orig.tipe==='contribution') rev={tipe:'return', amount:Math.abs(Number(orig.amount||0))};
+  else if(orig.tipe==='return')  rev={tipe:'contribution', amount:Math.abs(Number(orig.amount||0))};
+  else                           rev={tipe:'adjustment', amount:-Number(orig.amount||0)};
+  const row={ account_id:orig.account_id||null, participant:orig.participant, amount:rev.amount, tipe:rev.tipe,
+    tgl:new Date().toISOString().slice(0,10),
+    notes:`Reversal of #${orig.id} (${orig.tipe} ${fmtRp(Math.abs(Number(orig.amount||0)))})${orig.notes?' · '+orig.notes:''}` };
+  setSyncStatus('syncing');
+  const {error}=await db.from('founder_capital_ledger').insert(row);
+  if(error){ setSyncStatus('error'); showToast('Gagal reverse'); return; }
+  logAudit('MODAL','founder_capital',orig.id,`reverse → ${rev.tipe} ${fmtRp(Math.abs(rev.amount))}`);
+  setSyncStatus('ok'); renderFounderCapital(); showToast('Transaksi dibalik (asli tetap tersimpan)');
+}
+// B · Debt / Credit (read-only reuse of v_debt_summary / v_financing)
+async function renderModalDebt(){
+  const kpi=document.getElementById('modalDebtKpi'), tbl=document.getElementById('modalDebtTable');
+  let fin=null, rows=[];
+  try{ fin=(await db.from('v_financing').select('*').single()).data; }catch(e){}
+  try{ rows=(await db.from('v_debt_summary').select('*')).data||[]; }catch(e){ rows=null; }
+  if(kpi){
+    kpi.innerHTML=fin?[
+      ['Debt Outstanding (principal)',fmtRpShort(fin.debt_outstanding_principal),'sisa pokok'],
+      ['Outstanding + Interest',fmtRpShort(fin.debt_outstanding_total),'total termasuk bunga'],
+      ['Interest Paid',fmtRpShort(fin.interest_paid),'bunga dibayar'],
+      ['Active Facilities',String(fin.active_facilities||0),'fasilitas aktif'],
+    ].map(([l,v,s])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${s}</div></div>`).join('')
+    :`<div class="ih-card"><div class="ihc-label">Debt</div><div class="ihc-value">—</div><div class="ihc-sub">tidak ada data</div></div>`;
+  }
+  if(tbl){
+    if(rows===null){ tbl.innerHTML=''; return; }
+    const thead=`<thead><tr><th>Lender</th><th class="num">Principal</th><th class="num">Outstanding</th><th class="num">Total (+bunga)</th><th>Jatuh Tempo</th><th>Status</th></tr></thead>`;
+    const body=rows.length?rows.map(d=>`<tr><td>${esc(d.lender||'—')}</td>
+      <td class="num">${fmtRp(d.principal||0)}</td><td class="num">${fmtRp(d.outstanding_principal||0)}</td>
+      <td class="num">${fmtRp(d.outstanding_total||0)}</td><td>${d.next_due_date||'—'}</td>
+      <td>${esc(d.status||'')}</td></tr>`).join('')
+      :`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">Belum ada fasilitas utang.</td></tr>`;
+    tbl.innerHTML=thead+'<tbody>'+body+'</tbody>';
+  }
+}
+// D · Operating Liquidity (read-only reuse of v_cash_position)
+async function renderModalLiquidity(){
+  const kpi=document.getElementById('modalLiquidityKpi'); if(!kpi)return;
+  let cp=null; try{ cp=(await db.from('v_cash_position').select('*').single()).data; }catch(e){}
+  const total=cp?Number(cp.actual_cash||0):null, res=cp?Number(cp.reserve||0):null;
+  const prov=cp?(cp.is_provisional!==false):true;
+  kpi.innerHTML=[
+    ['Operating Cash Position',(total!=null&&res!=null)?fmtRpShort(total-res):'—','likuiditas tak-terestriksi'],
+    ['Cash Reserve',res!=null?fmtRpShort(res):'—','restricted'],
+    ['Operating Liquidity Position'+(prov?' <span style="font-size:9px;font-weight:700;color:#C07A0E;border:1px solid #C07A0E;border-radius:6px;padding:0 4px">PROVISIONAL</span>':''),total!=null?fmtRpShort(total):'—','derived · bukan saldo bank tereklonsiliasi'],
+  ].map(([l,v,s])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${s}</div></div>`).join('');
+}
 
 // ═══════════════════ MODAL · PARTNER COLLABORATION (replaces investor model) ═══════════════════
 let _pcVehicle='Mobil';
