@@ -4656,15 +4656,22 @@ async function addCostEntry(){
   const pst=(document.getElementById('ucePayStatus')||{}).value||'';
   const attr={}; if(ps)attr.paid_source=ps; if(pst)attr.payment_status=pst;
   if(pst==='paid')attr.paid_date=row.entry_date;
+  const hasAttr=Object.keys(attr).length>0;
   try{
-    let {error}=await db.from('unit_cost_entries').insert({...row,...attr});
-    if(error && Object.keys(attr).length && /column|paid_source|payment_status|paid_date|schema cache/i.test(error.message||'')){
-      ({error}=await db.from('unit_cost_entries').insert(row)); // fallback: pre-phase22
-      if(!error)showToast('Biaya disimpan (atribusi belum aktif di DB).');
+    const {error}=await db.from('unit_cost_entries').insert({...row,...attr});
+    if(error){
+      // If attribution columns aren't live yet, do NOT silently strip the user's
+      // attribution — refuse and tell them, preserving the form input.
+      if(hasAttr && /column|paid_source|payment_status|paid_date|schema cache|pgrst204/i.test((error.message||'')+' '+(error.code||''))){
+        showToast('Modul atribusi pembayaran biaya (phase22) belum aktif — biaya TIDAK disimpan agar atribusi tidak hilang. Aktifkan phase22 atau kosongkan "dibayar oleh"/status.');
+        return;
+      }
+      throw error;
     }
-    if(error)throw error;
     showToast('Biaya ditambahkan.');
     document.getElementById('uceDesc').value=''; document.getElementById('uceAmt').value=''; document.getElementById('uceNote').value='';
+    const psEl=document.getElementById('ucePaidSource'); if(psEl)psEl.value='';
+    const pstEl=document.getElementById('ucePayStatus'); if(pstEl)pstEl.value='';
     loadCostEntries();
   }catch(e){ showToast('Cost Ledger belum aktif di database.'); }
 }
@@ -4837,7 +4844,7 @@ async function renderFounderCapital(){
       <td>${tp[r.tipe]||r.tipe}</td>
       <td class="num" style="color:${r.tipe==='return'?'var(--red)':'var(--green,#178A5A)'}">${r.tipe==='return'?'− ':''}${fmtRp(Math.abs(Number(r.amount||0)))}</td>
       <td style="font-size:12px;color:var(--text3)">${esc(r.notes||'')}</td>
-      <td class="num"><button class="btn-sm danger" onclick="hapusFounderCap(${r.id})">Hapus</button></td></tr>`).join('')
+      <td class="num">${/(^|\b)(reversal|void)\b/i.test(r.notes||'')?'<span style="color:var(--text3);font-size:11px">—</span>':`<button class="btn-sm" onclick="reverseFounderCap(${r.id})">Reverse</button>`}</td></tr>`).join('')
       :`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">Belum ada transaksi modal.</td></tr>`;
     tbl.innerHTML=thead+'<tbody>'+body+'</tbody>';
   }
@@ -4870,12 +4877,26 @@ async function simpanFounderCap(){
   document.getElementById('founderCapForm').style.display='none';
   setSyncStatus('ok'); renderFounderCapital(); showToast('Modal tersimpan');
 }
-async function hapusFounderCap(id){
-  if(!confirm('Hapus transaksi modal ini?'))return;
-  const {error}=await db.from('founder_capital_ledger').delete().eq('id',id);
-  if(error){showToast('Gagal menghapus');return;}
-  logAudit('MODAL','founder_capital',id,'hapus');
-  renderFounderCapital(); showToast('Dihapus');
+// Append-only: never delete a financial event. Reverse = append a compensating
+// record and preserve the original (auditable). Uses only existing tipe values.
+async function reverseFounderCap(id){
+  let orig=null; try{ orig=(await db.from('founder_capital_ledger').select('*').eq('id',id).limit(1)).data?.[0]; }catch(e){}
+  if(!orig){ showToast('Transaksi tidak ditemukan'); return; }
+  if(/(^|\b)(reversal|void)\b/i.test(orig.notes||'')){ showToast('Transaksi reversal tidak dapat di-reverse'); return; }
+  if(!confirm(`Reverse transaksi ini? Transaksi asli tetap disimpan dan dibuat record pembalik.\n\n${orig.participant} · ${orig.tipe} · ${fmtRp(Math.abs(Number(orig.amount||0)))}`))return;
+  // Compensating entry: contribution↔return (same magnitude); adjustment→adjustment with negated amount.
+  let rev;
+  if(orig.tipe==='contribution') rev={tipe:'return', amount:Math.abs(Number(orig.amount||0))};
+  else if(orig.tipe==='return')  rev={tipe:'contribution', amount:Math.abs(Number(orig.amount||0))};
+  else                           rev={tipe:'adjustment', amount:-Number(orig.amount||0)};
+  const row={ account_id:orig.account_id||null, participant:orig.participant, amount:rev.amount, tipe:rev.tipe,
+    tgl:new Date().toISOString().slice(0,10),
+    notes:`Reversal of #${orig.id} (${orig.tipe} ${fmtRp(Math.abs(Number(orig.amount||0)))})${orig.notes?' · '+orig.notes:''}` };
+  setSyncStatus('syncing');
+  const {error}=await db.from('founder_capital_ledger').insert(row);
+  if(error){ setSyncStatus('error'); showToast('Gagal reverse'); return; }
+  logAudit('MODAL','founder_capital',orig.id,`reverse → ${rev.tipe} ${fmtRp(Math.abs(rev.amount))}`);
+  setSyncStatus('ok'); renderFounderCapital(); showToast('Transaksi dibalik (asli tetap tersimpan)');
 }
 // B · Debt / Credit (read-only reuse of v_debt_summary / v_financing)
 async function renderModalDebt(){
