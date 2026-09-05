@@ -1618,7 +1618,8 @@ async function loadUnits(){
   try{
     const {data,error}=await db.from('units').select('*').order('id',{ascending:true});
     if(error)throw error;
-    units=(data||[]).map(transformUnit);
+    // Hide archived units (soft-deleted) from the working set; records stay in DB.
+    units=(data||[]).filter(r=>!r.archived_at).map(transformUnit);
     await loadUnitFunding();
     updateMetrics(); setSyncStatus('ok');
   }catch(e){ setSyncStatus('error'); showToast('Gagal memuat data. Cek koneksi.'); }
@@ -2399,7 +2400,26 @@ async function confirmTerjual(){
 
 async function hapusUnit(id){
   const u=units.find(x=>x.id===id);
-  if(!confirm('Hapus unit ini?'))return;
+  // Count accounting dependencies. A unit with ANY dependency is NEVER hard-deleted
+  // (that would destroy financial history / violate FKs). Offer Archive instead.
+  let deps=0, detail=[];
+  try{
+    for(const [tbl,label] of [['capital_allocations','capital allocation'],['unit_cost_entries','cost entry'],['unit_funding','funding'],['unit_settlement','settlement'],['reserve_ledger','reserve']]){
+      const {count}=await db.from(tbl).select('id',{count:'exact',head:true}).eq('unit_id',id);
+      if(count){ deps+=count; detail.push(count+' '+label); }
+    }
+  }catch(e){ /* if counts fail, fall through to guarded delete */ }
+  if(deps>0){
+    if(!confirm(`Unit "${u?u.nama:id}" punya histori akuntansi (${detail.join(', ')}) dan TIDAK bisa dihapus permanen (menjaga integritas data). \n\nArsipkan unit ini? Unit akan disembunyikan dari daftar; semua record akuntansi tetap utuh.`))return;
+    setSyncStatus('syncing'); setLoading(true,'Mengarsipkan unit...');
+    const {error}=await db.from('units').update({archived_at:new Date().toISOString()}).eq('id',id);
+    setLoading(false);
+    if(!error){setSyncStatus('ok');showToast('Unit diarsipkan (histori tetap utuh)');logAudit('ARSIP','unit',id,u?u.nama:'—');await loadUnits();renderUnits();}
+    else{setSyncStatus('error');showToast('Gagal mengarsipkan: '+(error.message||''));}
+    return;
+  }
+  // No dependencies → genuinely empty mis-entry, hard delete allowed.
+  if(!confirm('Unit ini tidak punya histori akuntansi. Hapus permanen?'))return;
   setSyncStatus('syncing'); setLoading(true,'Menghapus unit...');
   const {error}=await db.from('units').delete().eq('id',id);
   setLoading(false);
@@ -4906,22 +4926,24 @@ async function renderModalDebt(){
   try{ rows=(await db.from('v_debt_summary').select('*')).data||[]; }catch(e){ rows=null; }
   if(kpi){
     kpi.innerHTML=fin?[
-      ['Debt Outstanding (principal)',fmtRpShort(fin.debt_outstanding_principal),'sisa pokok'],
+      ['Debt Liability (principal)',fmtRpShort(fin.debt_outstanding_principal),'kewajiban pokok (gross)'],
+      ['Net Cash Received',fin.total_net_disbursed!=null?fmtRpShort(fin.total_net_disbursed):'—','kas aktual diterima'],
+      ['Financing/Admin Fee',fin.total_fee!=null?fmtRpShort(fin.total_fee):'—','biaya potong bank'],
       ['Outstanding + Interest',fmtRpShort(fin.debt_outstanding_total),'total termasuk bunga'],
-      ['Interest Paid',fmtRpShort(fin.interest_paid),'bunga dibayar'],
-      ['Active Facilities',String(fin.active_facilities||0),'fasilitas aktif'],
     ].map(([l,v,s])=>`<div class="ih-card"><div class="ihc-label">${l}</div><div class="ihc-value">${v}</div><div class="ihc-sub">${s}</div></div>`).join('')
     :`<div class="ih-card"><div class="ihc-label">Debt</div><div class="ihc-value">—</div><div class="ihc-sub">tidak ada data</div></div>`;
   }
   if(tbl){
     if(rows===null){ tbl.innerHTML=''; return; }
-    const thead=`<thead><tr><th>Lender</th><th class="num">Principal</th><th class="num">Outstanding</th><th class="num">Total (+bunga)</th><th>Jatuh Tempo</th><th>Status</th></tr></thead>`;
+    const thead=`<thead><tr><th>Lender</th><th class="num">Principal (liability)</th><th class="num">Net Cash</th><th class="num">Fee</th><th class="num">Outstanding</th><th>Jatuh Tempo</th><th>Status</th></tr></thead>`;
     const body=rows.length?rows.map(d=>`<tr><td>${esc(d.lender||'—')}</td>
-      <td class="num">${fmtRp(d.principal||0)}</td><td class="num">${fmtRp(d.outstanding_principal||0)}</td>
-      <td class="num">${fmtRp(d.outstanding_total||0)}</td><td>${d.next_due_date||'—'}</td>
+      <td class="num">${fmtRp(d.principal||0)}</td><td class="num">${fmtRp(d.net_disbursed||0)}</td>
+      <td class="num" style="color:var(--red)">${fmtRp(d.fee||0)}</td>
+      <td class="num">${fmtRp(d.outstanding_principal||0)}</td><td>${d.next_due_date||'—'}</td>
       <td>${esc(d.status||'')}</td></tr>`).join('')
-      :`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">Belum ada fasilitas utang.</td></tr>`;
-    tbl.innerHTML=thead+'<tbody>'+body+'</tbody>';
+      :`<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:16px">Belum ada fasilitas utang.</td></tr>`;
+    tbl.innerHTML=thead+'<tbody>'+body+'</tbody>'
+      +`<p style="font-size:10.5px;color:var(--text3);margin-top:8px"><b>Liability</b> = pokok gross. <b>Net Cash</b> = kas aktual masuk. <b>Fee</b> = biaya pembiayaan (bukan cash diterima). Cash/liquidity view memakai <b>Net Cash</b>, bukan gross principal.</p>`;
   }
 }
 // D · Operating Liquidity (read-only reuse of v_cash_position)
